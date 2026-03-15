@@ -11,8 +11,8 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Link from 'next/link';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('user@gmail.com');
-  const [password, setPassword] = useState('********');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [role, setRole] = useState('user');
   const { login, user } = useApp();
   const router = useRouter();
@@ -30,9 +30,6 @@ export default function LoginPage() {
 
   const handleRoleChange = (newRole: string) => {
     setRole(newRole);
-    if (newRole === 'user') setEmail('user@gmail.com');
-    if (newRole === 'operator') setEmail('operator@gmail.com');
-    if (newRole === 'admin') setEmail('admin@gmail.com');
   };
 
   return (
