@@ -12,7 +12,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSeparator,
+  SidebarSeparator,
 } from '@/components/ui/sidebar';
 import { useApp } from '@/hooks/use-store';
 import { useRouter, usePathname } from 'next/navigation';
@@ -71,7 +71,7 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-        <SidebarMenuSeparator />
+        <SidebarSeparator />
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton onClick={handleLogout} tooltip="Logout">
