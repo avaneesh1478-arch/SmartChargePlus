@@ -1,0 +1,16 @@
+{
+  "placeholderImages": [
+    {
+      "id": "station-hero",
+      "description": "Electric vehicle charging station modern",
+      "imageUrl": "https://picsum.photos/seed/ev-charge/1200/600",
+      "imageHint": "ev charging"
+    },
+    {
+      "id": "map-placeholder",
+      "description": "Dark themed map showing charging locations",
+      "imageUrl": "https://picsum.photos/seed/ev-map/800/600",
+      "imageHint": "night map"
+    }
+  ]
+}
