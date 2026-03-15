@@ -9,19 +9,22 @@ interface AppContextType {
   stations: Station[];
   chargers: Charger[];
   transactions: Transaction[];
+  users: User[];
   login: (email: string) => void;
   logout: () => void;
   toggleCharger: (chargerId: string) => void;
   updateChargerStatus: (chargerId: string, status: Charger['status']) => void;
+  addStation: (data: { name: string, email: string, address: string, chargingCost: number }) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [stations] = useState<Station[]>(MOCK_STATIONS);
+  const [stations, setStations] = useState<Station[]>(MOCK_STATIONS);
   const [chargers, setChargers] = useState<Charger[]>(MOCK_CHARGERS);
   const [transactions] = useState<Transaction[]>(MOCK_TRANSACTIONS);
+  const [users, setUsers] = useState<User[]>(MOCK_USERS);
 
   // Persistence simulation
   useEffect(() => {
@@ -36,10 +39,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = (email: string) => {
-    const found = MOCK_USERS.find(u => u.email === email);
+    const found = users.find(u => u.email === email);
     if (found) {
       setUser(found);
       localStorage.setItem('volta_user', JSON.stringify(found));
+    } else {
+      // Allow dynamic operator login if they were added
+      const dynamicUser = users.find(u => u.email === email);
+      if (dynamicUser) {
+        setUser(dynamicUser);
+        localStorage.setItem('volta_user', JSON.stringify(dynamicUser));
+      }
     }
   };
 
@@ -66,8 +76,69 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setChargers(prev => prev.map(c => c.charger_id === chargerId ? { ...c, status } : c));
   };
 
+  const addStation = (data: { name: string, email: string, address: string, chargingCost: number }) => {
+    const newStationId = `st-${stations.length + 1}`;
+    
+    // 1. Create the new station
+    const newStation: Station = {
+      station_id: newStationId,
+      name: data.name,
+      location: data.address,
+      lat: 40.7128 + (Math.random() * 0.1),
+      lng: -74.0060 + (Math.random() * 0.1),
+      status: 'active',
+      operator_id: `op-${newStationId}`,
+      total_power: 150,
+      charger_count: 2,
+    };
+
+    // 2. Create the operator user for this station
+    const newOperator: User = {
+      uid: `op-${newStationId}`,
+      email: data.email,
+      role: 'OPERATOR',
+      associated_station_id: newStationId,
+      created_at: Date.now(),
+    };
+
+    // 3. Create mock chargers for this station
+    const newChargers: Charger[] = [
+      { 
+        charger_id: `ch-${newStationId}-1`, 
+        station_id: newStationId, 
+        type: 'DCFC', 
+        current_usage: 0, 
+        status: 'available', 
+        rate_per_kwh: data.chargingCost 
+      },
+      { 
+        charger_id: `ch-${newStationId}-2`, 
+        station_id: newStationId, 
+        type: 'Level 2', 
+        current_usage: 0, 
+        status: 'available', 
+        rate_per_kwh: data.chargingCost * 0.6 
+      },
+    ];
+
+    setStations(prev => [...prev, newStation]);
+    setUsers(prev => [...prev, newOperator]);
+    setChargers(prev => [...prev, ...newChargers]);
+  };
+
   return (
-    <AppContext.Provider value={{ user, stations, chargers, transactions, login, logout, toggleCharger, updateChargerStatus }}>
+    <AppContext.Provider value={{ 
+      user, 
+      stations, 
+      chargers, 
+      transactions, 
+      users,
+      login, 
+      logout, 
+      toggleCharger, 
+      updateChargerStatus,
+      addStation
+    }}>
       {children}
     </AppContext.Provider>
   );
