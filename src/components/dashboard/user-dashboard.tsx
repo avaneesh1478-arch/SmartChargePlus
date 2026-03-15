@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useApp } from '@/hooks/use-store';
 import { StatCard } from './stat-card';
 import { 
@@ -56,11 +56,16 @@ export function UserDashboard() {
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [selectedChargerId, setSelectedChargerId] = useState<string | null>(null);
-  const [bookingDate, setBookingDate] = useState<Date | undefined>(new Date());
+  const [bookingDate, setBookingDate] = useState<Date | undefined>(undefined);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isTimePickerOpen, setIsTimePickerOpen] = useState(false);
   const [bookingTime, setBookingTime] = useState('15:30');
   const [bookingDuration, setBookingDuration] = useState('1');
+
+  // Initialize date on client to avoid hydration mismatch
+  useEffect(() => {
+    setBookingDate(new Date());
+  }, []);
 
   const getAiRecommendations = async () => {
     setLoadingAi(true);
@@ -385,6 +390,7 @@ export function UserDashboard() {
               </div>
             </div>
 
+            {/* Separated Date and Time Boxes */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 flex items-center gap-1.5">
@@ -418,7 +424,10 @@ export function UserDashboard() {
                       <Calendar
                         mode="single"
                         selected={bookingDate}
-                        onSelect={setBookingDate}
+                        onSelect={(date) => {
+                          setBookingDate(date);
+                          // We don't close immediately to let them see the high-fidelity header update
+                        }}
                         initialFocus
                         className="bg-transparent"
                       />
