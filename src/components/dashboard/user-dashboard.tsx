@@ -58,6 +58,7 @@ export function UserDashboard() {
   const [selectedChargerId, setSelectedChargerId] = useState<string | null>(null);
   const [bookingDate, setBookingDate] = useState<Date | undefined>(new Date());
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isTimePickerOpen, setIsTimePickerOpen] = useState(false);
   const [bookingTime, setBookingTime] = useState('15:30');
   const [bookingDuration, setBookingDuration] = useState('1');
 
@@ -384,10 +385,10 @@ export function UserDashboard() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 flex items-center gap-1.5">
-                  <CalendarIcon className="h-3 w-3" /> Date & Time selection
+                  <CalendarIcon className="h-3 w-3" /> Date selection
                 </label>
                 <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                   <PopoverTrigger asChild>
@@ -399,13 +400,12 @@ export function UserDashboard() {
                       )}
                     >
                       <div className="flex items-center justify-between w-full">
-                         <span>{bookingDate ? format(bookingDate, "PPP") + " at " + bookingTime : "Pick Date & Time"}</span>
-                         <ChevronDown className="h-4 w-4 opacity-50" />
+                         <span className="truncate">{bookingDate ? format(bookingDate, "MMM d, yyyy") : "Pick Date"}</span>
+                         <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
                       </div>
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-[320px] p-0 bg-[#1a1a1c] border-white/10 overflow-hidden shadow-2xl" align="start">
-                    {/* High-Fidelity Header */}
                     <div className="bg-[#333] p-6 text-white border-b border-white/5">
                       <p className="text-xs font-semibold opacity-60 tracking-widest uppercase">
                         {bookingDate ? format(bookingDate, "yyyy") : format(new Date(), "yyyy")}
@@ -414,9 +414,7 @@ export function UserDashboard() {
                         {bookingDate ? format(bookingDate, "EEE, d MMM") : format(new Date(), "EEE, d MMM")}
                       </h3>
                     </div>
-                    
-                    {/* Scrollable Picker Area */}
-                    <div className="p-2 space-y-4 max-h-[400px] overflow-y-auto scrollbar-none">
+                    <div className="p-2">
                       <Calendar
                         mode="single"
                         selected={bookingDate}
@@ -424,35 +422,13 @@ export function UserDashboard() {
                         initialFocus
                         className="bg-transparent"
                       />
-                      
-                      <div className="px-3 pb-4">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-2 block">Available Times</label>
-                        <div className="grid grid-cols-3 gap-2">
-                          {['09:00', '10:30', '12:00', '14:00', '15:30', '17:00', '18:30', '20:00', '21:30'].map((time) => (
-                            <Button
-                              key={time}
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setBookingTime(time)}
-                              className={cn(
-                                "h-9 text-xs rounded-lg border-white/5 bg-white/5 hover:bg-primary/20",
-                                bookingTime === time ? "bg-primary text-white border-primary" : "text-muted-foreground"
-                              )}
-                            >
-                              {time}
-                            </Button>
-                          ))}
-                        </div>
-                      </div>
                     </div>
-
-                    {/* Footer Actions */}
                     <div className="p-4 border-t border-white/5 flex items-center justify-between bg-black/20">
                       <Button 
                         variant="ghost" 
                         size="sm" 
                         className="text-primary hover:bg-primary/5 font-bold uppercase text-[10px] tracking-widest" 
-                        onClick={() => { setBookingDate(undefined); setBookingTime('15:30'); }}
+                        onClick={() => { setBookingDate(undefined); }}
                       >
                         Clear
                       </Button>
@@ -473,6 +449,51 @@ export function UserDashboard() {
                         >
                           Set
                         </Button>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 flex items-center gap-1.5">
+                  <Clock className="h-3 w-3" /> Time selection
+                </label>
+                <Popover open={isTimePickerOpen} onOpenChange={setIsTimePickerOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "h-12 w-full justify-start text-left font-normal bg-background/20 border-white/5 rounded-xl hover:bg-white/5 focus:ring-primary/20",
+                        !bookingTime && "text-muted-foreground"
+                      )}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                         <span>{bookingTime}</span>
+                         <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+                      </div>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[280px] p-0 bg-[#1a1a1c] border-white/10 overflow-hidden shadow-2xl" align="end">
+                    <div className="bg-[#333] p-4 text-white border-b border-white/5">
+                      <h3 className="text-xl font-bold">Pick Start Time</h3>
+                    </div>
+                    <div className="p-3 max-h-[300px] overflow-y-auto scrollbar-none">
+                      <div className="grid grid-cols-3 gap-2">
+                        {['08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00', '21:30', '22:00'].map((time) => (
+                          <Button
+                            key={time}
+                            variant="outline"
+                            size="sm"
+                            onClick={() => { setBookingTime(time); setIsTimePickerOpen(false); }}
+                            className={cn(
+                              "h-10 text-xs rounded-lg border-white/5 bg-white/5 hover:bg-primary/20",
+                              bookingTime === time ? "bg-primary text-white border-primary" : "text-muted-foreground"
+                            )}
+                          >
+                            {time}
+                          </Button>
+                        ))}
                       </div>
                     </div>
                   </PopoverContent>
