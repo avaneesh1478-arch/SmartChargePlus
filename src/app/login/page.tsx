@@ -49,7 +49,7 @@ export default function LoginPage() {
               <Zap className="h-10 w-10 text-primary-foreground" />
             </div>
           </div>
-          <CardTitle className="text-3xl font-bold tracking-tight text-foreground">VoltaConnect</CardTitle>
+          <CardTitle className="text-3xl font-bold tracking-tight text-foreground">Smart Charge+</CardTitle>
           <CardDescription className="text-muted-foreground">
             Enterprise EV Charging Intelligence
           </CardDescription>
@@ -113,7 +113,7 @@ export default function LoginPage() {
           </div>
         </CardContent>
         <CardFooter className="flex flex-wrap items-center justify-between text-xs text-muted-foreground">
-          <span>&copy; 2024 VoltaConnect</span>
+          <span>&copy; 2024 Smart Charge+</span>
           <div className="flex gap-4">
             <a href="#" className="hover:text-primary underline-offset-4 hover:underline">Support</a>
             <a href="#" className="hover:text-primary underline-offset-4 hover:underline">Docs</a>

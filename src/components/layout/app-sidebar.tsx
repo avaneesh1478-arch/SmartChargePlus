@@ -45,7 +45,7 @@ export function AppSidebar() {
           <Zap className="h-6 w-6" />
         </div>
         <div className="flex flex-col gap-0.5 leading-none transition-all group-data-[collapsible=icon]:hidden">
-          <span className="text-xl font-bold tracking-tight text-primary">VoltaConnect</span>
+          <span className="text-xl font-bold tracking-tight text-primary">Smart Charge+</span>
           <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest">Network Management</span>
         </div>
       </SidebarHeader>

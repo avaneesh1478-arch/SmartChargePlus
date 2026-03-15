@@ -4,7 +4,7 @@ import { AppProvider } from '@/hooks/use-store';
 import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
-  title: 'VoltaConnect | EV Charging Management',
+  title: 'Smart Charge+ | EV Charging Management',
   description: 'Enterprise EV charging network management platform.',
 };
 

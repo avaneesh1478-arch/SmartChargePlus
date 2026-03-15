@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useRouter } from 'next/navigation';
@@ -23,7 +22,7 @@ export default function Home() {
           {/* Logo */}
           <div className="flex items-center gap-1 text-primary font-bold">
             <Zap className="h-5 w-5 fill-primary" />
-            <span className="tracking-tight text-sm">SmartCharge+</span>
+            <span className="tracking-tight text-sm">Smart Charge+</span>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -163,7 +162,7 @@ export default function Home() {
       <footer className="py-8 px-8 md:px-20 border-t border-white/5 flex flex-col md:flex-row items-center justify-between text-[10px] text-muted-foreground/60 uppercase tracking-widest bg-black">
         <div className="flex items-center gap-2">
           <Zap className="h-3 w-3 fill-primary/40 text-primary/40" />
-          <span>SmartCharge+ © 2024</span>
+          <span>Smart Charge+ © 2024</span>
         </div>
         <div className="mt-4 md:mt-0">
           Smart EV Charging Management
