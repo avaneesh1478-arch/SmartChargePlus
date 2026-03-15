@@ -1,5 +1,12 @@
+
 {
   "placeholderImages": [
+    {
+      "id": "hero-bg",
+      "description": "Electric vehicle charging at night with futuristic lighting",
+      "imageUrl": "https://picsum.photos/seed/ev-night-charge/1920/1080",
+      "imageHint": "ev charging night"
+    },
     {
       "id": "station-hero",
       "description": "Electric vehicle charging station modern",
