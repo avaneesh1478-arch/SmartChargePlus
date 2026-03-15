@@ -10,25 +10,25 @@
     --card-foreground: 0 0% 98%;
     --popover: 240 10% 6%;
     --popover-foreground: 0 0% 98%;
-    --primary: 217 91% 60%;
-    --primary-foreground: 222 47% 11%;
+    --primary: 173 80% 40%;
+    --primary-foreground: 0 0% 100%;
     --secondary: 240 4% 16%;
     --secondary-foreground: 0 0% 98%;
     --muted: 240 4% 16%;
     --muted-foreground: 240 5% 65%;
-    --accent: 217 91% 60%;
+    --accent: 173 80% 40%;
     --accent-foreground: 0 0% 98%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
     --border: 240 4% 16%;
     --input: 240 4% 16%;
-    --ring: 217 91% 60%;
+    --ring: 173 80% 40%;
     --radius: 0.75rem;
 
     --success: 142 71% 45%;
     --success-foreground: 144 61% 92%;
 
-    --chart-1: 217 91% 60%;
+    --chart-1: 173 80% 40%;
     --chart-2: 142 71% 45%;
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
@@ -36,12 +36,12 @@
 
     --sidebar-background: 240 10% 4%;
     --sidebar-foreground: 240 5% 85%;
-    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary: 173 80% 40%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 4% 16%;
     --sidebar-accent-foreground: 240 5% 98%;
     --sidebar-border: 240 4% 16%;
-    --sidebar-ring: 217 91% 60%;
+    --sidebar-ring: 173 80% 40%;
   }
 }
 
@@ -56,7 +56,7 @@
 }
 
 .dark-glass {
-  @apply bg-black/40 backdrop-blur-md border border-white/10;
+  @apply bg-card/80 backdrop-blur-md border border-white/5;
 }
 
 .success-badge {
@@ -69,4 +69,8 @@
 
 .warning-badge {
   @apply bg-amber-500/10 text-amber-500 border border-amber-500/20;
+}
+
+.teal-gradient-btn {
+  @apply bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white transition-all duration-300;
 }

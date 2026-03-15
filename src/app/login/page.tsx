@@ -8,11 +8,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Link from 'next/link';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('admin@gmail.com');
+  const [email, setEmail] = useState('user@gmail.com');
   const [password, setPassword] = useState('********');
+  const [role, setRole] = useState('user');
   const { login, user } = useApp();
   const router = useRouter();
 
@@ -27,99 +29,106 @@ export default function LoginPage() {
     login(email);
   };
 
-  const setDemoRole = (roleEmail: string) => {
-    setEmail(roleEmail);
+  const handleRoleChange = (newRole: string) => {
+    setRole(newRole);
+    if (newRole === 'user') setEmail('user@gmail.com');
+    if (newRole === 'operator') setEmail('operator@gmail.com');
+    if (newRole === 'admin') setEmail('admin@gmail.com');
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 via-background to-background relative">
+    <div className="flex min-h-screen items-center justify-center p-4 bg-background relative selection:bg-primary/30">
       <div className="absolute top-8 left-8">
         <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-primary transition-colors">
           <Link href="/">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Home
+            Home
           </Link>
         </Button>
       </div>
 
-      <Card className="w-full max-w-md dark-glass border-white/5 shadow-2xl">
-        <CardHeader className="space-y-1 text-center">
-          <div className="flex justify-center mb-6">
-            <div className="bg-primary p-3 rounded-2xl shadow-lg shadow-primary/20">
-              <Zap className="h-10 w-10 text-primary-foreground" />
+      <div className="w-full max-w-md space-y-8 flex flex-col items-center">
+        {/* Branding Section */}
+        <div className="text-center space-y-4">
+          <div className="flex justify-center">
+            <div className="bg-primary p-3 rounded-xl shadow-lg shadow-primary/20">
+              <Zap className="h-8 w-8 text-primary-foreground fill-primary-foreground" />
             </div>
           </div>
-          <CardTitle className="text-3xl font-bold tracking-tight text-foreground">Smart Charge+</CardTitle>
-          <CardDescription className="text-muted-foreground">
-            Enterprise EV Charging Intelligence
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="admin@gmail.com"
-                  className="pl-10 bg-secondary/50"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type="password"
-                  className="pl-10 bg-secondary/50"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-11 transition-all">
-              Sign In to Platform
-            </Button>
-          </form>
+          <div className="space-y-1">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">SmartCharge+</h1>
+            <p className="text-xs text-muted-foreground">Sign in to continue</p>
+          </div>
+        </div>
 
-          <div className="mt-8 space-y-4">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-border" />
+        {/* Login Card */}
+        <Card className="w-full bg-[#111113] border-white/5 shadow-2xl rounded-2xl overflow-hidden">
+          <CardContent className="p-8 space-y-6">
+            <Tabs value={role} onValueChange={handleRoleChange} className="w-full">
+              <TabsList className="grid w-full grid-cols-3 bg-[#1c1c1f] p-1 h-11 rounded-lg">
+                <TabsTrigger 
+                  value="user" 
+                  className="rounded-md data-[state=active]:bg-primary data-[state=active]:text-white text-xs font-medium transition-all"
+                >
+                  User
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="operator" 
+                  className="rounded-md data-[state=active]:bg-primary data-[state=active]:text-white text-xs font-medium transition-all"
+                >
+                  Operator
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="admin" 
+                  className="rounded-md data-[state=active]:bg-primary data-[state=active]:text-white text-xs font-medium transition-all"
+                >
+                  Admin
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <div className="relative">
+                  <Mail className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="Email address"
+                    className="pl-10 h-11 bg-[#1c1c1f] border-none text-sm placeholder:text-muted-foreground/50 focus-visible:ring-1 focus-visible:ring-primary/50"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
               </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">Demo Accounts</span>
+              <div className="space-y-2">
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Password"
+                    className="pl-10 h-11 bg-[#1c1c1f] border-none text-sm placeholder:text-muted-foreground/50 focus-visible:ring-1 focus-visible:ring-primary/50"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                </div>
               </div>
+              <Button type="submit" className="w-full teal-gradient-btn h-11 font-bold rounded-lg shadow-lg shadow-primary/20">
+                Sign In
+              </Button>
+            </form>
+
+            <div className="text-center">
+              <p className="text-xs text-muted-foreground">
+                Don't have an account? <Link href="#" className="text-primary hover:underline">Sign Up</Link>
+              </p>
             </div>
-            <div className="grid grid-cols-3 gap-2">
-              <Button variant="outline" size="sm" className="text-xs h-8 border-border" onClick={() => setDemoRole('admin@gmail.com')}>
-                Admin
-              </Button>
-              <Button variant="outline" size="sm" className="text-xs h-8 border-border" onClick={() => setDemoRole('operator@gmail.com')}>
-                Operator
-              </Button>
-              <Button variant="outline" size="sm" className="text-xs h-8 border-border" onClick={() => setDemoRole('user@gmail.com')}>
-                End User
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-        <CardFooter className="flex flex-wrap items-center justify-between text-xs text-muted-foreground">
-          <span>&copy; 2024 Smart Charge+</span>
-          <div className="flex gap-4">
-            <a href="#" className="hover:text-primary underline-offset-4 hover:underline">Support</a>
-            <a href="#" className="hover:text-primary underline-offset-4 hover:underline">Docs</a>
-          </div>
-        </CardFooter>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
