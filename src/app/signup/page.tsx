@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -13,7 +14,7 @@ export default function SignupPage() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { login, user } = useApp();
+  const { signup, user } = useApp();
   const router = useRouter();
 
   useEffect(() => {
@@ -24,8 +25,7 @@ export default function SignupPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate sign up as a regular USER by logging in with the provided email
-    login(email || 'user@gmail.com');
+    signup(email, fullName);
   };
 
   return (

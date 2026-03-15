@@ -1,3 +1,4 @@
+
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -11,6 +12,7 @@ interface AppContextType {
   transactions: Transaction[];
   users: User[];
   login: (email: string) => void;
+  signup: (email: string, fullName: string) => void;
   logout: () => void;
   toggleCharger: (chargerId: string) => void;
   updateChargerStatus: (chargerId: string, status: Charger['status']) => void;
@@ -45,6 +47,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setUser(found);
       localStorage.setItem('volta_user', JSON.stringify(found));
     }
+  };
+
+  const signup = (email: string, fullName: string) => {
+    const newUser: User = {
+      uid: `u-${Date.now()}`,
+      email,
+      role: 'USER',
+      created_at: Date.now(),
+      wallet_balance: 0,
+    };
+    setUsers(prev => [...prev, newUser]);
+    setUser(newUser);
+    localStorage.setItem('volta_user', JSON.stringify(newUser));
   };
 
   const logout = () => {
@@ -120,7 +135,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const removeStation = (stationId: string) => {
     setStations(prev => prev.filter(s => s.station_id !== stationId));
     setChargers(prev => prev.filter(c => c.station_id !== stationId));
-    // Note: In a real app we'd also disable the associated operator user
   };
 
   return (
@@ -131,6 +145,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       transactions, 
       users,
       login, 
+      signup,
       logout, 
       toggleCharger, 
       updateChargerStatus,
