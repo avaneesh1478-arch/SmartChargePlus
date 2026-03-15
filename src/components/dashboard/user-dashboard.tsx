@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -29,6 +28,7 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle,
+  DialogDescription,
   DialogClose
 } from '@/components/ui/dialog';
 import {
@@ -341,8 +341,8 @@ export function UserDashboard() {
           <div className="p-6 space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-bold">{selectedStation?.name}</h3>
-                <p className="text-xs text-muted-foreground">{selectedStation?.location}</p>
+                <DialogTitle className="text-xl font-bold">{selectedStation?.name}</DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground">{selectedStation?.location}</DialogDescription>
               </div>
               <DialogClose asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-white/5">
