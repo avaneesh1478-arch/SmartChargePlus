@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { StatCard } from './stat-card';
-import { CreditCard, Zap, Activity, ShieldCheck, TrendingUp, Users, Plus } from 'lucide-react';
+import { CreditCard, Zap, Activity, ShieldCheck, TrendingUp, Users, Plus, Trash2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -18,6 +18,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from '@/hooks/use-toast';
@@ -41,7 +52,7 @@ const usageData = [
 ];
 
 export function AdminDashboard() {
-  const { stations, addStation } = useApp();
+  const { stations, addStation, removeStation } = useApp();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -78,6 +89,14 @@ export function AdminDashboard() {
     setFormData({ name: '', email: '', address: '', chargingCost: '' });
   };
 
+  const handleRemoveStation = (stationId: string, stationName: string) => {
+    removeStation(stationId);
+    toast({
+      title: "Station Removed",
+      description: `${stationName} has been removed from the network.`,
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -103,43 +122,43 @@ export function AdminDashboard() {
                 <div className="grid gap-4 py-4">
                   <div className="grid gap-2">
                     <Label htmlFor="name" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Station Name</Label>
-                    <Input
+                    <input
                       id="name"
                       placeholder="e.g. Central Plaza Hub"
-                      className="bg-secondary/50 border-none"
+                      className="flex h-10 w-full rounded-md border-none bg-secondary/50 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 disabled:cursor-not-allowed disabled:opacity-50"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     />
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="email" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Operator Email</Label>
-                    <Input
+                    <input
                       id="email"
                       type="email"
                       placeholder="e.g. operator@hub.com"
-                      className="bg-secondary/50 border-none"
+                      className="flex h-10 w-full rounded-md border-none bg-secondary/50 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 disabled:cursor-not-allowed disabled:opacity-50"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     />
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="address" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Address</Label>
-                    <Input
+                    <input
                       id="address"
                       placeholder="e.g. 123 Tesla Way, Tech City"
-                      className="bg-secondary/50 border-none"
+                      className="flex h-10 w-full rounded-md border-none bg-secondary/50 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 disabled:cursor-not-allowed disabled:opacity-50"
                       value={formData.address}
                       onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                     />
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="cost" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Charging Cost ($/kWh)</Label>
-                    <Input
+                    <input
                       id="cost"
                       type="number"
                       step="0.01"
                       placeholder="e.g. 0.45"
-                      className="bg-secondary/50 border-none"
+                      className="flex h-10 w-full rounded-md border-none bg-secondary/50 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 disabled:cursor-not-allowed disabled:opacity-50"
                       value={formData.chargingCost}
                       onChange={(e) => setFormData({ ...formData, chargingCost: e.target.value })}
                     />
@@ -232,6 +251,7 @@ export function AdminDashboard() {
                 <TableHead>Status</TableHead>
                 <TableHead>Uptime</TableHead>
                 <TableHead className="text-right">Revenue (MTD)</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -245,7 +265,35 @@ export function AdminDashboard() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-muted-foreground">99.9%</TableCell>
-                  <TableCell className="text-right font-mono font-bold text-primary">${(Math.random() * 5000).toFixed(2)}</TableCell>
+                  <TableCell className="text-right font-mono font-bold text-primary">
+                    ${(Math.random() * 5000).toFixed(2)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive hover:bg-destructive/10">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="bg-card border-white/10">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently decommission <strong>{station.name}</strong> from the network. This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel className="bg-secondary/50 border-none">Cancel</AlertDialogCancel>
+                          <AlertDialogAction 
+                            className="bg-destructive hover:bg-destructive/90 text-white"
+                            onClick={() => handleRemoveStation(station.station_id, station.name)}
+                          >
+                            Decommission
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
