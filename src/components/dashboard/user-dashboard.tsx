@@ -1,21 +1,61 @@
+
 "use client";
 
 import { useState } from 'react';
 import { useApp } from '@/hooks/use-store';
 import { StatCard } from './stat-card';
-import { Wallet, Navigation, Sparkles, History, MapPin, Zap, Search, SlidersHorizontal, BellOff, Star, Clock } from 'lucide-react';
+import { 
+  Wallet, 
+  Navigation, 
+  Sparkles, 
+  History, 
+  MapPin, 
+  Zap, 
+  Search, 
+  SlidersHorizontal, 
+  BellOff, 
+  Star, 
+  Clock, 
+  Calendar as CalendarIcon,
+  ChevronDown,
+  X
+} from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle,
+  DialogClose
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { smartChargingStationRecommendation } from '@/ai/flows/smart-charging-station-recommendation-flow';
 import { toast } from '@/hooks/use-toast';
+import { Station, Charger } from '@/types';
+import { cn } from '@/lib/utils';
 
 export function UserDashboard() {
   const { user, stations, chargers, transactions } = useApp();
   const [loadingAi, setLoadingAi] = useState(false);
   const [recommendations, setRecommendations] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Booking Dialog State
+  const [isBookingOpen, setIsBookingOpen] = useState(false);
+  const [selectedStation, setSelectedStation] = useState<Station | null>(null);
+  const [selectedChargerId, setSelectedChargerId] = useState<string | null>(null);
+  const [bookingDate, setBookingDate] = useState('Today');
+  const [bookingTime, setBookingTime] = useState('15:30');
+  const [bookingDuration, setBookingDuration] = useState('1');
 
   const getAiRecommendations = async () => {
     setLoadingAi(true);
@@ -53,6 +93,36 @@ export function UserDashboard() {
     s.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
     s.location.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleOpenBooking = (station: Station) => {
+    setSelectedStation(station);
+    setIsBookingOpen(true);
+    const stationChargers = chargers.filter(c => c.station_id === station.station_id);
+    const firstAvailable = stationChargers.find(c => c.status === 'available');
+    if (firstAvailable) setSelectedChargerId(firstAvailable.charger_id);
+  };
+
+  const handleConfirmBooking = () => {
+    if (!selectedChargerId) {
+      toast({ title: "Error", description: "Please select a charger slot.", variant: "destructive" });
+      return;
+    }
+    toast({ 
+      title: "Booking Confirmed!", 
+      description: `Reserved ${selectedStation?.name} for ${bookingDuration} hour(s) at ${bookingTime}.` 
+    });
+    setIsBookingOpen(false);
+  };
+
+  const getEstimatedCost = () => {
+    if (!selectedStation) return "0.00";
+    const charger = chargers.find(c => c.charger_id === selectedChargerId);
+    const rate = charger?.rate_per_kwh || 0.45;
+    const durationHours = parseInt(bookingDuration);
+    // Rough estimate: avg 50kWh per hour for DCFC, 7kWh for L2
+    const avgConsumption = charger?.type === 'DCFC' ? 40 : 7;
+    return (rate * avgConsumption * durationHours).toFixed(2);
+  };
 
   return (
     <div className="space-y-8">
@@ -114,7 +184,16 @@ export function UserDashboard() {
                         <p className="text-sm text-muted-foreground leading-relaxed mt-1">{rec.reason}</p>
                         <div className="flex gap-3 mt-4">
                           <Button size="sm" variant="outline" className="h-8 text-xs px-4 rounded-lg bg-white/5 border-white/10">Directions</Button>
-                          <Button size="sm" className="h-8 text-xs px-4 font-bold rounded-lg teal-gradient-btn">Reserve Spot</Button>
+                          <Button 
+                            size="sm" 
+                            className="h-8 text-xs px-4 font-bold rounded-lg teal-gradient-btn"
+                            onClick={() => {
+                              const station = stations.find(s => s.station_id === rec.station_id);
+                              if (station) handleOpenBooking(station);
+                            }}
+                          >
+                            Reserve Spot
+                          </Button>
                         </div>
                       </div>
                     </div>
@@ -129,7 +208,7 @@ export function UserDashboard() {
             </CardContent>
           </Card>
 
-          {/* Network Stations List (Redesigned to match image) */}
+          {/* Network Stations List */}
           <div className="space-y-6">
             <div className="space-y-4">
               <h3 className="text-xl font-bold text-foreground">Discover and Book available Chargers nearby</h3>
@@ -195,7 +274,10 @@ export function UserDashboard() {
                           <Badge variant="secondary" className="bg-[#1c1c1f] text-[10px] py-1 px-3 rounded-lg border-none hover:bg-[#1c1c1f]">Type 2</Badge>
                         </div>
 
-                        <Button className="w-full teal-gradient-btn h-12 font-bold rounded-xl shadow-lg shadow-primary/10">
+                        <Button 
+                          className="w-full teal-gradient-btn h-12 font-bold rounded-xl shadow-lg shadow-primary/10"
+                          onClick={() => handleOpenBooking(station)}
+                        >
                           Book Now
                         </Button>
                       </CardContent>
@@ -252,6 +334,123 @@ export function UserDashboard() {
           </Card>
         </div>
       </div>
+
+      {/* Booking Dialog */}
+      <Dialog open={isBookingOpen} onOpenChange={setIsBookingOpen}>
+        <DialogContent className="sm:max-w-[500px] bg-[#1a1a1c] border-white/5 text-white p-0 rounded-3xl overflow-hidden shadow-2xl">
+          <div className="p-6 space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-bold">{selectedStation?.name}</h3>
+                <p className="text-xs text-muted-foreground">{selectedStation?.location}</p>
+              </div>
+              <DialogClose asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-white/5">
+                  <X className="h-4 w-4" />
+                </Button>
+              </DialogClose>
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground/60">Select a Charger</h4>
+              <div className="grid grid-cols-2 gap-3">
+                {selectedStation && chargers
+                  .filter(c => c.station_id === selectedStation.station_id)
+                  .map((charger, idx) => (
+                    <div 
+                      key={charger.charger_id}
+                      onClick={() => charger.status === 'available' && setSelectedChargerId(charger.charger_id)}
+                      className={cn(
+                        "p-4 rounded-2xl border transition-all cursor-pointer group",
+                        selectedChargerId === charger.charger_id 
+                          ? "bg-primary/10 border-primary shadow-lg shadow-primary/5" 
+                          : "bg-background/20 border-white/5 hover:border-white/10",
+                        charger.status === 'occupied' && "opacity-50 cursor-not-allowed grayscale"
+                      )}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <Zap className={cn("h-4 w-4", selectedChargerId === charger.charger_id ? "text-primary" : "text-muted-foreground")} />
+                        <span className="text-sm font-bold">Slot {idx + 1}</span>
+                      </div>
+                      <div className="space-y-0.5">
+                        <p className="text-[10px] text-muted-foreground font-medium">{charger.type} - {charger.type === 'DCFC' ? '50kW' : '22kW'}</p>
+                        <p className={cn(
+                          "text-[10px] font-bold uppercase tracking-widest",
+                          charger.status === 'available' ? "text-primary" : "text-destructive"
+                        )}>
+                          {charger.status}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 flex items-center gap-1.5">
+                  <CalendarIcon className="h-3 w-3" /> Date
+                </label>
+                <Select value={bookingDate} onValueChange={setBookingDate}>
+                  <SelectTrigger className="h-11 bg-background/20 border-white/5 rounded-xl focus:ring-primary/20">
+                    <SelectValue placeholder="Select Date" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#1a1a1c] border-white/10">
+                    <SelectItem value="Today">Today</SelectItem>
+                    <SelectItem value="Tomorrow">Tomorrow</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 flex items-center gap-1.5">
+                  <Clock className="h-3 w-3" /> Start Time
+                </label>
+                <Select value={bookingTime} onValueChange={setBookingTime}>
+                  <SelectTrigger className="h-11 bg-background/20 border-white/5 rounded-xl focus:ring-primary/20">
+                    <SelectValue placeholder="Select Time" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#1a1a1c] border-white/10">
+                    <SelectItem value="15:30">15:30</SelectItem>
+                    <SelectItem value="16:00">16:00</SelectItem>
+                    <SelectItem value="16:30">16:30</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Duration</label>
+              <Select value={bookingDuration} onValueChange={setBookingDuration}>
+                <SelectTrigger className="h-11 bg-background/20 border-white/5 rounded-xl focus:ring-primary/20">
+                  <SelectValue placeholder="Select Duration" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#1a1a1c] border-white/10">
+                  <SelectItem value="1">1 hour</SelectItem>
+                  <SelectItem value="2">2 hours</SelectItem>
+                  <SelectItem value="3">3 hours</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="bg-background/20 rounded-2xl p-5 flex items-center justify-between border border-white/5">
+              <div className="space-y-1">
+                <p className="text-[10px] text-muted-foreground/60 uppercase font-bold tracking-widest">Estimated Cost</p>
+                <p className="text-xs text-muted-foreground">Based on avg 50kW consumption</p>
+              </div>
+              <div className="text-right">
+                <p className="text-2xl font-bold text-white">${getEstimatedCost()}</p>
+              </div>
+            </div>
+
+            <Button 
+              onClick={handleConfirmBooking}
+              className="w-full teal-gradient-btn h-12 font-bold rounded-xl shadow-xl shadow-primary/20"
+            >
+              Confirm Booking
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
