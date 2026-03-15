@@ -27,17 +27,38 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [chargers, setChargers] = useState<Charger[]>(MOCK_CHARGERS);
   const [transactions, setTransactions] = useState<Transaction[]>(MOCK_TRANSACTIONS);
   const [users, setUsers] = useState<User[]>(MOCK_USERS);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   // Persistence simulation
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+
     const storedUser = localStorage.getItem('volta_user');
     const storedUsers = localStorage.getItem('volta_all_users');
+    const storedStations = localStorage.getItem('volta_stations');
+    const storedChargers = localStorage.getItem('volta_chargers');
     
     if (storedUsers) {
       try {
         setUsers(JSON.parse(storedUsers));
       } catch (e) {
         console.error("Failed to parse stored users", e);
+      }
+    }
+
+    if (storedStations) {
+      try {
+        setStations(JSON.parse(storedStations));
+      } catch (e) {
+        console.error("Failed to parse stored stations", e);
+      }
+    }
+
+    if (storedChargers) {
+      try {
+        setChargers(JSON.parse(storedChargers));
+      } catch (e) {
+        console.error("Failed to parse stored chargers", e);
       }
     }
 
@@ -48,12 +69,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
         console.error("Failed to parse stored user session", e);
       }
     }
+    
+    setIsLoaded(true);
   }, []);
 
-  // Save users to localStorage whenever the list changes
+  // Save state to localStorage whenever it changes, but only after initial load
   useEffect(() => {
+    if (!isLoaded) return;
     localStorage.setItem('volta_all_users', JSON.stringify(users));
-  }, [users]);
+  }, [users, isLoaded]);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+    localStorage.setItem('volta_stations', JSON.stringify(stations));
+  }, [stations, isLoaded]);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+    localStorage.setItem('volta_chargers', JSON.stringify(chargers));
+  }, [chargers, isLoaded]);
 
   const login = (email: string) => {
     const found = users.find(u => u.email.toLowerCase() === email.toLowerCase());
