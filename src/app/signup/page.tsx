@@ -3,16 +3,17 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/hooks/use-store';
-import { Zap, Mail, Lock, ArrowLeft } from 'lucide-react';
+import { Zap, Mail, Lock, User as UserIcon, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Link from 'next/link';
 
-export default function LoginPage() {
-  const [email, setEmail] = useState('user@gmail.com');
-  const [password, setPassword] = useState('********');
+export default function SignupPage() {
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [role, setRole] = useState('user');
   const { login, user } = useApp();
   const router = useRouter();
@@ -25,14 +26,8 @@ export default function LoginPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    login(email);
-  };
-
-  const handleRoleChange = (newRole: string) => {
-    setRole(newRole);
-    if (newRole === 'user') setEmail('user@gmail.com');
-    if (newRole === 'operator') setEmail('operator@gmail.com');
-    if (newRole === 'admin') setEmail('admin@gmail.com');
+    // Simulate sign up by logging in with the provided email
+    login(email || 'user@gmail.com');
   };
 
   return (
@@ -56,14 +51,14 @@ export default function LoginPage() {
           </div>
           <div className="space-y-1">
             <h1 className="text-2xl font-bold tracking-tight text-foreground">SmartCharge+</h1>
-            <p className="text-xs text-muted-foreground">Sign in to continue</p>
+            <p className="text-xs text-muted-foreground">Create your account</p>
           </div>
         </div>
 
-        {/* Login Card */}
+        {/* Signup Card */}
         <Card className="w-full bg-[#111113] border-white/5 shadow-2xl rounded-2xl overflow-hidden">
           <CardContent className="p-8 space-y-6">
-            <Tabs value={role} onValueChange={handleRoleChange} className="w-full">
+            <Tabs value={role} onValueChange={setRole} className="w-full">
               <TabsList className="grid w-full grid-cols-3 bg-[#1c1c1f] p-1 h-11 rounded-lg">
                 <TabsTrigger 
                   value="user" 
@@ -87,6 +82,20 @@ export default function LoginPage() {
             </Tabs>
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <div className="relative">
+                  <UserIcon className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="fullName"
+                    type="text"
+                    placeholder="Full Name"
+                    className="pl-10 h-11 bg-[#1c1c1f] border-none text-sm placeholder:text-muted-foreground/50 focus-visible:ring-1 focus-visible:ring-primary/50"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
               <div className="space-y-2">
                 <div className="relative">
                   <Mail className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
@@ -116,17 +125,29 @@ export default function LoginPage() {
                 </div>
               </div>
               <Button type="submit" className="w-full teal-gradient-btn h-11 font-bold rounded-lg shadow-lg shadow-primary/20">
-                Sign In
+                Sign Up
               </Button>
             </form>
 
             <div className="text-center">
               <p className="text-xs text-muted-foreground">
-                Don't have an account? <Link href="/signup" className="text-primary hover:underline">Sign Up</Link>
+                Already have an account? <Link href="/login" className="text-primary hover:underline">Sign In</Link>
               </p>
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Floating Notification Simulation from screenshot */}
+      <div className="fixed bottom-6 right-6 z-50 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+        <div className="bg-black/80 backdrop-blur-md border border-white/10 px-4 py-3 rounded-xl flex items-center gap-3 shadow-2xl">
+          <Zap className="h-4 w-4 text-primary fill-primary animate-pulse" />
+          <div className="flex flex-col">
+             <span className="text-[10px] font-bold text-white uppercase tracking-wider">Slot now available!</span>
+             <span className="text-[10px] text-white/60">Slot #1 at Unknown Station just opened up.</span>
+          </div>
+          <button className="ml-2 text-white/30 hover:text-white transition-colors">×</button>
+        </div>
       </div>
     </div>
   );
