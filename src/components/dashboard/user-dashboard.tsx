@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -130,7 +129,6 @@ export function UserDashboard() {
 
   return (
     <div className="space-y-8">
-      {/* Header Section */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Welcome, Driver</h1>
@@ -146,7 +144,6 @@ export function UserDashboard() {
         </div>
       </div>
 
-      {/* Stats Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatCard title="Wallet Balance" value={`$${user?.wallet_balance?.toFixed(2) || '0.00'}`} icon={Wallet} />
         <StatCard title="Last Session" value="45.2 kWh" subtext="Downtown Hub" icon={Zap} />
@@ -155,7 +152,6 @@ export function UserDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
-          {/* AI Recommendation Card */}
           <Card className="border-none bg-[#1a1a1c] border-white/5 overflow-hidden">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
@@ -212,7 +208,6 @@ export function UserDashboard() {
             </CardContent>
           </Card>
 
-          {/* Network Stations List */}
           <div className="space-y-6">
             <div className="space-y-4">
               <h3 className="text-xl font-bold text-foreground">Discover and Book available Chargers nearby</h3>
@@ -297,7 +292,6 @@ export function UserDashboard() {
           </div>
         </div>
 
-        {/* Sidebar for History/Activity */}
         <div className="space-y-6">
           <Card className="border-none bg-[#1a1a1c] border-white/5 rounded-2xl overflow-hidden">
             <CardHeader className="pb-2">
@@ -390,35 +384,39 @@ export function UserDashboard() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 flex items-center gap-1.5">
-                  <CalendarIcon className="h-3 w-3" /> Date
+                  <CalendarIcon className="h-3 w-3" /> Date & Time selection
                 </label>
                 <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
                       className={cn(
-                        "h-11 w-full justify-start text-left font-normal bg-background/20 border-white/5 rounded-xl hover:bg-white/5 focus:ring-primary/20",
+                        "h-12 w-full justify-start text-left font-normal bg-background/20 border-white/5 rounded-xl hover:bg-white/5 focus:ring-primary/20",
                         !bookingDate && "text-muted-foreground"
                       )}
                     >
-                      {bookingDate ? format(bookingDate, "PPP") : <span>Pick a date</span>}
+                      <div className="flex items-center justify-between w-full">
+                         <span>{bookingDate ? format(bookingDate, "PPP") + " at " + bookingTime : "Pick Date & Time"}</span>
+                         <ChevronDown className="h-4 w-4 opacity-50" />
+                      </div>
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-[300px] p-0 bg-[#1a1a1c] border-white/10 overflow-hidden" align="start">
-                    {/* Header Part from Reference Image */}
-                    <div className="bg-[#444] p-6 text-white border-b border-white/5">
-                      <p className="text-xs font-medium opacity-60">
+                  <PopoverContent className="w-[320px] p-0 bg-[#1a1a1c] border-white/10 overflow-hidden shadow-2xl" align="start">
+                    {/* High-Fidelity Header */}
+                    <div className="bg-[#333] p-6 text-white border-b border-white/5">
+                      <p className="text-xs font-semibold opacity-60 tracking-widest uppercase">
                         {bookingDate ? format(bookingDate, "yyyy") : format(new Date(), "yyyy")}
                       </p>
                       <h3 className="text-3xl font-bold mt-1">
                         {bookingDate ? format(bookingDate, "EEE, d MMM") : format(new Date(), "EEE, d MMM")}
                       </h3>
                     </div>
-                    {/* Calendar Part */}
-                    <div className="p-2">
+                    
+                    {/* Scrollable Picker Area */}
+                    <div className="p-2 space-y-4 max-h-[400px] overflow-y-auto scrollbar-none">
                       <Calendar
                         mode="single"
                         selected={bookingDate}
@@ -426,16 +424,51 @@ export function UserDashboard() {
                         initialFocus
                         className="bg-transparent"
                       />
+                      
+                      <div className="px-3 pb-4">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-2 block">Available Times</label>
+                        <div className="grid grid-cols-3 gap-2">
+                          {['09:00', '10:30', '12:00', '14:00', '15:30', '17:00', '18:30', '20:00', '21:30'].map((time) => (
+                            <Button
+                              key={time}
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setBookingTime(time)}
+                              className={cn(
+                                "h-9 text-xs rounded-lg border-white/5 bg-white/5 hover:bg-primary/20",
+                                bookingTime === time ? "bg-primary text-white border-primary" : "text-muted-foreground"
+                              )}
+                            >
+                              {time}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
                     </div>
+
                     {/* Footer Actions */}
-                    <div className="p-3 border-t border-white/5 flex items-center justify-between">
-                      <Button variant="ghost" size="sm" className="text-primary hover:bg-primary/5" onClick={() => setBookingDate(undefined)}>Clear</Button>
+                    <div className="p-4 border-t border-white/5 flex items-center justify-between bg-black/20">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-primary hover:bg-primary/5 font-bold uppercase text-[10px] tracking-widest" 
+                        onClick={() => { setBookingDate(undefined); setBookingTime('15:30'); }}
+                      >
+                        Clear
+                      </Button>
                       <div className="flex gap-2">
-                        <Button variant="ghost" size="sm" className="text-white hover:bg-white/5" onClick={() => setIsCalendarOpen(false)}>Cancel</Button>
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="text-primary hover:bg-primary/5 font-bold" 
+                          className="text-white hover:bg-white/5 font-bold uppercase text-[10px] tracking-widest" 
+                          onClick={() => setIsCalendarOpen(false)}
+                        >
+                          Cancel
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-primary hover:bg-primary/5 font-bold uppercase text-[10px] tracking-widest" 
                           onClick={() => setIsCalendarOpen(false)}
                         >
                           Set
@@ -444,21 +477,6 @@ export function UserDashboard() {
                     </div>
                   </PopoverContent>
                 </Popover>
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 flex items-center gap-1.5">
-                  <Clock className="h-3 w-3" /> Start Time
-                </label>
-                <Select value={bookingTime} onValueChange={setBookingTime}>
-                  <SelectTrigger className="h-11 bg-background/20 border-white/5 rounded-xl focus:ring-primary/20">
-                    <SelectValue placeholder="Select Time" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-[#1a1a1c] border-white/10">
-                    <SelectItem value="15:30">15:30</SelectItem>
-                    <SelectItem value="16:00">16:00</SelectItem>
-                    <SelectItem value="16:30">16:30</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
             </div>
 
