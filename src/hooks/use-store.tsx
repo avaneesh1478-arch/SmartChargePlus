@@ -71,7 +71,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const addStation = (data: { name: string, email: string, address: string, chargingCost: number }) => {
-    const newStationId = `st-${stations.length + 1}`;
+    const newStationId = `st-${Date.now()}`;
     
     const newStation: Station = {
       station_id: newStationId,
@@ -120,6 +120,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const removeStation = (stationId: string) => {
     setStations(prev => prev.filter(s => s.station_id !== stationId));
     setChargers(prev => prev.filter(c => c.station_id !== stationId));
+    // Note: In a real app we'd also disable the associated operator user
   };
 
   return (

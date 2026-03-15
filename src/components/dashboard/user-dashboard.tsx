@@ -3,10 +3,9 @@
 import { useState } from 'react';
 import { useApp } from '@/hooks/use-store';
 import { StatCard } from './stat-card';
-import { Wallet, Navigation, Sparkles, History, Search, MapPin, Zap } from 'lucide-react';
+import { Wallet, Navigation, Sparkles, History, MapPin, Zap } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { smartChargingStationRecommendation } from '@/ai/flows/smart-charging-station-recommendation-flow';
 import { toast } from '@/hooks/use-toast';
@@ -59,14 +58,14 @@ export function UserDashboard() {
           <Button variant="outline" size="sm" className="gap-2">
             <History className="h-4 w-4" /> Session History
           </Button>
-          <Button size="sm" className="gap-2 bg-primary">
+          <Button size="sm" className="gap-2 bg-primary font-bold">
             <Wallet className="h-4 w-4" /> Top Up Wallet
           </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatCard title="Wallet Balance" value={`$${user?.wallet_balance?.toFixed(2)}`} icon={Wallet} />
+        <StatCard title="Wallet Balance" value={`$${user?.wallet_balance?.toFixed(2) || '0.00'}`} icon={Wallet} />
         <StatCard title="Last Session" value="45.2 kWh" subtext="Downtown Hub" icon={Zap} />
         <StatCard title="Nearby Active" value={stations.filter(s => s.status === 'active').length} icon={Navigation} />
       </div>
@@ -86,7 +85,7 @@ export function UserDashboard() {
                   onClick={getAiRecommendations}
                   disabled={loadingAi}
                   size="sm"
-                  className="bg-primary hover:bg-primary/90"
+                  className="bg-primary hover:bg-primary/90 font-bold"
                 >
                   {loadingAi ? "Analyzing..." : "Find Best Station"}
                 </Button>
@@ -105,13 +104,13 @@ export function UserDashboard() {
                         <p className="text-sm text-muted-foreground">{rec.reason}</p>
                         <div className="flex gap-2 mt-2">
                           <Button size="sm" variant="secondary" className="h-7 text-xs px-2">Directions</Button>
-                          <Button size="sm" className="h-7 text-xs px-2">Reserve Spot</Button>
+                          <Button size="sm" className="h-7 text-xs px-2 font-bold">Reserve Spot</Button>
                         </div>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <div className="text-center py-8 text-muted-foreground bg-secondary/20 rounded-xl border border-dashed">
+                  <div className="text-center py-8 text-muted-foreground bg-secondary/20 rounded-xl border border-dashed border-white/10">
                     Tap "Find Best Station" to get personalized AI suggestions based on your battery level and preferences.
                   </div>
                 )}
@@ -120,30 +119,43 @@ export function UserDashboard() {
           </Card>
 
           <div className="space-y-4">
-            <h3 className="text-xl font-bold">Nearby Stations</h3>
+            <h3 className="text-xl font-bold flex items-center gap-2">
+              <Navigation className="h-5 w-5 text-primary" /> Network Stations
+            </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {stations.slice(0, 4).map(station => (
-                <Card key={station.station_id} className="border-none bg-card/50">
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-start mb-3">
-                      <div className="h-10 w-10 bg-secondary rounded-lg flex items-center justify-center">
-                        <Zap className="h-5 w-5 text-primary" />
-                      </div>
-                      <Badge className={station.status === 'active' ? 'success-badge' : 'warning-badge'}>
-                        {station.status}
-                      </Badge>
-                    </div>
-                    <h4 className="font-bold">{station.name}</h4>
-                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                      <MapPin className="h-3 w-3" /> {station.location}
-                    </p>
-                    <div className="mt-4 flex justify-between items-center">
-                      <span className="text-sm font-semibold text-emerald-500">$0.45 / kWh</span>
-                      <Button variant="ghost" size="sm" className="text-xs text-primary h-8 px-2">Details</Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+              {stations.length > 0 ? (
+                stations.map(station => {
+                  const stationChargers = chargers.filter(c => c.station_id === station.station_id);
+                  const rate = stationChargers[0]?.rate_per_kwh || 0.45;
+                  
+                  return (
+                    <Card key={station.station_id} className="border-none bg-card/50 hover:bg-card/80 transition-all cursor-pointer group">
+                      <CardContent className="p-4">
+                        <div className="flex justify-between items-start mb-3">
+                          <div className="h-10 w-10 bg-secondary rounded-lg flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                            <Zap className="h-5 w-5 text-primary" />
+                          </div>
+                          <Badge className={station.status === 'active' ? 'success-badge' : 'warning-badge'}>
+                            {station.status}
+                          </Badge>
+                        </div>
+                        <h4 className="font-bold">{station.name}</h4>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                          <MapPin className="h-3 w-3" /> {station.location}
+                        </p>
+                        <div className="mt-4 flex justify-between items-center">
+                          <span className="text-sm font-bold text-emerald-500">${rate.toFixed(2)} / kWh</span>
+                          <Button variant="ghost" size="sm" className="text-xs text-primary h-8 px-2 hover:bg-primary/10">Details</Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })
+              ) : (
+                <div className="col-span-full py-12 text-center text-muted-foreground bg-secondary/10 rounded-xl border border-dashed border-white/5">
+                  No stations currently online in your area.
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -151,29 +163,37 @@ export function UserDashboard() {
         <div className="space-y-6">
           <Card className="border-none bg-card/50">
             <CardHeader>
-              <CardTitle className="text-lg">Recent Sessions</CardTitle>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <History className="h-5 w-5 text-primary" /> Recent Sessions
+              </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="divide-y divide-border/50">
-                {transactions.map(tx => (
-                  <div key={tx.transaction_id} className="p-4 flex gap-3 items-center hover:bg-secondary/20 transition-colors">
-                    <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center">
-                      <History className="h-4 w-4 text-muted-foreground" />
+              <div className="divide-y divide-white/5">
+                {transactions.length > 0 ? (
+                  transactions.map(tx => (
+                    <div key={tx.transaction_id} className="p-4 flex gap-3 items-center hover:bg-secondary/20 transition-colors">
+                      <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center">
+                        <History className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold">{tx.station_name}</p>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest">{new Date(tx.timestamp).toLocaleDateString()}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-mono font-bold">${tx.cost.toFixed(2)}</p>
+                        <p className="text-[10px] text-emerald-500">{tx.energy_delivered} kWh</p>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-semibold">{tx.station_name}</p>
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-widest">{new Date(tx.timestamp).toLocaleDateString()}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-mono font-bold">${tx.cost.toFixed(2)}</p>
-                      <p className="text-[10px] text-emerald-500">{tx.energy_delivered} kWh</p>
-                    </div>
+                  ))
+                ) : (
+                  <div className="p-8 text-center text-xs text-muted-foreground">
+                    No recent activity found.
                   </div>
-                ))}
+                )}
               </div>
             </CardContent>
-            <CardFooter className="p-4 border-t">
-              <Button variant="outline" className="w-full text-xs h-8">View Full Report</Button>
+            <CardFooter className="p-4 border-t border-white/5">
+              <Button variant="outline" className="w-full text-xs h-8 border-white/10">View Full History</Button>
             </CardFooter>
           </Card>
         </div>
