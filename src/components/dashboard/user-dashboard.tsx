@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -57,6 +58,7 @@ export function UserDashboard() {
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [selectedChargerId, setSelectedChargerId] = useState<string | null>(null);
   const [bookingDate, setBookingDate] = useState<Date | undefined>(new Date());
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [bookingTime, setBookingTime] = useState('15:30');
   const [bookingDuration, setBookingDuration] = useState('1');
 
@@ -393,7 +395,7 @@ export function UserDashboard() {
                 <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 flex items-center gap-1.5">
                   <CalendarIcon className="h-3 w-3" /> Date
                 </label>
-                <Popover>
+                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
@@ -429,12 +431,15 @@ export function UserDashboard() {
                     <div className="p-3 border-t border-white/5 flex items-center justify-between">
                       <Button variant="ghost" size="sm" className="text-primary hover:bg-primary/5" onClick={() => setBookingDate(undefined)}>Clear</Button>
                       <div className="flex gap-2">
-                        <DialogClose asChild>
-                           <Button variant="ghost" size="sm" className="text-white hover:bg-white/5">Cancel</Button>
-                        </DialogClose>
-                        <PopoverTrigger asChild>
-                          <Button variant="ghost" size="sm" className="text-primary hover:bg-primary/5 font-bold">Set</Button>
-                        </PopoverTrigger>
+                        <Button variant="ghost" size="sm" className="text-white hover:bg-white/5" onClick={() => setIsCalendarOpen(false)}>Cancel</Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-primary hover:bg-primary/5 font-bold" 
+                          onClick={() => setIsCalendarOpen(false)}
+                        >
+                          Set
+                        </Button>
                       </div>
                     </div>
                   </PopoverContent>
