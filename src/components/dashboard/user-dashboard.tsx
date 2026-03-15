@@ -38,10 +38,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { smartChargingStationRecommendation } from '@/ai/flows/smart-charging-station-recommendation-flow';
 import { toast } from '@/hooks/use-toast';
 import { Station, Charger } from '@/types';
 import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
 
 export function UserDashboard() {
   const { user, stations, chargers, transactions } = useApp();
@@ -53,7 +56,7 @@ export function UserDashboard() {
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [selectedChargerId, setSelectedChargerId] = useState<string | null>(null);
-  const [bookingDate, setBookingDate] = useState('Today');
+  const [bookingDate, setBookingDate] = useState<Date | undefined>(new Date());
   const [bookingTime, setBookingTime] = useState('15:30');
   const [bookingDuration, setBookingDuration] = useState('1');
 
@@ -109,7 +112,7 @@ export function UserDashboard() {
     }
     toast({ 
       title: "Booking Confirmed!", 
-      description: `Reserved ${selectedStation?.name} for ${bookingDuration} hour(s) at ${bookingTime}.` 
+      description: `Reserved ${selectedStation?.name} for ${bookingDuration} hour(s) on ${bookingDate ? format(bookingDate, 'PPP') : 'selected date'} at ${bookingTime}.` 
     });
     setIsBookingOpen(false);
   };
@@ -119,7 +122,6 @@ export function UserDashboard() {
     const charger = chargers.find(c => c.charger_id === selectedChargerId);
     const rate = charger?.rate_per_kwh || 0.45;
     const durationHours = parseInt(bookingDuration);
-    // Rough estimate: avg 50kWh per hour for DCFC, 7kWh for L2
     const avgConsumption = charger?.type === 'DCFC' ? 40 : 7;
     return (rate * avgConsumption * durationHours).toFixed(2);
   };
@@ -129,7 +131,7 @@ export function UserDashboard() {
       {/* Header Section */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Welcome, Driver</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Welcome, Driver</h1>
           <p className="text-muted-foreground text-sm">Your EV charging ecosystem at a glance.</p>
         </div>
         <div className="flex gap-3">
@@ -297,7 +299,7 @@ export function UserDashboard() {
         <div className="space-y-6">
           <Card className="border-none bg-[#1a1a1c] border-white/5 rounded-2xl overflow-hidden">
             <CardHeader className="pb-2">
-              <CardTitle className="text-lg flex items-center gap-2">
+              <CardTitle className="text-lg flex items-center gap-2 text-foreground">
                 <History className="h-5 w-5 text-primary" /> Recent Activity
               </CardTitle>
             </CardHeader>
@@ -310,7 +312,7 @@ export function UserDashboard() {
                         <Zap className="h-5 w-5 text-primary" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold truncate">{tx.station_name}</p>
+                        <p className="text-sm font-semibold truncate text-foreground">{tx.station_name}</p>
                         <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">
                           {new Date(tx.timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                         </p>
@@ -341,11 +343,11 @@ export function UserDashboard() {
           <div className="p-6 space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <DialogTitle className="text-xl font-bold">{selectedStation?.name}</DialogTitle>
+                <DialogTitle className="text-xl font-bold text-foreground">{selectedStation?.name}</DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground">{selectedStation?.location}</DialogDescription>
               </div>
               <DialogClose asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-white/5">
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-white/5 text-muted-foreground">
                   <X className="h-4 w-4" />
                 </Button>
               </DialogClose>
@@ -370,7 +372,7 @@ export function UserDashboard() {
                     >
                       <div className="flex items-center gap-2 mb-1">
                         <Zap className={cn("h-4 w-4", selectedChargerId === charger.charger_id ? "text-primary" : "text-muted-foreground")} />
-                        <span className="text-sm font-bold">Slot {idx + 1}</span>
+                        <span className="text-sm font-bold text-foreground">Slot {idx + 1}</span>
                       </div>
                       <div className="space-y-0.5">
                         <p className="text-[10px] text-muted-foreground font-medium">{charger.type} - {charger.type === 'DCFC' ? '50kW' : '22kW'}</p>
@@ -391,15 +393,52 @@ export function UserDashboard() {
                 <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 flex items-center gap-1.5">
                   <CalendarIcon className="h-3 w-3" /> Date
                 </label>
-                <Select value={bookingDate} onValueChange={setBookingDate}>
-                  <SelectTrigger className="h-11 bg-background/20 border-white/5 rounded-xl focus:ring-primary/20">
-                    <SelectValue placeholder="Select Date" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-[#1a1a1c] border-white/10">
-                    <SelectItem value="Today">Today</SelectItem>
-                    <SelectItem value="Tomorrow">Tomorrow</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "h-11 w-full justify-start text-left font-normal bg-background/20 border-white/5 rounded-xl hover:bg-white/5 focus:ring-primary/20",
+                        !bookingDate && "text-muted-foreground"
+                      )}
+                    >
+                      {bookingDate ? format(bookingDate, "PPP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[300px] p-0 bg-[#1a1a1c] border-white/10 overflow-hidden" align="start">
+                    {/* Header Part from Reference Image */}
+                    <div className="bg-[#444] p-6 text-white border-b border-white/5">
+                      <p className="text-xs font-medium opacity-60">
+                        {bookingDate ? format(bookingDate, "yyyy") : format(new Date(), "yyyy")}
+                      </p>
+                      <h3 className="text-3xl font-bold mt-1">
+                        {bookingDate ? format(bookingDate, "EEE, d MMM") : format(new Date(), "EEE, d MMM")}
+                      </h3>
+                    </div>
+                    {/* Calendar Part */}
+                    <div className="p-2">
+                      <Calendar
+                        mode="single"
+                        selected={bookingDate}
+                        onSelect={setBookingDate}
+                        initialFocus
+                        className="bg-transparent"
+                      />
+                    </div>
+                    {/* Footer Actions */}
+                    <div className="p-3 border-t border-white/5 flex items-center justify-between">
+                      <Button variant="ghost" size="sm" className="text-primary hover:bg-primary/5" onClick={() => setBookingDate(undefined)}>Clear</Button>
+                      <div className="flex gap-2">
+                        <DialogClose asChild>
+                           <Button variant="ghost" size="sm" className="text-white hover:bg-white/5">Cancel</Button>
+                        </DialogClose>
+                        <PopoverTrigger asChild>
+                          <Button variant="ghost" size="sm" className="text-primary hover:bg-primary/5 font-bold">Set</Button>
+                        </PopoverTrigger>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 flex items-center gap-1.5">
