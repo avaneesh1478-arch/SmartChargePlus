@@ -15,7 +15,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('user');
-  const { login, user } = useApp();
+  const { login, user, users } = useApp();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -39,8 +39,14 @@ export default function LoginPage() {
         });
       }
     } else {
-      // Basic check for other roles in this mock environment
-      login(email);
+      const success = login(email);
+      if (!success) {
+        toast({
+          variant: "destructive",
+          title: "User Not Found",
+          description: "No account found for this email. Please sign up first.",
+        });
+      }
     }
   };
 

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -32,6 +31,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Persistence simulation
   useEffect(() => {
     const storedUser = localStorage.getItem('volta_user');
+    const storedUsers = localStorage.getItem('volta_all_users');
+    
+    if (storedUsers) {
+      try {
+        setUsers(JSON.parse(storedUsers));
+      } catch (e) {
+        console.error("Failed to parse stored users", e);
+      }
+    }
+
     if (storedUser) {
       try {
         setUser(JSON.parse(storedUser));
@@ -41,23 +50,35 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Save users to localStorage whenever the list changes
+  useEffect(() => {
+    localStorage.setItem('volta_all_users', JSON.stringify(users));
+  }, [users]);
+
   const login = (email: string) => {
-    const found = users.find(u => u.email === email);
+    const found = users.find(u => u.email.toLowerCase() === email.toLowerCase());
     if (found) {
       setUser(found);
       localStorage.setItem('volta_user', JSON.stringify(found));
     }
+    return found;
   };
 
   const signup = (email: string, fullName: string) => {
     const newUser: User = {
       uid: `u-${Date.now()}`,
-      email,
+      email: email.toLowerCase(),
       role: 'USER',
       created_at: Date.now(),
-      wallet_balance: 0,
+      wallet_balance: 100.00, // Starting balance for new users
     };
-    setUsers(prev => [...prev, newUser]);
+    
+    setUsers(prev => {
+      const exists = prev.find(u => u.email.toLowerCase() === email.toLowerCase());
+      if (exists) return prev;
+      return [...prev, newUser];
+    });
+    
     setUser(newUser);
     localStorage.setItem('volta_user', JSON.stringify(newUser));
   };
@@ -102,7 +123,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const newOperator: User = {
       uid: `op-${newStationId}`,
-      email: data.email,
+      email: data.email.toLowerCase(),
       role: 'OPERATOR',
       associated_station_id: newStationId,
       created_at: Date.now(),
