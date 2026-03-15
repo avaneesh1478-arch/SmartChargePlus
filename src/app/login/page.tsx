@@ -3,11 +3,12 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/hooks/use-store';
-import { Zap, Mail, Lock } from 'lucide-react';
+import { Zap, Mail, Lock, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import Link from 'next/link';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('admin@gmail.com');
@@ -31,7 +32,16 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 via-background to-background">
+    <div className="flex min-h-screen items-center justify-center p-4 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 via-background to-background relative">
+      <div className="absolute top-8 left-8">
+        <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-primary transition-colors">
+          <Link href="/">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Home
+          </Link>
+        </Button>
+      </div>
+
       <Card className="w-full max-w-md dark-glass border-white/5 shadow-2xl">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-6">
