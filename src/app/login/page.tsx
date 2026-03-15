@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 
 export default function LoginPage() {
@@ -16,6 +17,7 @@ export default function LoginPage() {
   const [role, setRole] = useState('user');
   const { login, user } = useApp();
   const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (user) {
@@ -25,7 +27,21 @@ export default function LoginPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    login(email);
+
+    if (role === 'admin') {
+      if (email === 'admin@gmail.com' && password === '142536') {
+        login(email);
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Authentication Failed",
+          description: "Invalid admin email or password.",
+        });
+      }
+    } else {
+      // Basic check for other roles in this mock environment
+      login(email);
+    }
   };
 
   const handleRoleChange = (newRole: string) => {
