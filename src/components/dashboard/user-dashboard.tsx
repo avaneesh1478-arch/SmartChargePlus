@@ -44,7 +44,7 @@ import { smartChargingStationRecommendation } from '@/ai/flows/smart-charging-st
 import { toast } from '@/hooks/use-toast';
 import { Station, Charger } from '@/types';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, parse, isValid } from 'date-fns';
 
 export function UserDashboard() {
   const { user, stations, chargers, transactions } = useApp();
@@ -57,6 +57,7 @@ export function UserDashboard() {
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [selectedChargerId, setSelectedChargerId] = useState<string | null>(null);
   const [bookingDate, setBookingDate] = useState<Date | undefined>(undefined);
+  const [dateInput, setDateInput] = useState('');
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isTimePickerOpen, setIsTimePickerOpen] = useState(false);
   const [bookingTime, setBookingTime] = useState('15:30');
@@ -64,8 +65,28 @@ export function UserDashboard() {
 
   // Initialize date on client to avoid hydration mismatch
   useEffect(() => {
-    setBookingDate(new Date());
+    const today = new Date();
+    setBookingDate(today);
+    setDateInput(format(today, 'yyyy-MM-dd'));
   }, []);
+
+  // Sync dateInput when bookingDate changes via calendar
+  useEffect(() => {
+    if (bookingDate) {
+      setDateInput(format(bookingDate, 'yyyy-MM-dd'));
+    }
+  }, [bookingDate]);
+
+  const handleDateInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setDateInput(val);
+    
+    // Try to parse YYYY-MM-DD format
+    const parsed = parse(val, 'yyyy-MM-dd', new Date());
+    if (isValid(parsed)) {
+      setBookingDate(parsed);
+    }
+  };
 
   const getAiRecommendations = async () => {
     setLoadingAi(true);
@@ -402,25 +423,31 @@ export function UserDashboard() {
                 </label>
                 <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                   <PopoverTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className={cn(
-                        "h-12 w-full justify-start text-left font-normal bg-background/20 border-white/5 rounded-xl hover:bg-white/5 focus:ring-primary/20",
-                        !bookingDate && "text-muted-foreground"
-                      )}
-                    >
-                      <div className="flex items-center justify-between w-full">
-                         <span className="truncate">{bookingDate ? format(bookingDate, "MMM d, yyyy") : "Pick Date"}</span>
+                    <div className="relative group">
+                      <Input
+                        value={dateInput}
+                        onChange={handleDateInputChange}
+                        placeholder="YYYY-MM-DD"
+                        className="h-12 w-full pr-10 bg-background/20 border-white/5 rounded-xl hover:bg-white/5 focus:ring-primary/20 text-sm placeholder:text-muted-foreground/30"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsCalendarOpen(true);
+                        }}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 hover:bg-white/5"
+                      >
                          <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
-                      </div>
-                    </Button>
+                      </Button>
+                    </div>
                   </PopoverTrigger>
                   <PopoverContent 
                     className="w-[320px] p-0 bg-[#1a1a1c] border-white/10 overflow-hidden shadow-2xl" 
                     align="start"
                     onInteractOutside={(e) => {
-                      // Prevent closing if interacting with the calendar
                       if (e.target instanceof Element && e.target.closest('.rdp')) {
                         e.preventDefault();
                       }
@@ -453,7 +480,10 @@ export function UserDashboard() {
                         variant="ghost" 
                         size="sm" 
                         className="text-primary hover:bg-primary/5 font-bold uppercase text-[10px] tracking-widest" 
-                        onClick={() => { setBookingDate(undefined); }}
+                        onClick={() => { 
+                          setBookingDate(undefined);
+                          setDateInput('');
+                        }}
                       >
                         Clear
                       </Button>
