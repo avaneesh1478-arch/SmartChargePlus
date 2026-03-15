@@ -280,6 +280,7 @@ export function UserDashboard() {
                         </div>
 
                         <Button 
+                          type="button"
                           className="w-full teal-gradient-btn h-12 font-bold rounded-xl shadow-lg shadow-primary/10"
                           onClick={() => handleOpenBooking(station)}
                         >
@@ -363,7 +364,10 @@ export function UserDashboard() {
                   .map((charger, idx) => (
                     <div 
                       key={charger.charger_id}
-                      onClick={() => charger.status === 'available' && setSelectedChargerId(charger.charger_id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (charger.status === 'available') setSelectedChargerId(charger.charger_id);
+                      }}
                       className={cn(
                         "p-4 rounded-2xl border transition-all cursor-pointer group",
                         selectedChargerId === charger.charger_id 
@@ -399,6 +403,7 @@ export function UserDashboard() {
                 <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                   <PopoverTrigger asChild>
                     <Button
+                      type="button"
                       variant="outline"
                       className={cn(
                         "h-12 w-full justify-start text-left font-normal bg-background/20 border-white/5 rounded-xl hover:bg-white/5 focus:ring-primary/20",
@@ -411,7 +416,16 @@ export function UserDashboard() {
                       </div>
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-[320px] p-0 bg-[#1a1a1c] border-white/10 overflow-hidden shadow-2xl" align="start">
+                  <PopoverContent 
+                    className="w-[320px] p-0 bg-[#1a1a1c] border-white/10 overflow-hidden shadow-2xl" 
+                    align="start"
+                    onInteractOutside={(e) => {
+                      // Prevent closing if interacting with the calendar
+                      if (e.target instanceof Element && e.target.closest('.rdp')) {
+                        e.preventDefault();
+                      }
+                    }}
+                  >
                     <div className="bg-[#333] p-6 text-white border-b border-white/5">
                       <p className="text-xs font-semibold opacity-60 tracking-widest uppercase">
                         {bookingDate ? format(bookingDate, "yyyy") : format(new Date(), "yyyy")}
@@ -425,8 +439,9 @@ export function UserDashboard() {
                         mode="single"
                         selected={bookingDate}
                         onSelect={(date) => {
-                          setBookingDate(date);
-                          // We don't close immediately to let them see the high-fidelity header update
+                          if (date) {
+                            setBookingDate(date);
+                          }
                         }}
                         initialFocus
                         className="bg-transparent"
@@ -434,6 +449,7 @@ export function UserDashboard() {
                     </div>
                     <div className="p-4 border-t border-white/5 flex items-center justify-between bg-black/20">
                       <Button 
+                        type="button"
                         variant="ghost" 
                         size="sm" 
                         className="text-primary hover:bg-primary/5 font-bold uppercase text-[10px] tracking-widest" 
@@ -443,6 +459,7 @@ export function UserDashboard() {
                       </Button>
                       <div className="flex gap-2">
                         <Button 
+                          type="button"
                           variant="ghost" 
                           size="sm" 
                           className="text-white hover:bg-white/5 font-bold uppercase text-[10px] tracking-widest" 
@@ -451,6 +468,7 @@ export function UserDashboard() {
                           Cancel
                         </Button>
                         <Button 
+                          type="button"
                           variant="ghost" 
                           size="sm" 
                           className="text-primary hover:bg-primary/5 font-bold uppercase text-[10px] tracking-widest" 
@@ -471,6 +489,7 @@ export function UserDashboard() {
                 <Popover open={isTimePickerOpen} onOpenChange={setIsTimePickerOpen}>
                   <PopoverTrigger asChild>
                     <Button
+                      type="button"
                       variant="outline"
                       className={cn(
                         "h-12 w-full justify-start text-left font-normal bg-background/20 border-white/5 rounded-xl hover:bg-white/5 focus:ring-primary/20",
@@ -492,9 +511,14 @@ export function UserDashboard() {
                         {['08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00', '21:30', '22:00'].map((time) => (
                           <Button
                             key={time}
+                            type="button"
                             variant="outline"
                             size="sm"
-                            onClick={() => { setBookingTime(time); setIsTimePickerOpen(false); }}
+                            onClick={(e) => { 
+                              e.stopPropagation();
+                              setBookingTime(time); 
+                              setIsTimePickerOpen(false); 
+                            }}
                             className={cn(
                               "h-10 text-xs rounded-lg border-white/5 bg-white/5 hover:bg-primary/20",
                               bookingTime === time ? "bg-primary text-white border-primary" : "text-muted-foreground"
@@ -535,6 +559,7 @@ export function UserDashboard() {
             </div>
 
             <Button 
+              type="button"
               onClick={handleConfirmBooking}
               className="w-full teal-gradient-btn h-12 font-bold rounded-xl shadow-xl shadow-primary/20"
             >
