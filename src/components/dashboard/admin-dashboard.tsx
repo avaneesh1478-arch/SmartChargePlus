@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { StatCard } from './stat-card';
-import { CreditCard, Zap, Activity, ShieldCheck, TrendingUp, Users, Plus, Trash2 } from 'lucide-react';
+import { CreditCard, Zap, Activity, ShieldCheck, TrendingUp, Users, Plus, Trash2, MapPin } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -59,16 +59,18 @@ export function AdminDashboard() {
     name: '',
     email: '',
     address: '',
-    chargingCost: ''
+    chargingCost: '',
+    latitude: '',
+    longitude: ''
   });
 
   const handleAddStation = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.email || !formData.address || !formData.chargingCost) {
+    if (!formData.name || !formData.email || !formData.address || !formData.chargingCost || !formData.latitude || !formData.longitude) {
       toast({
         variant: "destructive",
         title: "Incomplete Form",
-        description: "Please fill in all fields to add a station.",
+        description: "Please fill in all fields including geographic location to add a station.",
       });
       return;
     }
@@ -77,7 +79,9 @@ export function AdminDashboard() {
       name: formData.name,
       email: formData.email,
       address: formData.address,
-      chargingCost: parseFloat(formData.chargingCost)
+      chargingCost: parseFloat(formData.chargingCost),
+      lat: parseFloat(formData.latitude),
+      lng: parseFloat(formData.longitude)
     });
 
     toast({
@@ -86,7 +90,7 @@ export function AdminDashboard() {
     });
 
     setIsDialogOpen(false);
-    setFormData({ name: '', email: '', address: '', chargingCost: '' });
+    setFormData({ name: '', email: '', address: '', chargingCost: '', latitude: '', longitude: '' });
   };
 
   const handleRemoveStation = (stationId: string, stationName: string) => {
@@ -151,6 +155,35 @@ export function AdminDashboard() {
                       onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                     />
                   </div>
+
+                  {/* Geographic Location Selection */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="latitude" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Latitude</Label>
+                      <input
+                        id="latitude"
+                        type="number"
+                        step="0.000001"
+                        placeholder="e.g. 40.7128"
+                        className="flex h-10 w-full rounded-md border-none bg-secondary/50 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 disabled:cursor-not-allowed disabled:opacity-50"
+                        value={formData.latitude}
+                        onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="longitude" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Longitude</Label>
+                      <input
+                        id="longitude"
+                        type="number"
+                        step="0.000001"
+                        placeholder="e.g. -74.0060"
+                        className="flex h-10 w-full rounded-md border-none bg-secondary/50 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 disabled:cursor-not-allowed disabled:opacity-50"
+                        value={formData.longitude}
+                        onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
                   <div className="grid gap-2">
                     <Label htmlFor="cost" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Charging Cost ($/kWh)</Label>
                     <input

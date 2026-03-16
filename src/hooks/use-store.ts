@@ -15,7 +15,7 @@ interface AppContextType {
   logout: () => void;
   toggleCharger: (chargerId: string) => void;
   updateChargerStatus: (chargerId: string, status: Charger['status']) => void;
-  addStation: (data: { name: string, email: string, address: string, chargingCost: number }) => void;
+  addStation: (data: { name: string, email: string, address: string, chargingCost: number, lat: number, lng: number }) => void;
   removeStation: (stationId: string) => void;
 }
 
@@ -140,15 +140,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setChargers(prev => prev.map(c => c.charger_id === chargerId ? { ...c, status } : c));
   };
 
-  const addStation = (data: { name: string, email: string, address: string, chargingCost: number }) => {
+  const addStation = (data: { name: string, email: string, address: string, chargingCost: number, lat: number, lng: number }) => {
     const newStationId = `st-${Date.now()}`;
     
     const newStation: Station = {
       station_id: newStationId,
       name: data.name,
       location: data.address,
-      lat: 40.7128 + (Math.random() * 0.1),
-      lng: -74.0060 + (Math.random() * 0.1),
+      lat: data.lat,
+      lng: data.lng,
       status: 'active',
       operator_id: `op-${newStationId}`,
       total_power: 150,
