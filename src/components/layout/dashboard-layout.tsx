@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import Link from 'next/link';
 
 export function DashboardLayout({ children }: { children: ReactNode }) {
   const { user } = useApp();
@@ -34,7 +35,10 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
               <Bell className="h-5 w-5" />
               <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-primary" />
             </Button>
-            <div className="flex items-center gap-3 pl-2 border-l">
+            <Link 
+              href="/profile" 
+              className="flex items-center gap-3 pl-2 border-l hover:opacity-80 transition-opacity"
+            >
               <div className="flex flex-col items-end hidden sm:flex">
                 <span className="text-sm font-medium">{user?.email}</span>
                 <Badge variant="outline" className="text-[10px] h-4 py-0 success-badge">
@@ -47,7 +51,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
                   {user?.email?.[0].toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-            </div>
+            </Link>
           </div>
         </header>
         <main className="flex-1 p-6 overflow-y-auto">
