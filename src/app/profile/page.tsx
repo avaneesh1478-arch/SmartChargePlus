@@ -9,10 +9,11 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { User, Mail, Shield, Zap, Wallet, MapPin, Calendar, Settings, LogOut, Phone, Camera } from 'lucide-react';
+import { User, Mail, Shield, Zap, Wallet, MapPin, Calendar, Settings, LogOut, Phone, Camera, ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import Link from 'next/link';
 
 export default function ProfilePage() {
   const { user, stations, chargers, logout, updateProfile } = useApp();
@@ -75,8 +76,14 @@ export default function ProfilePage() {
   return (
     <DashboardLayout>
       <div className="max-w-4xl mx-auto space-y-8">
-        <div className="flex justify-between items-end">
-          <div>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <Button variant="ghost" size="sm" asChild className="mb-2 -ml-2 text-muted-foreground hover:text-primary h-8 px-2">
+              <Link href="/dashboard">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Dashboard
+              </Link>
+            </Button>
             <h1 className="text-3xl font-bold tracking-tight text-foreground">Account Profile</h1>
             <p className="text-muted-foreground text-sm">Manage your personal information and account settings.</p>
           </div>
