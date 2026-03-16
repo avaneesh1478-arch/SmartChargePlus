@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -15,7 +14,6 @@ import {
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -132,7 +130,7 @@ export function OperatorDashboard() {
         />
       </div>
 
-      {/* Slot Status Grid */}
+      {/* Slot Status Grid - Updated to 2 columns (2x2 style) */}
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <h2 className="text-xl font-bold flex items-center gap-2">
@@ -160,7 +158,7 @@ export function OperatorDashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {myChargers.map((charger, idx) => (
             <Card key={charger.charger_id} className="border-none bg-[#1a1a1c] relative overflow-hidden group">
               {charger.status === 'occupied' && (
