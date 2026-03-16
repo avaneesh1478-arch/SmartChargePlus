@@ -18,7 +18,8 @@ import {
   Calendar as CalendarIcon,
   ChevronDown,
   X,
-  LocateFixed
+  LocateFixed,
+  Loader2
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -42,14 +43,16 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { smartChargingStationRecommendation } from '@/ai/flows/smart-charging-station-recommendation-flow';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Station, Charger } from '@/types';
 import { cn, calculateDistance } from '@/lib/utils';
 import { format, parse, isValid } from 'date-fns';
 
 export function UserDashboard() {
   const { user, stations, chargers, transactions } = useApp();
+  const { toast } = useToast();
   const [loadingAi, setLoadingAi] = useState(false);
+  const [locating, setLocating] = useState(false);
   const [recommendations, setRecommendations] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [userLocation, setUserLocation] = useState<{ lat: number, lng: number } | null>(null);
@@ -70,22 +73,50 @@ export function UserDashboard() {
     const today = new Date();
     setBookingDate(today);
     setDateInput(format(today, 'yyyy-MM-dd'));
-
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          });
-        },
-        (error) => {
-          console.warn("Geolocation permission denied or error:", error.message);
-          // Fallback to a default location if needed, or keep as null
-        }
-      );
-    }
+    handleGetLocation(false); // Silent check on mount
   }, []);
+
+  const handleGetLocation = (showToast = true) => {
+    if (!("geolocation" in navigator)) {
+      if (showToast) {
+        toast({ 
+          variant: "destructive", 
+          title: "Browser Unsupported", 
+          description: "Your browser does not support geolocation services." 
+        });
+      }
+      return;
+    }
+
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        });
+        setLocating(false);
+        if (showToast) {
+          toast({ 
+            title: "Location Traced", 
+            description: "Successfully updated your live position. Nearby stations refreshed." 
+          });
+        }
+      },
+      (error) => {
+        setLocating(false);
+        console.warn("Geolocation error:", error.message);
+        if (showToast) {
+          toast({ 
+            variant: "destructive", 
+            title: "Location Access Denied", 
+            description: "Please enable location services to find nearby stations." 
+          });
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
 
   // Sync dateInput when bookingDate changes via calendar
   useEffect(() => {
@@ -211,6 +242,73 @@ export function UserDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
+          {/* Near Station Suggestion */}
+          <Card className="border-none bg-[#1a1a1c] border-white/5 overflow-hidden">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <LocateFixed className="h-5 w-5 text-primary" />
+                  <div>
+                    <CardTitle className="text-lg">Near Station Suggestion</CardTitle>
+                    <CardDescription className="text-xs text-muted-foreground/60">Trace available stations relative to your live position</CardDescription>
+                  </div>
+                </div>
+                <Button 
+                  size="sm" 
+                  onClick={() => handleGetLocation()}
+                  disabled={locating}
+                  className="bg-primary/20 text-primary hover:bg-primary/30 font-bold border border-primary/20 gap-2"
+                >
+                  {locating ? (
+                    <>
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      Tracing...
+                    </>
+                  ) : (
+                    "Find Near Station"
+                  )}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {userLocation ? (
+                  nearbyStations.map((station) => (
+                    <div key={station.station_id} className="bg-background/40 p-4 rounded-2xl border border-white/5 flex items-center justify-between hover:bg-background/60 transition-colors group">
+                      <div className="flex items-center gap-4">
+                        <div className="h-10 w-10 bg-secondary/30 rounded-full flex items-center justify-center">
+                          <MapPin className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-bold">{station.name}</h4>
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{station.location}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-primary">{station.distance.toFixed(1)} km</p>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-7 text-[10px] px-2 font-bold hover:text-primary"
+                          onClick={() => handleOpenBooking(station)}
+                        >
+                          Quick Book
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-12 bg-white/5 rounded-2xl border border-dashed border-white/10 space-y-3">
+                    <LocateFixed className="h-8 w-8 mx-auto text-muted-foreground/20" />
+                    <p className="text-xs text-muted-foreground max-w-xs mx-auto">
+                      Click "Find Near Station" to grant location access and trace your distance to available hubs.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Smart Recommendation */}
           <Card className="border-none bg-[#1a1a1c] border-white/5 overflow-hidden">
             <CardHeader className="pb-4">
@@ -262,53 +360,6 @@ export function UserDashboard() {
                   <div className="text-center py-10 text-muted-foreground bg-white/5 rounded-2xl border border-dashed border-white/10">
                     <Sparkles className="h-8 w-8 mx-auto mb-3 opacity-20" />
                     <p className="text-sm">Get personalized AI suggestions for your current trip.</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Near Station Suggestion */}
-          <Card className="border-none bg-[#1a1a1c] border-white/5 overflow-hidden">
-            <CardHeader className="pb-4">
-              <div className="flex items-center gap-2">
-                <LocateFixed className="h-5 w-5 text-primary" />
-                <div>
-                  <CardTitle className="text-lg">Near Station Suggestion</CardTitle>
-                  <CardDescription className="text-xs text-muted-foreground/60">Based on your live geographical location</CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {userLocation ? (
-                  nearbyStations.map((station) => (
-                    <div key={station.station_id} className="bg-background/40 p-4 rounded-2xl border border-white/5 flex items-center justify-between hover:bg-background/60 transition-colors group">
-                      <div className="flex items-center gap-4">
-                        <div className="h-10 w-10 bg-secondary/30 rounded-full flex items-center justify-center">
-                          <MapPin className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-bold">{station.name}</h4>
-                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{station.location}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-bold text-primary">{station.distance.toFixed(1)} km</p>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-7 text-[10px] px-2 font-bold hover:text-primary"
-                          onClick={() => handleOpenBooking(station)}
-                        >
-                          Quick Book
-                        </Button>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center py-8 bg-white/5 rounded-2xl border border-dashed border-white/10">
-                    <p className="text-xs text-muted-foreground">Please enable location services to see stations near you.</p>
                   </div>
                 )}
               </div>
