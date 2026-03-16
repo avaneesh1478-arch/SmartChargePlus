@@ -12,17 +12,8 @@ import {
   MoreHorizontal,
   Circle
 } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
 import {
   Select,
   SelectContent,
@@ -39,8 +30,9 @@ import {
   Tooltip, 
   ResponsiveContainer 
 } from 'recharts';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const earningsData = [
   { day: '02-08', amount: 240 },
@@ -53,7 +45,8 @@ const earningsData = [
 ];
 
 export function OperatorDashboard() {
-  const { user, stations, chargers, updateChargerStatus } = useApp();
+  const { user, stations, chargers, updateChargerStatus, addSlot } = useApp();
+  const { toast } = useToast();
 
   const myStation = stations.find(s => s.operator_id === user?.uid || user?.associated_station_id === s.station_id);
   const myChargers = chargers.filter(c => c.station_id === myStation?.station_id);
@@ -63,6 +56,23 @@ export function OperatorDashboard() {
     toast({
       title: "Status Updated",
       description: `Slot ${chargerId} is now ${newStatus}.`,
+    });
+  };
+
+  const handleAddSlot = () => {
+    if (!myStation) {
+      toast({
+        variant: "destructive",
+        title: "Station Not Found",
+        description: "You are not assigned to any station.",
+      });
+      return;
+    }
+    
+    addSlot(myStation.station_id);
+    toast({
+      title: "Slot Added",
+      description: "A new charging slot has been successfully added to your station.",
     });
   };
 
@@ -79,7 +89,7 @@ export function OperatorDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard 
           title="Weekly Revenue" 
-          value="$1988" 
+          value="$1,988" 
           icon={DollarSign} 
           trend={{ value: 12, isUp: true }} 
           iconClassName="bg-emerald-500/10"
@@ -113,7 +123,11 @@ export function OperatorDashboard() {
           <h2 className="text-xl font-bold flex items-center gap-2">
             Slot Status — <span className="text-muted-foreground font-medium">{myStation?.name || "Downtown EV Hub"}</span>
           </h2>
-          <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold gap-1.5 px-4 h-9 rounded-lg">
+          <Button 
+            onClick={handleAddSlot}
+            size="sm" 
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold gap-1.5 px-4 h-9 rounded-lg"
+          >
             <Plus className="h-4 w-4" /> Add Slot
           </Button>
         </div>
