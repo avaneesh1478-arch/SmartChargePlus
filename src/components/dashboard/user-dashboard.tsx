@@ -44,7 +44,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { smartChargingStationRecommendation } from '@/ai/flows/smart-charging-station-recommendation-flow';
 import { useToast } from '@/hooks/use-toast';
-import { Station, Charger } from '@/types';
+import { Station } from '@/types';
 import { cn, calculateDistance } from '@/lib/utils';
 import { format, parse, isValid } from 'date-fns';
 
@@ -157,19 +157,23 @@ export function UserDashboard() {
       const available = stations.map(s => {
         const stationChargers = chargers.filter(c => c.station_id === s.station_id);
         const occupied = stationChargers.filter(c => c.status === 'occupied').length;
-        const load = (occupied / stationChargers.length) * 100 || 0;
+        const total = stationChargers.length;
+        const load = total > 0 ? (occupied / total) * 100 : 0;
+        
         return {
           station_id: s.station_id,
           name: s.name,
           location: s.location,
-          charger_types: ['Level 2', 'DCFC'] as any[],
+          charger_types: ['Level 2', 'DCFC'] as ('Level 2' | 'DCFC')[],
           current_load_percentage: load,
           rate_per_kwh: stationChargers[0]?.rate_per_kwh || 0.35
         };
       });
 
       const res = await smartChargingStationRecommendation({
-        userLocation: userLocation || { latitude: 40.7128, longitude: -74.0060 },
+        userLocation: userLocation 
+          ? { latitude: userLocation.lat, longitude: userLocation.lng }
+          : { latitude: 40.7128, longitude: -74.0060 },
         vehicleChargerType: 'DCFC',
         preference: 'maximizeSpeed',
         availableStations: available
@@ -177,6 +181,7 @@ export function UserDashboard() {
       setRecommendations(res.recommendations);
       toast({ title: "AI Recommendations Ready", description: "Found the best stations for your current trip." });
     } catch (e) {
+      console.error("AI Error:", e);
       toast({ title: "AI Error", description: "Could not generate recommendations.", variant: "destructive" });
     } finally {
       setLoadingAi(false);
