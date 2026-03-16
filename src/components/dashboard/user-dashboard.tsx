@@ -274,13 +274,17 @@ export function UserDashboard() {
               <div className="space-y-4">
                 {userLocation ? (
                   nearbyStations.map((station) => (
-                    <div key={station.station_id} className="bg-background/40 p-4 rounded-2xl border border-white/5 flex items-center justify-between hover:bg-background/60 transition-colors group">
+                    <div 
+                      key={station.station_id} 
+                      className="bg-background/40 p-4 rounded-2xl border border-white/5 flex items-center justify-between hover:bg-background/60 transition-colors group cursor-pointer"
+                      onClick={() => handleOpenBooking(station)}
+                    >
                       <div className="flex items-center gap-4">
                         <div className="h-10 w-10 bg-secondary/30 rounded-full flex items-center justify-center">
                           <MapPin className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
                         </div>
                         <div>
-                          <h4 className="text-sm font-bold">{station.name}</h4>
+                          <h4 className="text-sm font-bold group-hover:text-primary transition-colors">{station.name}</h4>
                           <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{station.location}</p>
                         </div>
                       </div>
@@ -290,7 +294,10 @@ export function UserDashboard() {
                           variant="ghost" 
                           size="sm" 
                           className="h-7 text-[10px] px-2 font-bold hover:text-primary"
-                          onClick={() => handleOpenBooking(station)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenBooking(station);
+                          }}
                         >
                           Quick Book
                         </Button>
@@ -332,30 +339,44 @@ export function UserDashboard() {
             <CardContent>
               <div className="space-y-4">
                 {recommendations.length > 0 ? (
-                  recommendations.map((rec, i) => (
-                    <div key={i} className="bg-background/40 p-5 rounded-2xl border border-white/5 flex gap-4 items-start hover:bg-background/60 transition-colors">
-                      <div className="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center shrink-0 border border-primary/10">
-                        <Navigation className="h-6 w-6 text-primary" />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-bold text-lg text-foreground">{rec.station_name}</h4>
-                        <p className="text-sm text-muted-foreground leading-relaxed mt-1">{rec.reason}</p>
-                        <div className="flex gap-3 mt-4">
-                          <Button size="sm" variant="outline" className="h-8 text-xs px-4 rounded-lg bg-white/5 border-white/10">Directions</Button>
-                          <Button 
-                            size="sm" 
-                            className="h-8 text-xs px-4 font-bold rounded-lg teal-gradient-btn"
-                            onClick={() => {
-                              const station = stations.find(s => s.station_id === rec.station_id);
-                              if (station) handleOpenBooking(station);
-                            }}
-                          >
-                            Reserve Spot
-                          </Button>
+                  recommendations.map((rec, i) => {
+                    const station = stations.find(s => s.station_id === rec.station_id);
+                    return (
+                      <div 
+                        key={i} 
+                        className="bg-background/40 p-5 rounded-2xl border border-white/5 flex gap-4 items-start hover:bg-background/60 transition-colors cursor-pointer"
+                        onClick={() => station && handleOpenBooking(station)}
+                      >
+                        <div className="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center shrink-0 border border-primary/10">
+                          <Navigation className="h-6 w-6 text-primary" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors">{rec.station_name}</h4>
+                          <p className="text-sm text-muted-foreground leading-relaxed mt-1">{rec.reason}</p>
+                          <div className="flex gap-3 mt-4">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="h-8 text-xs px-4 rounded-lg bg-white/5 border-white/10"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              Directions
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              className="h-8 text-xs px-4 font-bold rounded-lg teal-gradient-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (station) handleOpenBooking(station);
+                              }}
+                            >
+                              Reserve Spot
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 ) : (
                   <div className="text-center py-10 text-muted-foreground bg-white/5 rounded-2xl border border-dashed border-white/10">
                     <Sparkles className="h-8 w-8 mx-auto mb-3 opacity-20" />
@@ -395,7 +416,11 @@ export function UserDashboard() {
                   const rate = stationChargers[0]?.rate_per_kwh || 0.35;
                   
                   return (
-                    <Card key={station.station_id} className="border-none bg-[#111113] hover:bg-[#151517] transition-all rounded-2xl overflow-hidden group border border-white/5">
+                    <Card 
+                      key={station.station_id} 
+                      className="border-none bg-[#111113] hover:bg-[#151517] transition-all rounded-2xl overflow-hidden group border border-white/5 cursor-pointer"
+                      onClick={() => handleOpenBooking(station)}
+                    >
                       <CardContent className="p-6">
                         <div className="flex justify-between items-start mb-4">
                           <div className="space-y-1">
@@ -434,7 +459,10 @@ export function UserDashboard() {
                         <Button 
                           type="button"
                           className="w-full teal-gradient-btn h-12 font-bold rounded-xl shadow-lg shadow-primary/10"
-                          onClick={() => handleOpenBooking(station)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenBooking(station);
+                          }}
                         >
                           Book Now
                         </Button>
