@@ -6,17 +6,40 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { User, Mail, Shield, Zap, Wallet, MapPin, Calendar, Settings, LogOut } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { User, Mail, Shield, Zap, Wallet, MapPin, Calendar, Settings, LogOut, Phone, Camera } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 export default function ProfilePage() {
-  const { user, stations, chargers, logout } = useApp();
+  const { user, stations, chargers, logout, updateProfile } = useApp();
   const router = useRouter();
+  const { toast } = useToast();
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
+  // Form state
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    address: '',
+    contactNumber: '',
+    profileImage: ''
+  });
 
   useEffect(() => {
     if (!user) {
       router.push('/login');
+    } else {
+      setFormData({
+        fullName: user.fullName || user.email.split('@')[0],
+        email: user.email,
+        address: user.address || '',
+        contactNumber: user.contactNumber || '',
+        profileImage: user.profileImage || `https://picsum.photos/seed/${user.uid}/100/100`
+      });
     }
   }, [user, router]);
 
@@ -25,6 +48,16 @@ export default function ProfilePage() {
   const handleLogout = () => {
     logout();
     router.push('/login');
+  };
+
+  const handleSaveProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateProfile(formData);
+    toast({
+      title: "Profile Updated",
+      description: "Your account information has been successfully updated.",
+    });
+    setIsEditDialogOpen(false);
   };
 
   // Role-specific data
@@ -36,34 +69,112 @@ export default function ProfilePage() {
     ? chargers.filter(c => c.station_id === myStation.station_id).length
     : 0;
 
+  const displayName = user.fullName || user.email.split('@')[0];
+  const profileImg = user.profileImage || `https://picsum.photos/seed/${user.uid}/100/100`;
+
   return (
     <DashboardLayout>
       <div className="max-w-4xl mx-auto space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Account Profile</h1>
-          <p className="text-muted-foreground text-sm">Manage your personal information and account settings.</p>
+        <div className="flex justify-between items-end">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">Account Profile</h1>
+            <p className="text-muted-foreground text-sm">Manage your personal information and account settings.</p>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Main Info Card */}
           <Card className="md:col-span-1 border-none bg-[#1a1a1c] border-white/5">
             <CardContent className="pt-8 flex flex-col items-center text-center space-y-4">
-              <Avatar className="h-24 w-24 ring-4 ring-primary/10">
-                <AvatarImage src={`https://picsum.photos/seed/${user.uid}/100/100`} />
-                <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
-                  {user.email[0].toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
+              <div className="relative group">
+                <Avatar className="h-24 w-24 ring-4 ring-primary/10">
+                  <AvatarImage src={profileImg} />
+                  <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
+                    {user.email[0].toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                  <Camera className="h-6 w-6 text-white" />
+                </div>
+              </div>
               <div className="space-y-1">
-                <h3 className="text-xl font-bold">{user.email.split('@')[0]}</h3>
+                <h3 className="text-xl font-bold">{displayName}</h3>
                 <Badge className="success-badge uppercase tracking-widest text-[10px] py-0.5 px-3">
                   {user.role}
                 </Badge>
               </div>
               <div className="w-full pt-4 space-y-2">
-                <Button variant="outline" className="w-full bg-secondary/20 border-white/5 text-xs font-bold gap-2">
-                  <Settings className="h-3 w-3" /> Edit Profile
-                </Button>
+                <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="w-full bg-secondary/20 border-white/5 text-xs font-bold gap-2">
+                      <Settings className="h-3 w-3" /> Edit Profile
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[425px] bg-card border-white/10">
+                    <form onSubmit={handleSaveProfile}>
+                      <DialogHeader>
+                        <DialogTitle className="text-xl font-bold text-primary">Edit Profile</DialogTitle>
+                        <DialogDescription className="text-muted-foreground">
+                          Update your personal information below.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                          <Label htmlFor="fullName" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Full Name</Label>
+                          <Input
+                            id="fullName"
+                            className="bg-secondary/50 border-none h-10"
+                            value={formData.fullName}
+                            onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="email" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Email</Label>
+                          <Input
+                            id="email"
+                            type="email"
+                            className="bg-secondary/50 border-none h-10"
+                            value={formData.email}
+                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="contactNumber" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Contact Number</Label>
+                          <Input
+                            id="contactNumber"
+                            className="bg-secondary/50 border-none h-10"
+                            placeholder="e.g. +1 234 567 890"
+                            value={formData.contactNumber}
+                            onChange={(e) => setFormData({ ...formData, contactNumber: e.target.value })}
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="address" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Address</Label>
+                          <Input
+                            id="address"
+                            className="bg-secondary/50 border-none h-10"
+                            placeholder="e.g. 123 Tesla Way"
+                            value={formData.address}
+                            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="profileImage" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Profile Image URL</Label>
+                          <Input
+                            id="profileImage"
+                            className="bg-secondary/50 border-none h-10"
+                            placeholder="https://..."
+                            value={formData.profileImage}
+                            onChange={(e) => setFormData({ ...formData, profileImage: e.target.value })}
+                          />
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button type="submit" className="w-full teal-gradient-btn font-bold">Save Changes</Button>
+                      </DialogFooter>
+                    </form>
+                  </DialogContent>
+                </Dialog>
                 <Button variant="ghost" onClick={handleLogout} className="w-full text-rose-500 hover:text-rose-400 hover:bg-rose-500/5 text-xs font-bold gap-2">
                   <LogOut className="h-3 w-3" /> Sign Out
                 </Button>
@@ -84,6 +195,20 @@ export default function ProfilePage() {
                   <div className="flex items-center gap-2 text-sm">
                     <Mail className="h-4 w-4 text-primary" />
                     <span>{user.email}</span>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Contact Number</p>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Phone className="h-4 w-4 text-primary" />
+                    <span>{user.contactNumber || 'Not provided'}</span>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Mailing Address</p>
+                  <div className="flex items-center gap-2 text-sm">
+                    <MapPin className="h-4 w-4 text-primary" />
+                    <span>{user.address || 'No address set'}</span>
                   </div>
                 </div>
                 <div className="space-y-1">

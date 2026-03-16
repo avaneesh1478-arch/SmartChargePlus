@@ -3,6 +3,10 @@ export type UserRole = 'ADMIN' | 'OPERATOR' | 'USER';
 export interface User {
   uid: string;
   email: string;
+  fullName?: string;
+  address?: string;
+  contactNumber?: string;
+  profileImage?: string;
   role: UserRole;
   associated_station_id?: string;
   created_at: number;

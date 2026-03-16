@@ -13,6 +13,7 @@ interface AppContextType {
   login: (email: string) => void;
   signup: (email: string, fullName: string) => void;
   logout: () => void;
+  updateProfile: (data: Partial<User>) => void;
   toggleCharger: (chargerId: string) => void;
   updateChargerStatus: (chargerId: string, status: Charger['status']) => void;
   addStation: (data: { name: string, email: string, address: string, chargingCost: number, lat: number, lng: number }) => void;
@@ -114,6 +115,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const newUser: User = {
       uid: `u-${Date.now()}`,
       email: email.toLowerCase(),
+      fullName: fullName,
       role: 'USER',
       created_at: Date.now(),
       wallet_balance: 100.00,
@@ -132,6 +134,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     setUser(null);
     localStorage.removeItem('volta_user');
+  };
+
+  const updateProfile = (data: Partial<User>) => {
+    if (!user) return;
+    const updatedUser = { ...user, ...data };
+    setUser(updatedUser);
+    setUsers(prev => prev.map(u => u.uid === user.uid ? updatedUser : u));
+    localStorage.setItem('volta_user', JSON.stringify(updatedUser));
   };
 
   const toggleCharger = (chargerId: string) => {
@@ -254,6 +264,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       login, 
       signup,
       logout, 
+      updateProfile,
       toggleCharger, 
       updateChargerStatus,
       addStation,
