@@ -31,7 +31,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [users, setUsers] = useState<User[]>(MOCK_USERS);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Persistence simulation
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -43,7 +42,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (storedUsers) {
       try {
         const parsedUsers = JSON.parse(storedUsers);
-        if (Array.isArray(parsedUsers)) setUsers(parsedUsers);
+        if (Array.isArray(parsedUsers)) {
+          // Merge mock users with stored users to ensure defaults always exist
+          const mergedUsers = [...MOCK_USERS];
+          parsedUsers.forEach((u: User) => {
+            if (!mergedUsers.find(mu => mu.uid === u.uid || mu.email === u.email)) {
+              mergedUsers.push(u);
+            }
+          });
+          setUsers(mergedUsers);
+        }
       } catch (e) {
         console.error("Failed to parse stored users", e);
       }
@@ -69,7 +77,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     if (storedUser) {
       try {
-        setUser(JSON.parse(storedUser));
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
       } catch (e) {
         console.error("Failed to parse stored user session", e);
       }
@@ -78,7 +87,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setIsLoaded(true);
   }, []);
 
-  // Save state to localStorage whenever it changes, but only after initial load
   useEffect(() => {
     if (!isLoaded) return;
     localStorage.setItem('volta_all_users', JSON.stringify(users));
@@ -189,7 +197,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     ];
 
     setStations(prev => [...prev, newStation]);
-    setUsers(prev => [...prev, newOperator]);
+    setUsers(prev => {
+      // Remove any existing user with this email before adding the new operator
+      const filtered = prev.filter(u => u.email.toLowerCase() !== data.email.toLowerCase());
+      return [...filtered, newOperator];
+    });
     setChargers(prev => [...prev, ...newChargers]);
   };
 

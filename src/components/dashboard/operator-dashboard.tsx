@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useApp } from '@/hooks/use-store';
 import { StatCard } from './stat-card';
 import { 
@@ -49,8 +49,17 @@ export function OperatorDashboard() {
   const { toast } = useToast();
   const [bulkCount, setBulkCount] = useState<number>(1);
 
-  const myStation = stations.find(s => s.operator_id === user?.uid || user?.associated_station_id === s.station_id);
-  const myChargers = chargers.filter(c => c.station_id === myStation?.station_id);
+  const myStation = useMemo(() => {
+    return stations.find(s => 
+      s.operator_id === user?.uid || 
+      (user?.associated_station_id && s.station_id === user.associated_station_id)
+    );
+  }, [stations, user]);
+
+  const myChargers = useMemo(() => {
+    if (!myStation) return [];
+    return chargers.filter(c => c.station_id === myStation.station_id);
+  }, [chargers, myStation]);
 
   const handleStatusUpdate = (chargerId: string, newStatus: any) => {
     updateChargerStatus(chargerId, newStatus);
@@ -65,7 +74,7 @@ export function OperatorDashboard() {
       toast({
         variant: "destructive",
         title: "Station Not Found",
-        description: "You are not assigned to any station.",
+        description: "You are not assigned to any station. Please contact an administrator.",
       });
       return;
     }
@@ -117,7 +126,7 @@ export function OperatorDashboard() {
         <StatCard 
           title="Active Slots" 
           value={`${activeSlotsCount}/${myChargers.length}`} 
-          subtext={myStation?.name || "Downtown Hub"} 
+          subtext={myStation?.name || "Loading station..."} 
           icon={Zap} 
           iconClassName="bg-primary/10"
         />
@@ -130,11 +139,11 @@ export function OperatorDashboard() {
         />
       </div>
 
-      {/* Slot Status Grid - Updated to 2 columns (2x2 style) */}
+      {/* Slot Status Grid */}
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <h2 className="text-xl font-bold flex items-center gap-2">
-            Slot Status — <span className="text-muted-foreground font-medium">{myStation?.name || "Downtown EV Hub"}</span>
+            Slot Status — <span className="text-muted-foreground font-medium">{myStation?.name || "Initializing..."}</span>
           </h2>
           <div className="flex items-center gap-2 bg-secondary/20 p-1.5 rounded-xl border border-white/5">
             <div className="flex items-center px-3 border-r border-white/10 gap-2">
@@ -159,53 +168,60 @@ export function OperatorDashboard() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {myChargers.map((charger, idx) => (
-            <Card key={charger.charger_id} className="border-none bg-[#1a1a1c] relative overflow-hidden group">
-              {charger.status === 'occupied' && (
-                <div className="absolute top-3 right-3">
-                  <Circle className="h-2 w-2 fill-primary text-primary" />
-                </div>
-              )}
-              <CardContent className="p-5 space-y-4">
-                <div className="space-y-1">
-                  <h4 className="font-bold text-foreground">Slot {idx + 1}</h4>
-                  <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
-                    {charger.type} - {charger.type === 'DCFC' ? '150kW' : '50kW'}
-                  </p>
-                  <p className={cn(
-                    "text-[10px] font-bold uppercase tracking-widest",
-                    charger.status === 'available' ? "text-muted-foreground/60" : "text-primary"
-                  )}>
-                    {charger.status}
-                  </p>
-                </div>
+          {myChargers.length > 0 ? (
+            myChargers.map((charger, idx) => (
+              <Card key={charger.charger_id} className="border-none bg-[#1a1a1c] relative overflow-hidden group">
+                {charger.status === 'occupied' && (
+                  <div className="absolute top-3 right-3">
+                    <Circle className="h-2 w-2 fill-primary text-primary" />
+                  </div>
+                )}
+                <CardContent className="p-5 space-y-4">
+                  <div className="space-y-1">
+                    <h4 className="font-bold text-foreground">Slot {idx + 1}</h4>
+                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                      {charger.type} - {charger.type === 'DCFC' ? '150kW' : '50kW'}
+                    </p>
+                    <p className={cn(
+                      "text-[10px] font-bold uppercase tracking-widest",
+                      charger.status === 'available' ? "text-muted-foreground/60" : "text-primary"
+                    )}>
+                      {charger.status}
+                    </p>
+                  </div>
 
-                <div className="flex items-center gap-2">
-                  <Select 
-                    defaultValue={charger.status} 
-                    onValueChange={(val) => handleStatusUpdate(charger.charger_id, val)}
-                  >
-                    <SelectTrigger className="h-9 bg-background/20 border-white/5 text-[10px] font-bold uppercase tracking-wider rounded-lg focus:ring-primary/20">
-                      <SelectValue placeholder="Update Status" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-[#1a1a1c] border-white/10">
-                      <SelectItem value="available">Available</SelectItem>
-                      <SelectItem value="occupied">Occupied</SelectItem>
-                      <SelectItem value="offline">Offline</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-9 w-9 rounded-lg bg-red-500/5 hover:bg-red-500/10 text-red-500/50 hover:text-red-500 border border-red-500/10"
-                    onClick={() => handleRemoveSlot(charger.charger_id)}
-                  >
-                    <Minus className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  <div className="flex items-center gap-2">
+                    <Select 
+                      defaultValue={charger.status} 
+                      onValueChange={(val) => handleStatusUpdate(charger.charger_id, val)}
+                    >
+                      <SelectTrigger className="h-9 bg-background/20 border-white/5 text-[10px] font-bold uppercase tracking-wider rounded-lg focus:ring-primary/20">
+                        <SelectValue placeholder="Update Status" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-[#1a1a1c] border-white/10">
+                        <SelectItem value="available">Available</SelectItem>
+                        <SelectItem value="occupied">Occupied</SelectItem>
+                        <SelectItem value="offline">Offline</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-9 w-9 rounded-lg bg-red-500/5 hover:bg-red-500/10 text-red-500/50 hover:text-red-500 border border-red-500/10"
+                      onClick={() => handleRemoveSlot(charger.charger_id)}
+                    >
+                      <Minus className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          ) : (
+            <div className="col-span-full py-20 text-center border border-dashed border-white/5 rounded-2xl bg-white/2">
+              <Zap className="h-8 w-8 mx-auto mb-4 text-muted-foreground/20" />
+              <p className="text-sm text-muted-foreground">No chargers found for this station. Add slots to get started.</p>
+            </div>
+          )}
         </div>
       </div>
 
