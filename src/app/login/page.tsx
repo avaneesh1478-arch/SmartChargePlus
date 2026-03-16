@@ -28,7 +28,11 @@ export default function LoginPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Find the user in our mock database
+    const foundUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+
     if (role === 'admin') {
+      // Hardcoded Admin credentials as per requirements
       if (email === 'admin@gmail.com' && password === '142536') {
         login(email);
       } else {
@@ -38,13 +42,38 @@ export default function LoginPage() {
           description: "Invalid admin email or password.",
         });
       }
+    } else if (role === 'operator') {
+      // Operators must have an email registered by an Admin and use the fixed password '121212'
+      if (foundUser && foundUser.role === 'OPERATOR') {
+        if (password === '121212') {
+          login(email);
+          toast({
+            title: "Welcome back, Operator",
+            description: "Successfully signed into your station management portal.",
+          });
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Authentication Failed",
+            description: "Incorrect password for operator account.",
+          });
+        }
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Operator Not Found",
+          description: "This email is not registered as an operator in our network.",
+        });
+      }
     } else {
-      const success = login(email);
-      if (!success) {
+      // Standard User login
+      if (foundUser && foundUser.role === 'USER') {
+        login(email);
+      } else {
         toast({
           variant: "destructive",
           title: "User Not Found",
-          description: "No account found for this email. Please sign up first.",
+          description: "No user account found for this email. Please sign up first.",
         });
       }
     }
@@ -75,7 +104,7 @@ export default function LoginPage() {
           </div>
           <div className="space-y-1">
             <h1 className="text-2xl font-bold tracking-tight text-foreground">SmartCharge+</h1>
-            <p className="text-xs text-muted-foreground">Sign in to continue</p>
+            <p className="text-xs text-muted-foreground">Sign in to your dashboard</p>
           </div>
         </div>
 
@@ -139,11 +168,19 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground">
-                Don't have an account? <Link href="/signup" className="text-primary hover:underline">Sign Up</Link>
+            {role === 'user' && (
+              <div className="text-center">
+                <p className="text-xs text-muted-foreground">
+                  Don't have an account? <Link href="/signup" className="text-primary hover:underline">Sign Up</Link>
+                </p>
+              </div>
+            )}
+            
+            {role === 'operator' && (
+              <p className="text-[10px] text-center text-muted-foreground/60 leading-relaxed">
+                Contact your Network Administrator if you haven't been assigned an operator account yet.
               </p>
-            </div>
+            )}
           </CardContent>
         </Card>
       </div>
