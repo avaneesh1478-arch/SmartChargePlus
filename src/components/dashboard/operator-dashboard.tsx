@@ -50,9 +50,10 @@ export function OperatorDashboard() {
   const [bulkCount, setBulkCount] = useState<number>(1);
 
   const myStation = useMemo(() => {
+    if (!user) return undefined;
     return stations.find(s => 
-      s.operator_id === user?.uid || 
-      (user?.associated_station_id && s.station_id === user.associated_station_id)
+      s.operator_id === user.uid || 
+      (user.associated_station_id && s.station_id === user.associated_station_id)
     );
   }, [stations, user]);
 
@@ -65,7 +66,7 @@ export function OperatorDashboard() {
     updateChargerStatus(chargerId, newStatus);
     toast({
       title: "Status Updated",
-      description: `Slot is now ${newStatus}.`,
+      description: `Slot status is now ${newStatus}.`,
     });
   };
 
@@ -74,18 +75,19 @@ export function OperatorDashboard() {
       toast({
         variant: "destructive",
         title: "Station Not Found",
-        description: "You are not assigned to any station. Please contact an administrator.",
+        description: "We couldn't identify your assigned station. Please contact support.",
       });
       return;
     }
     
     const count = Math.max(1, bulkCount);
     addSlot(myStation.station_id, count);
+    
     toast({
       title: count > 1 ? "Slots Added" : "Slot Added",
       description: count > 1 
-        ? `${count} new charging slots have been successfully added to your station.`
-        : "A new charging slot has been successfully added to your station.",
+        ? `${count} new charging slots have been added to ${myStation.name}.`
+        : `A new charging slot has been added to ${myStation.name}.`,
     });
     setBulkCount(1);
   };
@@ -94,7 +96,7 @@ export function OperatorDashboard() {
     removeSlot(chargerId);
     toast({
       title: "Slot Removed",
-      description: "The charging slot has been removed from your station.",
+      description: "The charging slot has been successfully decommissioned.",
     });
   };
 
@@ -104,7 +106,7 @@ export function OperatorDashboard() {
     <div className="space-y-8 max-w-7xl mx-auto">
       <div className="space-y-1">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">Operator Dashboard</h1>
-        <p className="text-muted-foreground text-sm">Manage your stations and track performance</p>
+        <p className="text-muted-foreground text-sm">Manage your station infrastructure and performance.</p>
       </div>
 
       {/* Top Stats */}
@@ -126,7 +128,7 @@ export function OperatorDashboard() {
         <StatCard 
           title="Active Slots" 
           value={`${activeSlotsCount}/${myChargers.length}`} 
-          subtext={myStation?.name || "Loading station..."} 
+          subtext={myStation?.name || "Locating station..."} 
           icon={Zap} 
           iconClassName="bg-primary/10"
         />
@@ -139,11 +141,11 @@ export function OperatorDashboard() {
         />
       </div>
 
-      {/* Slot Status Grid */}
+      {/* Slot Status Grid - 2x2 Table Format */}
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <h2 className="text-xl font-bold flex items-center gap-2">
-            Slot Status — <span className="text-muted-foreground font-medium">{myStation?.name || "Initializing..."}</span>
+            Infrastructure Status — <span className="text-muted-foreground font-medium">{myStation?.name || "Initializing..."}</span>
           </h2>
           <div className="flex items-center gap-2 bg-secondary/20 p-1.5 rounded-xl border border-white/5">
             <div className="flex items-center px-3 border-r border-white/10 gap-2">
@@ -167,7 +169,7 @@ export function OperatorDashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {myChargers.length > 0 ? (
             myChargers.map((charger, idx) => (
               <Card key={charger.charger_id} className="border-none bg-[#1a1a1c] relative overflow-hidden group">
@@ -192,7 +194,7 @@ export function OperatorDashboard() {
 
                   <div className="flex items-center gap-2">
                     <Select 
-                      defaultValue={charger.status} 
+                      value={charger.status} 
                       onValueChange={(val) => handleStatusUpdate(charger.charger_id, val)}
                     >
                       <SelectTrigger className="h-9 bg-background/20 border-white/5 text-[10px] font-bold uppercase tracking-wider rounded-lg focus:ring-primary/20">
@@ -219,7 +221,7 @@ export function OperatorDashboard() {
           ) : (
             <div className="col-span-full py-20 text-center border border-dashed border-white/5 rounded-2xl bg-white/2">
               <Zap className="h-8 w-8 mx-auto mb-4 text-muted-foreground/20" />
-              <p className="text-sm text-muted-foreground">No chargers found for this station. Add slots to get started.</p>
+              <p className="text-sm text-muted-foreground">No charging slots found. Click "Add Slots" to initialize your infrastructure.</p>
             </div>
           )}
         </div>
@@ -227,7 +229,7 @@ export function OperatorDashboard() {
 
       {/* Weekly Earnings Chart */}
       <div className="space-y-4">
-        <h3 className="text-xl font-bold">Weekly Earnings</h3>
+        <h3 className="text-xl font-bold">Weekly Performance</h3>
         <Card className="border-none bg-[#1a1a1c] p-6 rounded-2xl">
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -264,13 +266,13 @@ export function OperatorDashboard() {
 
       {/* Recent Bookings Table */}
       <div className="space-y-4">
-        <h3 className="text-xl font-bold">Your Recent Bookings</h3>
+        <h3 className="text-xl font-bold">Recent Network Activity</h3>
         <Card className="border-none bg-[#1a1a1c] overflow-hidden rounded-2xl border border-white/5">
           <Table>
             <TableHeader>
               <TableRow className="border-white/5 bg-secondary/5">
                 <TableHead className="text-[10px] font-bold uppercase tracking-widest py-4">Customer</TableHead>
-                <TableHead className="text-[10px] font-bold uppercase tracking-widest py-4">Slot</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest py-4">Slot ID</TableHead>
                 <TableHead className="text-[10px] font-bold uppercase tracking-widest py-4">Time</TableHead>
                 <TableHead className="text-[10px] font-bold uppercase tracking-widest py-4">Status</TableHead>
                 <TableHead className="text-[10px] font-bold uppercase tracking-widest py-4 text-right">Amount</TableHead>
@@ -278,9 +280,9 @@ export function OperatorDashboard() {
             </TableHeader>
             <TableBody>
               {[
-                { customer: 'John Doe', slot: 'Slot 4', time: '14:30', status: 'Completed', amount: '$24.50' },
-                { customer: 'Sarah Miller', slot: 'Slot 1', time: '15:15', status: 'Active', amount: '$12.00' },
-                { customer: 'Alex Chen', slot: 'Slot 9', time: '16:00', status: 'Pending', amount: '$45.00' },
+                { customer: 'John Doe', slot: 'Slot 1', time: '14:30', status: 'Completed', amount: '$24.50' },
+                { customer: 'Sarah Miller', slot: 'Slot 2', time: '15:15', status: 'Active', amount: '$12.00' },
+                { customer: 'Alex Chen', slot: 'Slot 1', time: '16:00', status: 'Pending', amount: '$45.00' },
               ].map((booking, i) => (
                 <TableRow key={i} className="border-white/5 hover:bg-white/5 transition-colors">
                   <TableCell className="text-sm font-medium py-4">{booking.customer}</TableCell>

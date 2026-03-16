@@ -43,7 +43,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       try {
         const parsedUsers = JSON.parse(storedUsers);
         if (Array.isArray(parsedUsers)) {
-          // Merge mock users with stored users to ensure defaults always exist
           const mergedUsers = [...MOCK_USERS];
           parsedUsers.forEach((u: User) => {
             if (!mergedUsers.find(mu => mu.uid === u.uid || mu.email === u.email)) {
@@ -198,7 +197,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     setStations(prev => [...prev, newStation]);
     setUsers(prev => {
-      // Remove any existing user with this email before adding the new operator
       const filtered = prev.filter(u => u.email.toLowerCase() !== data.email.toLowerCase());
       return [...filtered, newOperator];
     });
