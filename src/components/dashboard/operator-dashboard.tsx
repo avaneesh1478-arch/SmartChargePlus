@@ -2,110 +2,245 @@
 
 import { useApp } from '@/hooks/use-store';
 import { StatCard } from './stat-card';
-import { Activity, Power, Settings, AlertTriangle, BatteryCharging, Zap, MapPin } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
+import { 
+  DollarSign, 
+  Users, 
+  Zap, 
+  Activity, 
+  Plus, 
+  Minus, 
+  MoreHorizontal,
+  Circle
+} from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer 
+} from 'recharts';
 import { toast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
+
+const earningsData = [
+  { day: '02-08', amount: 240 },
+  { day: '02-09', amount: 310 },
+  { day: '02-10', amount: 190 },
+  { day: '02-11', amount: 420 },
+  { day: '02-12', amount: 370 },
+  { day: '02-13', amount: 300 },
+  { day: '02-14', amount: 160 },
+];
 
 export function OperatorDashboard() {
-  const { user, stations, chargers, toggleCharger } = useApp();
+  const { user, stations, chargers, updateChargerStatus } = useApp();
 
-  const myStations = stations.filter(s => s.operator_id === user?.uid || user?.associated_station_id === s.station_id);
-  const myChargers = chargers.filter(c => myStations.some(s => s.station_id === c.station_id));
+  const myStation = stations.find(s => s.operator_id === user?.uid || user?.associated_station_id === s.station_id);
+  const myChargers = chargers.filter(c => c.station_id === myStation?.station_id);
 
-  const handleToggle = (chargerId: string, status: string) => {
-    toggleCharger(chargerId);
+  const handleStatusUpdate = (chargerId: string, newStatus: any) => {
+    updateChargerStatus(chargerId, newStatus);
     toast({
-      title: status === 'available' ? 'Charging Session Started' : 'Charging Session Stopped',
-      description: `Charger ${chargerId} remotely controlled successfully.`,
+      title: "Status Updated",
+      description: `Slot ${chargerId} is now ${newStatus}.`,
     });
   };
 
+  const activeSlotsCount = myChargers.filter(c => c.status === 'occupied').length;
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Station Console</h1>
-          <p className="text-muted-foreground text-sm">Managing {myStations.length} assigned locations.</p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="gap-2">
-            <Settings className="h-4 w-4" /> Config
-          </Button>
-          <Button size="sm" className="gap-2 bg-emerald-600 hover:bg-emerald-700">
-            <Activity className="h-4 w-4" /> Live Monitor
-          </Button>
-        </div>
+    <div className="space-y-8 max-w-7xl mx-auto">
+      <div className="space-y-1">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Operator Dashboard</h1>
+        <p className="text-muted-foreground text-sm">Manage your stations and track performance</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatCard title="Active Chargers" value={`${myChargers.filter(c => c.status === 'occupied').length}/${myChargers.length}`} icon={Activity} />
-        <StatCard title="Station Load" value="84%" icon={Zap} trend={{ value: 4, isUp: true }} />
-        <StatCard title="Alerts" value="0" icon={AlertTriangle} className="text-emerald-500" />
+      {/* Top Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard 
+          title="Weekly Revenue" 
+          value="$1988" 
+          icon={DollarSign} 
+          trend={{ value: 12, isUp: true }} 
+          iconClassName="bg-emerald-500/10"
+        />
+        <StatCard 
+          title="Total Sessions" 
+          value="138" 
+          icon={Users} 
+          trend={{ value: 8, isUp: true }} 
+          iconClassName="bg-emerald-500/10"
+        />
+        <StatCard 
+          title="Active Slots" 
+          value={`${activeSlotsCount}/${myChargers.length}`} 
+          subtext={myStation?.name || "Downtown Hub"} 
+          icon={Zap} 
+          iconClassName="bg-primary/10"
+        />
+        <StatCard 
+          title="Uptime" 
+          value="98.5%" 
+          trend={{ value: 0.5, isUp: true }} 
+          icon={Activity} 
+          iconClassName="bg-primary/10"
+        />
       </div>
 
-      <div className="space-y-4">
-        <h2 className="text-xl font-bold flex items-center gap-2">
-          <Zap className="h-5 w-5 text-primary" /> Active Stations
-        </h2>
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-          {myStations.map(station => (
-            <Card key={station.station_id} className="border-none bg-card/50 overflow-hidden">
-              <CardHeader className="flex flex-row items-start justify-between bg-secondary/20 p-6">
-                <div className="space-y-1">
-                  <CardTitle className="text-2xl">{station.name}</CardTitle>
-                  <CardDescription className="flex items-center gap-1">
-                    <MapPin className="h-3 w-3" /> {station.location}
-                  </CardDescription>
+      {/* Slot Status Grid */}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            Slot Status — <span className="text-muted-foreground font-medium">{myStation?.name || "Downtown EV Hub"}</span>
+          </h2>
+          <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold gap-1.5 px-4 h-9 rounded-lg">
+            <Plus className="h-4 w-4" /> Add Slot
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {myChargers.map((charger, idx) => (
+            <Card key={charger.charger_id} className="border-none bg-[#1a1a1c] relative overflow-hidden group">
+              {charger.status === 'occupied' && (
+                <div className="absolute top-3 right-3">
+                  <Circle className="h-2 w-2 fill-primary text-primary" />
                 </div>
-                <Badge className="success-badge">Operational</Badge>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  {myChargers.filter(c => c.station_id === station.station_id).map(charger => (
-                    <div key={charger.charger_id} className="bg-secondary/30 p-4 rounded-xl space-y-4 border border-border/50">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <BatteryCharging className={charger.status === 'occupied' ? "text-primary animate-pulse" : "text-muted-foreground"} />
-                          <span className="font-bold">{charger.charger_id}</span>
-                        </div>
-                        <Badge variant="outline" className={charger.status === 'available' ? 'success-badge' : 'warning-badge'}>
-                          {charger.status}
-                        </Badge>
-                      </div>
+              )}
+              <CardContent className="p-5 space-y-4">
+                <div className="space-y-1">
+                  <h4 className="font-bold text-foreground">Slot {idx + 1}</h4>
+                  <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                    {charger.type} - {charger.type === 'DCFC' ? '150kW' : '50kW'}
+                  </p>
+                  <p className={cn(
+                    "text-[10px] font-bold uppercase tracking-widest",
+                    charger.status === 'available' ? "text-muted-foreground/60" : "text-primary"
+                  )}>
+                    {charger.status}
+                  </p>
+                </div>
 
-                      <div className="space-y-1">
-                        <div className="flex justify-between text-xs mb-1">
-                          <span className="text-muted-foreground">Type: {charger.type}</span>
-                          <span className="font-mono">{charger.current_usage} kW</span>
-                        </div>
-                        <Progress value={charger.status === 'occupied' ? 75 : 0} className="h-1.5" />
-                      </div>
-
-                      <div className="flex gap-2">
-                        <Button
-                          variant={charger.status === 'available' ? 'default' : 'destructive'}
-                          size="sm"
-                          className="w-full gap-2"
-                          onClick={() => handleToggle(charger.charger_id, charger.status)}
-                        >
-                          <Power className="h-3 w-3" />
-                          {charger.status === 'available' ? 'Start' : 'Emergency Stop'}
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+                <div className="flex items-center gap-2">
+                  <Select 
+                    defaultValue={charger.status} 
+                    onValueChange={(val) => handleStatusUpdate(charger.charger_id, val)}
+                  >
+                    <SelectTrigger className="h-9 bg-background/20 border-white/5 text-[10px] font-bold uppercase tracking-wider rounded-lg focus:ring-primary/20">
+                      <SelectValue placeholder="Update Status" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#1a1a1c] border-white/10">
+                      <SelectItem value="available">Available</SelectItem>
+                      <SelectItem value="occupied">Occupied</SelectItem>
+                      <SelectItem value="offline">Offline</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg bg-red-500/5 hover:bg-red-500/10 text-red-500/50 hover:text-red-500 border border-red-500/10">
+                    <Minus className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
               </CardContent>
-              <CardFooter className="bg-secondary/10 px-6 py-4 flex justify-between border-t">
-                <span className="text-xs text-muted-foreground">Last heartbeat: 2 mins ago</span>
-                <Button variant="link" size="sm" className="text-primary text-xs h-auto p-0">View Detailed Analytics</Button>
-              </CardFooter>
             </Card>
           ))}
         </div>
+      </div>
+
+      {/* Weekly Earnings Chart */}
+      <div className="space-y-4">
+        <h3 className="text-xl font-bold">Weekly Earnings</h3>
+        <Card className="border-none bg-[#1a1a1c] p-6 rounded-2xl">
+          <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={earningsData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ffffff08" />
+                <XAxis 
+                  dataKey="day" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fill: '#666', fontSize: 10 }}
+                  dy={10}
+                />
+                <YAxis 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fill: '#666', fontSize: 10 }}
+                  dx={-10}
+                />
+                <Tooltip
+                  cursor={{ fill: '#ffffff05' }}
+                  contentStyle={{ backgroundColor: '#1a1a1c', border: '1px solid #ffffff10', borderRadius: '8px' }}
+                />
+                <Bar 
+                  dataKey="amount" 
+                  fill="hsl(var(--primary))" 
+                  radius={[4, 4, 0, 0]} 
+                  barSize={40}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+      </div>
+
+      {/* Recent Bookings Table */}
+      <div className="space-y-4">
+        <h3 className="text-xl font-bold">Your Recent Bookings</h3>
+        <Card className="border-none bg-[#1a1a1c] overflow-hidden rounded-2xl border border-white/5">
+          <Table>
+            <TableHeader>
+              <TableRow className="border-white/5 bg-secondary/5">
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest py-4">Customer</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest py-4">Slot</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest py-4">Time</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest py-4">Status</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest py-4 text-right">Amount</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {[
+                { customer: 'John Doe', slot: 'Slot 4', time: '14:30', status: 'Completed', amount: '$24.50' },
+                { customer: 'Sarah Miller', slot: 'Slot 1', time: '15:15', status: 'Active', amount: '$12.00' },
+                { customer: 'Alex Chen', slot: 'Slot 9', time: '16:00', status: 'Pending', amount: '$45.00' },
+              ].map((booking, i) => (
+                <TableRow key={i} className="border-white/5 hover:bg-white/5 transition-colors">
+                  <TableCell className="text-sm font-medium py-4">{booking.customer}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground py-4">{booking.slot}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground py-4">{booking.time}</TableCell>
+                  <TableCell className="py-4">
+                    <span className={cn(
+                      "text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border",
+                      booking.status === 'Completed' ? "success-badge" : 
+                      booking.status === 'Active' ? "bg-primary/10 text-primary border-primary/20" : 
+                      "warning-badge"
+                    )}>
+                      {booking.status}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-sm font-mono font-bold text-right py-4">{booking.amount}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
       </div>
     </div>
   );
