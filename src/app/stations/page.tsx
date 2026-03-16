@@ -1,3 +1,4 @@
+
 "use client";
 
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
@@ -10,7 +11,7 @@ import { Search, Filter, Map as MapIcon, Grid, Plus, MapPin, Zap } from 'lucide-
 import Image from 'next/image';
 
 export default function StationsPage() {
-  const { stations } = useApp();
+  const { stations, user } = useApp();
 
   return (
     <DashboardLayout>
@@ -25,7 +26,11 @@ export default function StationsPage() {
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Filter by location..." className="pl-9 h-9 w-[200px] bg-secondary/50 border-none" />
             </div>
-            <Button size="sm" className="bg-primary"><Plus className="h-4 w-4 mr-1" /> Add Station</Button>
+            {user?.role === 'ADMIN' && (
+              <Button size="sm" className="bg-primary">
+                <Plus className="h-4 w-4 mr-1" /> Add Station
+              </Button>
+            )}
           </div>
         </div>
 
