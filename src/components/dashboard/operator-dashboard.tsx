@@ -1,6 +1,7 @@
 
 "use client";
 
+import { useState } from 'react';
 import { useApp } from '@/hooks/use-store';
 import { StatCard } from './stat-card';
 import { 
@@ -14,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -47,6 +49,7 @@ const earningsData = [
 export function OperatorDashboard() {
   const { user, stations, chargers, updateChargerStatus, addSlot, removeSlot } = useApp();
   const { toast } = useToast();
+  const [bulkCount, setBulkCount] = useState<number>(1);
 
   const myStation = stations.find(s => s.operator_id === user?.uid || user?.associated_station_id === s.station_id);
   const myChargers = chargers.filter(c => c.station_id === myStation?.station_id);
@@ -69,11 +72,15 @@ export function OperatorDashboard() {
       return;
     }
     
-    addSlot(myStation.station_id);
+    const count = Math.max(1, bulkCount);
+    addSlot(myStation.station_id, count);
     toast({
-      title: "Slot Added",
-      description: "A new charging slot has been successfully added to your station.",
+      title: count > 1 ? "Slots Added" : "Slot Added",
+      description: count > 1 
+        ? `${count} new charging slots have been successfully added to your station.`
+        : "A new charging slot has been successfully added to your station.",
     });
+    setBulkCount(1);
   };
 
   const handleRemoveSlot = (chargerId: string) => {
@@ -127,17 +134,30 @@ export function OperatorDashboard() {
 
       {/* Slot Status Grid */}
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <h2 className="text-xl font-bold flex items-center gap-2">
             Slot Status — <span className="text-muted-foreground font-medium">{myStation?.name || "Downtown EV Hub"}</span>
           </h2>
-          <Button 
-            onClick={handleAddSlot}
-            size="sm" 
-            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold gap-1.5 px-4 h-9 rounded-lg"
-          >
-            <Plus className="h-4 w-4" /> Add Slot
-          </Button>
+          <div className="flex items-center gap-2 bg-secondary/20 p-1.5 rounded-xl border border-white/5">
+            <div className="flex items-center px-3 border-r border-white/10 gap-2">
+              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Qty</span>
+              <input 
+                type="number" 
+                min="1"
+                max="50"
+                value={bulkCount}
+                onChange={(e) => setBulkCount(parseInt(e.target.value) || 1)}
+                className="w-12 bg-transparent text-sm font-bold focus:outline-none text-primary"
+              />
+            </div>
+            <Button 
+              onClick={handleAddSlot}
+              size="sm" 
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold gap-1.5 px-4 h-9 rounded-lg"
+            >
+              <Plus className="h-4 w-4" /> Add Slots
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

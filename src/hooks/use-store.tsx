@@ -18,7 +18,7 @@ interface AppContextType {
   updateChargerStatus: (chargerId: string, status: Charger['status']) => void;
   addStation: (data: { name: string, email: string, address: string, chargingCost: number, lat: number, lng: number }) => void;
   removeStation: (stationId: string) => void;
-  addSlot: (stationId: string) => void;
+  addSlot: (stationId: string, count?: number) => void;
   removeSlot: (chargerId: string) => void;
 }
 
@@ -195,22 +195,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setChargers(prev => prev.filter(c => c.station_id !== stationId));
   };
 
-  const addSlot = (stationId: string) => {
-    const newSlotId = `ch-${stationId}-${Date.now()}`;
+  const addSlot = (stationId: string, count: number = 1) => {
+    const newChargers: Charger[] = [];
+    const timestamp = Date.now();
     
-    const newCharger: Charger = {
-      charger_id: newSlotId,
-      station_id: stationId,
-      type: 'Level 2',
-      current_usage: 0,
-      status: 'available',
-      rate_per_kwh: 0.35, 
-    };
+    for (let i = 0; i < count; i++) {
+      const newSlotId = `ch-${stationId}-${timestamp}-${i}`;
+      newChargers.push({
+        charger_id: newSlotId,
+        station_id: stationId,
+        type: 'Level 2',
+        current_usage: 0,
+        status: 'available',
+        rate_per_kwh: 0.35,
+      });
+    }
 
-    setChargers(prev => [...prev, newCharger]);
+    setChargers(prev => [...prev, ...newChargers]);
     setStations(prev => prev.map(s => 
       s.station_id === stationId 
-        ? { ...s, charger_count: s.charger_count + 1 } 
+        ? { ...s, charger_count: s.charger_count + count } 
         : s
     ));
   };
