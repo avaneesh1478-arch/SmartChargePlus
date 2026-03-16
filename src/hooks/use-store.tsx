@@ -1,4 +1,3 @@
-
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -43,7 +42,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     
     if (storedUsers) {
       try {
-        setUsers(JSON.parse(storedUsers));
+        const parsedUsers = JSON.parse(storedUsers);
+        if (Array.isArray(parsedUsers)) setUsers(parsedUsers);
       } catch (e) {
         console.error("Failed to parse stored users", e);
       }
@@ -51,7 +51,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     if (storedStations) {
       try {
-        setStations(JSON.parse(storedStations));
+        const parsedStations = JSON.parse(storedStations);
+        if (Array.isArray(parsedStations)) setStations(parsedStations);
       } catch (e) {
         console.error("Failed to parse stored stations", e);
       }
@@ -59,7 +60,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     if (storedChargers) {
       try {
-        setChargers(JSON.parse(storedChargers));
+        const parsedChargers = JSON.parse(storedChargers);
+        if (Array.isArray(parsedChargers)) setChargers(parsedChargers);
       } catch (e) {
         console.error("Failed to parse stored chargers", e);
       }
@@ -145,6 +147,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const addStation = (data: { name: string, email: string, address: string, chargingCost: number, lat: number, lng: number }) => {
     const newStationId = `st-${Date.now()}`;
+    const opUid = `op-${newStationId}`;
     
     const newStation: Station = {
       station_id: newStationId,
@@ -153,13 +156,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       lat: data.lat,
       lng: data.lng,
       status: 'active',
-      operator_id: `op-${newStationId}`,
+      operator_id: opUid,
       total_power: 150,
       charger_count: 2,
     };
 
     const newOperator: User = {
-      uid: `op-${newStationId}`,
+      uid: opUid,
       email: data.email.toLowerCase(),
       role: 'OPERATOR',
       associated_station_id: newStationId,
