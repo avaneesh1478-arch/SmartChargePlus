@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useApp } from '@/hooks/use-store';
@@ -9,7 +10,6 @@ import {
   Activity, 
   Plus, 
   Minus, 
-  MoreHorizontal,
   Circle
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -45,7 +45,7 @@ const earningsData = [
 ];
 
 export function OperatorDashboard() {
-  const { user, stations, chargers, updateChargerStatus, addSlot } = useApp();
+  const { user, stations, chargers, updateChargerStatus, addSlot, removeSlot } = useApp();
   const { toast } = useToast();
 
   const myStation = stations.find(s => s.operator_id === user?.uid || user?.associated_station_id === s.station_id);
@@ -55,7 +55,7 @@ export function OperatorDashboard() {
     updateChargerStatus(chargerId, newStatus);
     toast({
       title: "Status Updated",
-      description: `Slot ${chargerId} is now ${newStatus}.`,
+      description: `Slot is now ${newStatus}.`,
     });
   };
 
@@ -73,6 +73,14 @@ export function OperatorDashboard() {
     toast({
       title: "Slot Added",
       description: "A new charging slot has been successfully added to your station.",
+    });
+  };
+
+  const handleRemoveSlot = (chargerId: string) => {
+    removeSlot(chargerId);
+    toast({
+      title: "Slot Removed",
+      description: "The charging slot has been removed from your station.",
     });
   };
 
@@ -168,7 +176,12 @@ export function OperatorDashboard() {
                       <SelectItem value="offline">Offline</SelectItem>
                     </SelectContent>
                   </Select>
-                  <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg bg-red-500/5 hover:bg-red-500/10 text-red-500/50 hover:text-red-500 border border-red-500/10">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-9 w-9 rounded-lg bg-red-500/5 hover:bg-red-500/10 text-red-500/50 hover:text-red-500 border border-red-500/10"
+                    onClick={() => handleRemoveSlot(charger.charger_id)}
+                  >
                     <Minus className="h-3.5 w-3.5" />
                   </Button>
                 </div>

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -18,6 +19,7 @@ interface AppContextType {
   addStation: (data: { name: string, email: string, address: string, chargingCost: number, lat: number, lng: number }) => void;
   removeStation: (stationId: string) => void;
   addSlot: (stationId: string) => void;
+  removeSlot: (chargerId: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -213,6 +215,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     ));
   };
 
+  const removeSlot = (chargerId: string) => {
+    const chargerToRemove = chargers.find(c => c.charger_id === chargerId);
+    if (!chargerToRemove) return;
+
+    setChargers(prev => prev.filter(c => c.charger_id !== chargerId));
+    setStations(prev => prev.map(s => 
+      s.station_id === chargerToRemove.station_id 
+        ? { ...s, charger_count: Math.max(0, s.charger_count - 1) } 
+        : s
+    ));
+  };
+
   return (
     <AppContext.Provider value={{ 
       user, 
@@ -227,7 +241,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       updateChargerStatus,
       addStation,
       removeStation,
-      addSlot
+      addSlot,
+      removeSlot
     }}>
       {children}
     </AppContext.Provider>
