@@ -162,23 +162,12 @@ export default function Home() {
       <footer className="py-8 px-8 md:px-20 border-t border-white/5 flex flex-col md:flex-row items-center justify-between text-[10px] text-muted-foreground/60 uppercase tracking-widest bg-black">
         <div className="flex items-center gap-2">
           <Zap className="h-3 w-3 fill-primary/40 text-primary/40" />
-          <span>Smart Charge+ © 2024</span>
+          <span>Smart Charge+ © 2026</span>
         </div>
         <div className="mt-4 md:mt-0">
           Smart EV Charging Management
         </div>
       </footer>
-
-      {/* Floating Badge simulation */}
-      <div className="fixed bottom-6 right-6 z-50">
-        <div className="bg-black/80 backdrop-blur-md border border-white/10 px-3 py-1.5 rounded-lg flex items-center gap-2 text-[10px] text-white/50 shadow-2xl">
-          <span>Edit with</span>
-          <div className="flex items-center gap-1 font-bold text-white/90">
-             <div className="w-2 h-2 rounded-full bg-rose-500" /> Lovable
-          </div>
-          <button className="ml-1 hover:text-white">×</button>
-        </div>
-      </div>
     </div>
   );
 }
