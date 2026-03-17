@@ -3,16 +3,28 @@
 import { ReactNode } from 'react';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/app-sidebar';
-import { User, Bell, Search, Settings } from 'lucide-react';
+import { User, Bell, Search, Globe, Check } from 'lucide-react';
 import { useApp } from '@/hooks/use-store';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import Link from 'next/link';
 
 export function DashboardLayout({ children }: { children: ReactNode }) {
-  const { user } = useApp();
+  const { user, language, setLanguage } = useApp();
+
+  const languages = [
+    { id: 'en', name: 'English' },
+    { id: 'kn', name: 'ಕನ್ನಡ' },
+    { id: 'hi', name: 'हिन्दी' },
+  ] as const;
 
   return (
     <SidebarProvider>
@@ -31,10 +43,31 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" className="relative">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="text-muted-foreground">
+                  <Globe className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-card border-white/10 min-w-[150px] rounded-xl shadow-2xl">
+                {languages.map((lang) => (
+                  <DropdownMenuItem 
+                    key={lang.id} 
+                    onClick={() => setLanguage(lang.id)}
+                    className="flex items-center justify-between cursor-pointer focus:bg-primary/10 focus:text-primary py-2"
+                  >
+                    <span className="text-sm">{lang.name}</span>
+                    {language === lang.id && <Check className="h-4 w-4 text-primary" />}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Button variant="ghost" size="icon" className="relative text-muted-foreground">
               <Bell className="h-5 w-5" />
               <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-primary" />
             </Button>
+            
             <Link 
               href="/profile" 
               className="flex items-center gap-3 pl-2 border-l hover:opacity-80 transition-opacity"

@@ -3,16 +3,28 @@
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/hooks/use-store';
 import { Button } from '@/components/ui/button';
-import { Zap, Globe, User, MapPin, Clock, Shield, ChevronRight } from 'lucide-react';
+import { Zap, Globe, User, MapPin, Clock, Shield, ChevronRight, Check } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function Home() {
-  const { user } = useApp();
+  const { user, language, setLanguage, t } = useApp();
   const router = useRouter();
 
   const heroImage = PlaceHolderImages.find(img => img.id === 'hero-bg');
+
+  const languages = [
+    { id: 'en', name: 'English', label: 'English' },
+    { id: 'kn', name: 'ಕನ್ನಡ', label: 'Kannada' },
+    { id: 'hi', name: 'हिन्दी', label: 'Hindi' },
+  ] as const;
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground selection:bg-primary/30">
@@ -26,10 +38,27 @@ export default function Home() {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" className="text-xs bg-white/5 backdrop-blur-sm border border-white/10 rounded-full flex items-center gap-1">
-            <Globe className="h-3 w-3" />
-            English
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="text-xs bg-white/5 backdrop-blur-sm border border-white/10 rounded-full flex items-center gap-1 px-4">
+                <Globe className="h-3 w-3" />
+                {languages.find(l => l.id === language)?.name || 'Language'}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-black/90 border-white/10 text-white min-w-[150px] rounded-xl shadow-2xl backdrop-blur-md">
+              {languages.map((lang) => (
+                <DropdownMenuItem 
+                  key={lang.id} 
+                  onClick={() => setLanguage(lang.id)}
+                  className="flex items-center justify-between cursor-pointer focus:bg-primary/20 focus:text-primary transition-colors py-2"
+                >
+                  <span className="text-sm">{lang.name}</span>
+                  {language === lang.id && <Check className="h-4 w-4 text-primary" />}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-white/5 backdrop-blur-sm border border-white/10" asChild>
              <Link href={user ? "/dashboard" : "/login"}>
                 <User className="h-4 w-4" />
@@ -55,26 +84,29 @@ export default function Home() {
         </div>
 
         <div className="relative z-10 max-w-2xl space-y-6">
-          <p className="text-muted-foreground text-sm max-w-md leading-relaxed">
-            Real-time station availability, advance booking, and intelligent management — all in one platform.
+          <h1 className="text-6xl font-black tracking-tighter text-white">
+            {t.hero.title}
+          </h1>
+          <p className="text-muted-foreground text-lg max-w-md leading-relaxed">
+            {t.hero.subtitle}
           </p>
 
           <div className="flex flex-wrap gap-4 pt-4">
             <Button 
               size="lg" 
-              className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-8 rounded-xl h-12 shadow-xl shadow-primary/20"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-8 rounded-xl h-14 text-base shadow-xl shadow-primary/20"
               asChild
             >
-              <Link href="/stations">Find a Station</Link>
+              <Link href="/stations">{t.hero.findStation}</Link>
             </Button>
             <Button 
               variant="outline" 
               size="lg" 
-              className="bg-white/5 hover:bg-white/10 backdrop-blur-md border-white/10 text-white font-bold px-8 rounded-xl h-12"
+              className="bg-white/5 hover:bg-white/10 backdrop-blur-md border-white/10 text-white font-bold px-8 rounded-xl h-14 text-base"
               asChild
             >
               <Link href={user ? "/dashboard" : "/login"}>
-                {user ? "Go to Dashboard" : "Sign In"}
+                {user ? t.hero.goDashboard : t.nav.signIn}
               </Link>
             </Button>
           </div>
@@ -84,26 +116,26 @@ export default function Home() {
       {/* How It Works Section */}
       <section className="py-24 px-8 md:px-20 bg-black">
         <div className="text-center space-y-4 mb-16">
-          <h2 className="text-4xl font-bold tracking-tight">How It Works</h2>
-          <p className="text-muted-foreground">Three simple steps to smarter charging</p>
+          <h2 className="text-4xl font-bold tracking-tight">{t.howItWorks.title}</h2>
+          <p className="text-muted-foreground">{t.howItWorks.subtitle}</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {[
             {
               icon: MapPin,
-              title: "Find",
-              desc: "Search nearby charging stations with real-time availability"
+              title: t.howItWorks.find,
+              desc: t.howItWorks.findDesc
             },
             {
               icon: Clock,
-              title: "Book",
-              desc: "Reserve your slot in advance to skip the wait"
+              title: t.howItWorks.book,
+              desc: t.howItWorks.bookDesc
             },
             {
               icon: Zap,
-              title: "Charge",
-              desc: "Plug in and charge — track your session in real time"
+              title: t.howItWorks.charge,
+              desc: t.howItWorks.chargeDesc
             }
           ].map((step, i) => (
             <div key={i} className="dark-glass p-8 rounded-2xl border-white/5 space-y-6 text-center group hover:bg-white/5 transition-all">
@@ -122,25 +154,25 @@ export default function Home() {
       {/* Choose Your Portal Section */}
       <section className="py-24 px-8 md:px-20 bg-black border-t border-white/5">
         <div className="text-center space-y-4 mb-16">
-          <h2 className="text-4xl font-bold tracking-tight">Choose Your Portal</h2>
+          <h2 className="text-4xl font-bold tracking-tight">{t.portals.title}</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {[
             {
               icon: MapPin,
-              title: "EV Driver",
-              desc: "Find stations, book slots, and charge your vehicle effortlessly."
+              title: t.portals.driver,
+              desc: t.portals.driverDesc
             },
             {
               icon: Zap,
-              title: "Station Operator",
-              desc: "Manage your charging stations, slots, and track earnings."
+              title: t.portals.operator,
+              desc: t.portals.operatorDesc
             },
             {
               icon: Shield,
-              title: "System Admin",
-              desc: "Monitor the entire network, validate operators, and view analytics."
+              title: t.portals.admin,
+              desc: t.portals.adminDesc
             }
           ].map((portal, i) => (
             <Link href="/login" key={i} className="dark-glass p-8 rounded-2xl border-white/5 space-y-6 group hover:bg-white/5 transition-all cursor-pointer block">

@@ -49,7 +49,7 @@ import { cn, calculateDistance } from '@/lib/utils';
 import { format, parse, isValid } from 'date-fns';
 
 export function UserDashboard() {
-  const { user, stations, chargers, transactions } = useApp();
+  const { user, stations, chargers, transactions, t } = useApp();
   const { toast } = useToast();
   const [loadingAi, setLoadingAi] = useState(false);
   const [locating, setLocating] = useState(false);
@@ -226,8 +226,8 @@ export function UserDashboard() {
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Welcome, Driver</h1>
-          <p className="text-muted-foreground text-sm">Your EV charging ecosystem at a glance.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">{t.dashboard.welcomeUser}</h1>
+          <p className="text-muted-foreground text-sm">{t.dashboard.ecoSystem}</p>
         </div>
         <div className="flex gap-3">
           <Button variant="outline" size="sm" className="gap-2 bg-secondary/20 border-white/5">
@@ -240,9 +240,9 @@ export function UserDashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatCard title="Wallet Balance" value={`$${user?.wallet_balance?.toFixed(2) || '0.00'}`} icon={Wallet} />
-        <StatCard title="Last Session" value="45.2 kWh" subtext="Downtown Hub" icon={Zap} />
-        <StatCard title="Nearby Active" value={stations.filter(s => s.status === 'active').length} icon={Navigation} />
+        <StatCard title={t.dashboard.wallet} value={`$${user?.wallet_balance?.toFixed(2) || '0.00'}`} icon={Wallet} />
+        <StatCard title={t.dashboard.lastSession} value="45.2 kWh" subtext="Downtown Hub" icon={Zap} />
+        <StatCard title={t.dashboard.nearbyActive} value={stations.filter(s => s.status === 'active').length} icon={Navigation} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

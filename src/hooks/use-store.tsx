@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User, Station, Charger, Transaction } from '@/types';
 import { MOCK_USERS, MOCK_STATIONS, MOCK_CHARGERS, MOCK_TRANSACTIONS } from '@/lib/mock-data';
+import { translations, Language } from '@/lib/translations';
 
 interface AppContextType {
   user: User | null;
@@ -10,6 +11,9 @@ interface AppContextType {
   chargers: Charger[];
   transactions: Transaction[];
   users: User[];
+  language: Language;
+  setLanguage: (lang: Language) => void;
+  t: any;
   login: (email: string) => void;
   signup: (email: string, fullName: string) => void;
   logout: () => void;
@@ -30,6 +34,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [chargers, setChargers] = useState<Charger[]>(MOCK_CHARGERS);
   const [transactions, setTransactions] = useState<Transaction[]>(MOCK_TRANSACTIONS);
   const [users, setUsers] = useState<User[]>(MOCK_USERS);
+  const [language, setLanguageState] = useState<Language>('en');
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
@@ -39,7 +44,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const storedUsers = localStorage.getItem('volta_all_users');
     const storedStations = localStorage.getItem('volta_stations');
     const storedChargers = localStorage.getItem('volta_chargers');
+    const storedLang = localStorage.getItem('volta_lang') as Language;
     
+    if (storedLang && ['en', 'kn', 'hi'].includes(storedLang)) {
+      setLanguageState(storedLang);
+    }
+
     if (storedUsers) {
       try {
         const parsedUsers = JSON.parse(storedUsers);
@@ -86,6 +96,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     
     setIsLoaded(true);
   }, []);
+
+  const setLanguage = (lang: Language) => {
+    setLanguageState(lang);
+    localStorage.setItem('volta_lang', lang);
+  };
+
+  const t = translations[language];
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -261,6 +278,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       chargers, 
       transactions, 
       users,
+      language,
+      setLanguage,
+      t,
       login, 
       signup,
       logout, 
