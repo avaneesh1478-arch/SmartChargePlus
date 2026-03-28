@@ -195,11 +195,12 @@ export default function StationsPage() {
                     </div>
                   </div>
 
+                  {/* Trace Button Area */}
                   <div className="mt-4 flex justify-end">
                     <Button 
                       size="sm" 
                       variant="outline" 
-                      className="bg-white/5 border-white/10 hover:bg-white/10 text-white font-bold h-9 px-4 rounded-xl gap-2 text-xs"
+                      className="bg-primary/10 border-primary/20 hover:bg-primary text-primary hover:text-white font-bold h-9 px-6 rounded-xl gap-2 text-xs transition-all shadow-lg shadow-primary/5"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleGetDirections(station);
