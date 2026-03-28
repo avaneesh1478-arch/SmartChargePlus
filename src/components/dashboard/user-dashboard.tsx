@@ -19,7 +19,9 @@ import {
   ChevronDown,
   X,
   LocateFixed,
-  Loader2
+  Loader2,
+  Map as MapIcon,
+  Circle
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -116,6 +118,20 @@ export function UserDashboard() {
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
+  };
+
+  const handleGetDirections = (station: Station) => {
+    if (!userLocation) {
+      toast({
+        title: "Location Required",
+        description: "Please trace your live location first to generate accurate directions.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    const url = `https://www.google.com/maps/dir/?api=1&origin=${userLocation.lat},${userLocation.lng}&destination=${station.lat},${station.lng}&travelmode=driving`;
+    window.open(url, '_blank');
   };
 
   // Sync dateInput when bookingDate changes via calendar
@@ -223,7 +239,7 @@ export function UserDashboard() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 max-w-7xl mx-auto">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">{t.dashboard.welcomeUser}</h1>
@@ -247,236 +263,212 @@ export function UserDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
-          {/* Near Station Suggestion */}
-          <Card className="border-none bg-[#1a1a1c] border-white/5 overflow-hidden">
+          {/* Near Station Suggestion Card Redesign */}
+          <Card className="border-none bg-[#1a1a1c] border-white/5 overflow-hidden rounded-[2.5rem]">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <LocateFixed className="h-5 w-5 text-primary" />
                   <div>
-                    <CardTitle className="text-lg">Near Station Suggestion</CardTitle>
-                    <CardDescription className="text-xs text-muted-foreground/60">Trace available stations relative to your live position</CardDescription>
+                    <CardTitle className="text-lg">Navigation Center</CardTitle>
+                    <CardDescription className="text-xs text-muted-foreground/60">Live geographical mapping & routing</CardDescription>
                   </div>
                 </div>
-                <Button 
-                  size="sm" 
-                  onClick={() => handleGetLocation()}
-                  disabled={locating}
-                  className="bg-primary/20 text-primary hover:bg-primary/30 font-bold border border-primary/20 gap-2"
-                >
-                  {locating ? (
-                    <>
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                      Tracing...
-                    </>
-                  ) : (
-                    "Find Near Station"
-                  )}
-                </Button>
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {userLocation ? (
-                  nearbyStations.map((station) => (
-                    <div 
-                      key={station.station_id} 
-                      className="bg-background/40 p-4 rounded-2xl border border-white/5 flex items-center justify-between hover:bg-background/60 transition-colors group cursor-pointer"
-                      onClick={() => handleOpenBooking(station)}
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="h-10 w-10 bg-secondary/30 rounded-full flex items-center justify-center">
-                          <MapPin className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-bold group-hover:text-primary transition-colors">{station.name}</h4>
-                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{station.location}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-bold text-primary">{station.distance.toFixed(1)} km</p>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-7 text-[10px] px-2 font-bold hover:text-primary"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenBooking(station);
-                          }}
-                        >
-                          Quick Book
-                        </Button>
-                      </div>
+            <CardContent className="min-h-[400px] flex flex-col items-center justify-center p-8 relative">
+              <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
+              
+              {userLocation ? (
+                <div className="w-full space-y-6 z-10">
+                  <div className="bg-[#111113]/80 backdrop-blur-md border border-white/10 rounded-3xl p-5 flex flex-col items-center gap-4 shadow-2xl max-w-sm mx-auto">
+                    <div className="flex items-center gap-4 w-full">
+                       <div className="h-12 w-12 rounded-2xl bg-emerald-500/20 flex items-center justify-center shrink-0">
+                          <LocateFixed className="h-6 w-6 text-emerald-500 animate-pulse" />
+                       </div>
+                       <div className="flex-1">
+                          <p className="text-xs font-black text-white uppercase tracking-widest">Live Tracking Active</p>
+                          <p className="text-[10px] text-muted-foreground font-medium">Signal: High Precision</p>
+                       </div>
                     </div>
-                  ))
-                ) : (
-                  <div className="text-center py-12 bg-white/5 rounded-2xl border border-dashed border-white/10 space-y-3">
-                    <LocateFixed className="h-8 w-8 mx-auto text-muted-foreground/20" />
-                    <p className="text-xs text-muted-foreground max-w-xs mx-auto">
-                      Click "Find Near Station" to grant location access and trace your distance to available hubs.
-                    </p>
+                    <div className="bg-black/40 px-6 py-2 rounded-full border border-white/5 font-mono text-[10px] text-primary/80 font-bold">
+                      {userLocation.lat.toFixed(6)}, {userLocation.lng.toFixed(6)}
+                    </div>
                   </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
 
-          {/* Smart Recommendation */}
-          <Card className="border-none bg-[#1a1a1c] border-white/5 overflow-hidden">
-            <CardHeader className="pb-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2 text-primary">
-                    <Sparkles className="h-5 w-5" /> Smart Recommendation
-                  </CardTitle>
-                  <CardDescription className="text-muted-foreground/60">AI-powered optimal station matching</CardDescription>
-                </div>
-                <Button
-                  onClick={getAiRecommendations}
-                  disabled={loadingAi}
-                  size="sm"
-                  className="bg-primary/20 text-primary hover:bg-primary/30 font-bold border border-primary/20"
-                >
-                  {loadingAi ? "Analyzing..." : "Find Best Station"}
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {recommendations.length > 0 ? (
-                  recommendations.map((rec, i) => {
-                    const station = stations.find(s => s.station_id === rec.station_id);
-                    return (
+                  <div className="space-y-3">
+                    {nearbyStations.map((station) => (
                       <div 
-                        key={i} 
-                        className="bg-background/40 p-5 rounded-2xl border border-white/5 flex gap-4 items-start hover:bg-background/60 transition-colors cursor-pointer"
-                        onClick={() => station && handleOpenBooking(station)}
+                        key={station.station_id} 
+                        className="bg-background/40 p-4 rounded-2xl border border-white/5 flex items-center justify-between hover:bg-background/60 transition-all cursor-pointer group"
+                        onClick={() => handleOpenBooking(station)}
                       >
-                        <div className="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center shrink-0 border border-primary/10">
-                          <Navigation className="h-6 w-6 text-primary" />
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors">{rec.station_name}</h4>
-                          <p className="text-sm text-muted-foreground leading-relaxed mt-1">{rec.reason}</p>
-                          <div className="flex gap-3 mt-4">
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              className="h-8 text-xs px-4 rounded-lg bg-white/5 border-white/10"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              Directions
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              className="h-8 text-xs px-4 font-bold rounded-lg teal-gradient-btn"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (station) handleOpenBooking(station);
-                              }}
-                            >
-                              Reserve Spot
-                            </Button>
+                        <div className="flex items-center gap-4">
+                          <div className="h-10 w-10 bg-secondary/30 rounded-full flex items-center justify-center">
+                            <MapPin className="h-5 w-5 text-muted-foreground group-hover:text-primary" />
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-bold group-hover:text-primary">{station.name}</h4>
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{station.location}</p>
                           </div>
                         </div>
+                        <div className="text-right">
+                          <p className="text-sm font-black text-primary">{station.distance.toFixed(1)} km</p>
+                        </div>
                       </div>
-                    );
-                  })
-                ) : (
-                  <div className="text-center py-10 text-muted-foreground bg-white/5 rounded-2xl border border-dashed border-white/10">
-                    <Sparkles className="h-8 w-8 mx-auto mb-3 opacity-20" />
-                    <p className="text-sm">Get personalized AI suggestions for your current trip.</p>
+                    ))}
                   </div>
-                )}
-              </div>
+                </div>
+              ) : (
+                <div className="text-center z-10 space-y-10">
+                   <div className="relative mx-auto w-20 h-20">
+                    <div className="absolute inset-0 bg-primary/20 rounded-full animate-ping opacity-30" />
+                    <div className="relative bg-[#111113] w-20 h-20 rounded-[1.5rem] flex items-center justify-center border border-white/10 shadow-xl">
+                      <MapIcon className="h-8 w-8 text-primary" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-black tracking-tight uppercase text-muted-foreground/40">Navigation Center</h3>
+                    <p className="text-xs text-muted-foreground max-w-[240px] mx-auto leading-relaxed">
+                      Select a charging station from the list and click Trace to start your real-time journey guidance.
+                    </p>
+                  </div>
+
+                  <div className="bg-[#111113]/80 backdrop-blur-md border border-white/10 rounded-3xl p-6 flex flex-col items-center gap-6 shadow-2xl max-w-sm mx-auto">
+                    <div className="flex items-center gap-4 w-full text-left">
+                       <div className="h-12 w-12 rounded-2xl bg-indigo-500/20 flex items-center justify-center shrink-0">
+                          <LocateFixed className="h-6 w-6 text-indigo-500" />
+                       </div>
+                       <div className="flex-1">
+                          <p className="text-xs font-black text-white uppercase tracking-widest">GPS REQUIRED</p>
+                          <p className="text-[10px] text-muted-foreground font-medium">Enable location to view live distances.</p>
+                       </div>
+                    </div>
+                    <Button 
+                      onClick={() => handleGetLocation()}
+                      disabled={locating}
+                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11 rounded-xl gap-2 shadow-lg shadow-indigo-500/20"
+                    >
+                      {locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Navigation className="h-4 w-4" />}
+                      Activate GPS
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
+          {/* Discover and Book Section Redesign */}
           <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <h3 className="text-2xl font-black tracking-tight text-white">Smart Search</h3>
+              <Badge className="bg-primary/20 text-primary border-none rounded-full px-3 py-1 font-bold text-[10px] uppercase tracking-widest flex items-center gap-1.5">
+                <Sparkles className="h-3 w-3 fill-primary" /> AI Optimal
+              </Badge>
+            </div>
+            
             <div className="space-y-4">
-              <h3 className="text-xl font-bold text-foreground">Discover and Book available Chargers nearby</h3>
-              <div className="flex gap-3">
-                <div className="relative flex-1">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    placeholder="Search stations..." 
-                    className="pl-11 h-12 bg-[#1a1a1c] border-none rounded-xl focus-visible:ring-primary/40 placeholder:text-muted-foreground/40"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-                <Button variant="secondary" className="h-12 bg-[#1a1a1c] hover:bg-[#252528] rounded-xl border-none px-6 text-muted-foreground gap-2">
-                  <SlidersHorizontal className="h-4 w-4" />
-                  All Types
+              <div className="relative group">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                <Input 
+                  placeholder="Search stations or cities..." 
+                  className="h-14 pl-12 bg-[#1a1a1c] border-white/5 rounded-2xl text-base focus-visible:ring-primary/40 placeholder:text-muted-foreground/40"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+
+              <div className="flex items-center gap-3">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => handleGetLocation()}
+                  className="rounded-full px-6 font-bold h-10 gap-2 bg-white/5 border-white/10 text-white hover:bg-white/10"
+                >
+                  <LocateFixed className="h-4 w-4" />
+                  Find Nearby
                 </Button>
+                <Button variant="secondary" className="rounded-full px-6 h-10 font-bold bg-indigo-600 text-white hover:bg-indigo-700">All</Button>
+                <Button variant="ghost" className="rounded-full px-6 h-10 font-bold text-muted-foreground">DC Fast</Button>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 gap-4">
               {filteredStations.length > 0 ? (
-                filteredStations.map(station => {
+                filteredStations.map((station, idx) => {
                   const stationChargers = chargers.filter(c => c.station_id === station.station_id);
-                  const availableCount = stationChargers.filter(c => c.status === 'available').length;
-                  const totalCount = stationChargers.length;
                   const rate = stationChargers[0]?.rate_per_kwh || 0.35;
+                  const distance = userLocation ? calculateDistance(userLocation.lat, userLocation.lng, station.lat, station.lng) : null;
                   
                   return (
                     <Card 
                       key={station.station_id} 
-                      className="border-none bg-[#111113] hover:bg-[#151517] transition-all rounded-2xl overflow-hidden group border border-white/5 cursor-pointer"
+                      className="border-none bg-[#1a1a1c] hover:bg-[#202022] transition-all cursor-pointer rounded-2xl relative overflow-hidden group border border-white/5"
                       onClick={() => handleOpenBooking(station)}
                     >
-                      <CardContent className="p-6">
-                        <div className="flex justify-between items-start mb-4">
-                          <div className="space-y-1">
-                            <h4 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors">{station.name}</h4>
-                            <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                              <MapPin className="h-3 w-3" /> {station.location}
-                            </p>
+                      <CardContent className="p-5">
+                        <div className="flex gap-5">
+                          {/* Visual Placeholder */}
+                          <div className="h-24 w-24 rounded-2xl bg-secondary/30 flex items-center justify-center shrink-0 border border-white/5 group-hover:bg-primary/5 transition-colors">
+                            <Zap className="h-10 w-10 text-muted-foreground/30 group-hover:text-primary/40 transition-colors" />
                           </div>
-                          <div className="flex items-center gap-2">
-                             <div className="bg-secondary/40 p-1.5 rounded-full">
-                                <BellOff className="h-3.5 w-3.5 text-muted-foreground/50" />
-                             </div>
-                             <div className="flex items-center gap-1 bg-secondary/40 px-2 py-1 rounded-full text-[10px] font-bold">
-                                <Star className="h-3 w-3 text-white fill-white" />
-                                <span>5</span>
-                             </div>
+
+                          <div className="flex-1 space-y-3 relative">
+                            {/* Distance Badge */}
+                            <div className="absolute top-0 right-0">
+                              <Badge className="bg-emerald-500/10 text-emerald-500 border-none px-3 py-0.5 rounded-full font-bold text-[10px]">
+                                {distance ? `${distance.toFixed(1)} km` : '---'}
+                              </Badge>
+                            </div>
+
+                            <div className="space-y-1">
+                              <h4 className="font-bold text-xl text-white group-hover:text-primary transition-colors">{station.name}</h4>
+                              <p className="text-sm text-muted-foreground flex items-center gap-1.5 font-medium">
+                                <MapPin className="h-3 w-3" /> {station.location}
+                              </p>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                              <Badge className="bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[10px] font-bold rounded-lg px-2.5 py-1">
+                                ₹{rate.toFixed(2)}/kWh
+                              </Badge>
+                              <Badge className="bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[10px] font-bold rounded-lg px-2.5 py-1 flex items-center gap-1">
+                                <Star className="h-3 w-3 fill-emerald-500" /> 4.5
+                              </Badge>
+                            </div>
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4 mb-6">
-                           <div className="flex items-center gap-2 text-sm">
-                              <Zap className="h-4 w-4 text-muted-foreground" />
-                              <span className="font-medium">{availableCount}/{totalCount} available</span>
-                           </div>
-                           <div className="flex items-center gap-2 text-sm">
-                              <Clock className="h-4 w-4 text-muted-foreground" />
-                              <span className="font-medium">${rate.toFixed(2)}/kWh</span>
-                           </div>
+                        {/* Trace Button Area */}
+                        <div className="mt-4 flex justify-end">
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="bg-transparent border-white/10 hover:border-primary hover:text-primary text-muted-foreground font-bold h-10 px-8 rounded-xl gap-2 text-xs transition-all shadow-lg shadow-black/20"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleGetDirections(station);
+                            }}
+                          >
+                            <Navigation className="h-4 w-4" /> Trace
+                          </Button>
                         </div>
-
-                        <div className="flex gap-2 mb-6">
-                          <Badge variant="secondary" className="bg-[#1c1c1f] text-[10px] py-1 px-3 rounded-lg border-none hover:bg-[#1c1c1f]">CCS</Badge>
-                          <Badge variant="secondary" className="bg-[#1c1c1f] text-[10px] py-1 px-3 rounded-lg border-none hover:bg-[#1c1c1f]">Type 2</Badge>
-                        </div>
-
-                        <Button 
-                          type="button"
-                          className="w-full teal-gradient-btn h-12 font-bold rounded-xl shadow-lg shadow-primary/10"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenBooking(station);
-                          }}
-                        >
-                          Book Now
-                        </Button>
                       </CardContent>
+
+                      {/* Top Right Recommended Badge Simulation */}
+                      {idx === 0 && (
+                        <div className="absolute top-0 right-0 h-10 w-32 overflow-hidden pointer-events-none">
+                           <div className="bg-emerald-500 text-white text-[8px] font-black uppercase tracking-tighter text-center py-1 absolute top-2 -right-8 w-40 rotate-45 shadow-lg">
+                             Recommended
+                           </div>
+                        </div>
+                      )}
                     </Card>
                   );
                 })
               ) : (
-                <div className="col-span-full py-16 text-center text-muted-foreground bg-white/5 rounded-2xl border border-dashed border-white/10">
+                <div className="py-20 text-center text-muted-foreground bg-white/5 rounded-2xl border border-dashed border-white/10">
                   No stations matching your search.
                 </div>
               )}
