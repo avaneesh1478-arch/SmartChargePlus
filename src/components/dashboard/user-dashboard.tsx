@@ -11,8 +11,6 @@ import {
   MapPin, 
   Zap, 
   Search, 
-  SlidersHorizontal, 
-  BellOff, 
   Star, 
   Clock, 
   Calendar as CalendarIcon,
@@ -20,8 +18,7 @@ import {
   X,
   LocateFixed,
   Loader2,
-  Map as MapIcon,
-  Circle
+  Navigation2
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -70,101 +67,46 @@ export function UserDashboard() {
   const [bookingTime, setBookingTime] = useState('15:30');
   const [bookingDuration, setBookingDuration] = useState('1');
 
-  // Initialize and get live location
   useEffect(() => {
     const today = new Date();
     setBookingDate(today);
     setDateInput(format(today, 'yyyy-MM-dd'));
-    handleGetLocation(false); // Silent check on mount
   }, []);
 
-  const handleGetLocation = (showToast = true) => {
+  const handleGetLocation = () => {
     if (!("geolocation" in navigator)) {
-      if (showToast) {
-        toast({ 
-          variant: "destructive", 
-          title: "Browser Unsupported", 
-          description: "Your browser does not support geolocation services." 
-        });
-      }
+      toast({ variant: "destructive", title: "Unsupported", description: "Browser does not support geolocation." });
       return;
     }
-
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setUserLocation({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
-        });
+        setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
         setLocating(false);
-        if (showToast) {
-          toast({ 
-            title: "Location Traced", 
-            description: "Successfully updated your live position. Nearby stations refreshed." 
-          });
-        }
+        toast({ title: "Location Updated", description: "Tracing your nearby stations..." });
       },
-      (error) => {
+      () => {
         setLocating(false);
-        console.warn("Geolocation error:", error.message);
-        if (showToast) {
-          toast({ 
-            variant: "destructive", 
-            title: "Location Access Denied", 
-            description: "Please enable location services to find nearby stations." 
-          });
-        }
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
+        toast({ variant: "destructive", title: "Error", description: "Could not access location." });
+      }
     );
   };
 
   const handleGetDirections = (station: Station) => {
-    if (!userLocation) {
-      toast({
-        title: "Location Required",
-        description: "Please trace your live location first to generate accurate directions.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    const url = `https://www.google.com/maps/dir/?api=1&origin=${userLocation.lat},${userLocation.lng}&destination=${station.lat},${station.lng}&travelmode=driving`;
+    const origin = userLocation ? `${userLocation.lat},${userLocation.lng}` : "Current+Location";
+    const url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${station.lat},${station.lng}&travelmode=driving`;
     window.open(url, '_blank');
   };
 
-  // Sync dateInput when bookingDate changes via calendar
   useEffect(() => {
-    if (bookingDate) {
-      setDateInput(format(bookingDate, 'yyyy-MM-dd'));
-    }
+    if (bookingDate) setDateInput(format(bookingDate, 'yyyy-MM-dd'));
   }, [bookingDate]);
-
-  const nearbyStations = useMemo(() => {
-    if (!userLocation) return [];
-    
-    return stations
-      .map(station => ({
-        ...station,
-        distance: calculateDistance(
-          userLocation.lat, 
-          userLocation.lng, 
-          station.lat, 
-          station.lng
-        )
-      }))
-      .sort((a, b) => a.distance - b.distance)
-      .slice(0, 3);
-  }, [stations, userLocation]);
 
   const handleDateInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setDateInput(val);
     const parsed = parse(val, 'yyyy-MM-dd', new Date());
-    if (isValid(parsed)) {
-      setBookingDate(parsed);
-    }
+    if (isValid(parsed)) setBookingDate(parsed);
   };
 
   const getAiRecommendations = async () => {
@@ -174,14 +116,12 @@ export function UserDashboard() {
         const stationChargers = chargers.filter(c => c.station_id === s.station_id);
         const occupied = stationChargers.filter(c => c.status === 'occupied').length;
         const total = stationChargers.length;
-        const load = total > 0 ? (occupied / total) * 100 : 0;
-        
         return {
           station_id: s.station_id,
           name: s.name,
           location: s.location,
           charger_types: ['Level 2', 'DCFC'] as ('Level 2' | 'DCFC')[],
-          current_load_percentage: load,
+          current_load_percentage: total > 0 ? (occupied / total) * 100 : 0,
           rate_per_kwh: stationChargers[0]?.rate_per_kwh || 0.35
         };
       });
@@ -197,17 +137,21 @@ export function UserDashboard() {
       setRecommendations(res.recommendations);
       toast({ title: "AI Recommendations Ready", description: "Found the best stations for your current trip." });
     } catch (e) {
-      console.error("AI Error:", e);
       toast({ title: "AI Error", description: "Could not generate recommendations.", variant: "destructive" });
     } finally {
       setLoadingAi(false);
     }
   };
 
-  const filteredStations = stations.filter(s => 
-    s.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    s.location.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredStations = useMemo(() => {
+    return stations
+      .filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()) || s.location.toLowerCase().includes(searchQuery.toLowerCase()))
+      .map(s => ({
+        ...s,
+        distance: userLocation ? calculateDistance(userLocation.lat, userLocation.lng, s.lat, s.lng) : null
+      }))
+      .sort((a, b) => (a.distance || 0) - (b.distance || 0));
+  }, [stations, searchQuery, userLocation]);
 
   const handleOpenBooking = (station: Station) => {
     setSelectedStation(station);
@@ -224,7 +168,7 @@ export function UserDashboard() {
     }
     toast({ 
       title: "Booking Confirmed!", 
-      description: `Reserved ${selectedStation?.name} for ${bookingDuration} hour(s) on ${bookingDate ? format(bookingDate, 'PPP') : 'selected date'} at ${bookingTime}.` 
+      description: `Reserved ${selectedStation?.name} for ${bookingDuration} hour(s) at ${bookingTime}.` 
     });
     setIsBookingOpen(false);
   };
@@ -233,10 +177,62 @@ export function UserDashboard() {
     if (!selectedStation) return "0.00";
     const charger = chargers.find(c => c.charger_id === selectedChargerId);
     const rate = charger?.rate_per_kwh || 0.45;
-    const durationHours = parseInt(bookingDuration);
-    const avgConsumption = charger?.type === 'DCFC' ? 40 : 7;
-    return (rate * avgConsumption * durationHours).toFixed(2);
+    return (rate * (charger?.type === 'DCFC' ? 40 : 7) * parseInt(bookingDuration)).toFixed(2);
   };
+
+  const renderStationCard = (station: any, isAi = false) => (
+    <Card 
+      key={station.station_id} 
+      className="border-none bg-[#1a1a1c] hover:bg-[#202022] transition-all cursor-pointer rounded-2xl relative overflow-hidden group border border-white/5"
+      onClick={() => handleOpenBooking(station as Station)}
+    >
+      <CardContent className="p-5">
+        <div className="flex gap-5">
+          <div className="h-20 w-20 rounded-2xl bg-secondary/30 flex items-center justify-center shrink-0 border border-white/5 group-hover:bg-primary/5 transition-colors">
+            <Zap className="h-8 w-8 text-muted-foreground/30 group-hover:text-primary/40 transition-colors" />
+          </div>
+
+          <div className="flex-1 space-y-2 relative">
+            <div className="absolute top-0 right-0">
+              <Badge className="bg-emerald-500/10 text-emerald-500 border-none px-3 py-0.5 rounded-full font-bold text-[10px]">
+                {station.distance ? `${station.distance.toFixed(1)} km` : '---'}
+              </Badge>
+            </div>
+
+            <div className="space-y-0.5">
+              <h4 className="font-bold text-base text-white group-hover:text-primary transition-colors">{station.name || station.station_name}</h4>
+              <p className="text-[10px] text-muted-foreground flex items-center gap-1 font-medium">
+                <MapPin className="h-3 w-3" /> {station.location || 'Network Station'}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-500">
+                <Star className="h-3 w-3 fill-emerald-500" /> 4.5
+              </div>
+              {isAi && station.reason && (
+                <p className="text-[9px] text-primary font-medium italic line-clamp-1">"{station.reason}"</p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 flex justify-end">
+          <Button 
+            size="sm" 
+            variant="outline" 
+            className="bg-primary/10 border-primary/20 hover:bg-primary text-primary hover:text-white font-bold h-8 px-6 rounded-xl gap-2 text-[10px] transition-all"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleGetDirections(station as Station);
+            }}
+          >
+            <Navigation2 className="h-3 w-3" /> Trace
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
@@ -246,10 +242,10 @@ export function UserDashboard() {
           <p className="text-muted-foreground text-sm">{t.dashboard.ecoSystem}</p>
         </div>
         <div className="flex gap-3">
-          <Button variant="outline" size="sm" className="gap-2 bg-secondary/20 border-white/5">
+          <Button variant="outline" size="sm" className="gap-2 bg-secondary/20 border-white/5 h-10 px-4">
             <History className="h-4 w-4" /> History
           </Button>
-          <Button size="sm" className="teal-gradient-btn font-bold">
+          <Button size="sm" className="teal-gradient-btn font-bold h-10 px-6">
             <Wallet className="h-4 w-4" /> Top Up
           </Button>
         </div>
@@ -263,221 +259,71 @@ export function UserDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
-          {/* Near Station Suggestion Card Redesign */}
-          <Card className="border-none bg-[#1a1a1c] border-white/5 overflow-hidden rounded-[2.5rem]">
-            <CardHeader className="pb-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <LocateFixed className="h-5 w-5 text-primary" />
-                  <div>
-                    <CardTitle className="text-lg">Navigation Center</CardTitle>
-                    <CardDescription className="text-xs text-muted-foreground/60">Live geographical mapping & routing</CardDescription>
-                  </div>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="min-h-[400px] flex flex-col items-center justify-center p-8 relative">
-              <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
-              
-              {userLocation ? (
-                <div className="w-full space-y-6 z-10">
-                  <div className="bg-[#111113]/80 backdrop-blur-md border border-white/10 rounded-3xl p-5 flex flex-col items-center gap-4 shadow-2xl max-w-sm mx-auto">
-                    <div className="flex items-center gap-4 w-full">
-                       <div className="h-12 w-12 rounded-2xl bg-emerald-500/20 flex items-center justify-center shrink-0">
-                          <LocateFixed className="h-6 w-6 text-emerald-500 animate-pulse" />
-                       </div>
-                       <div className="flex-1">
-                          <p className="text-xs font-black text-white uppercase tracking-widest">Live Tracking Active</p>
-                          <p className="text-[10px] text-muted-foreground font-medium">Signal: High Precision</p>
-                       </div>
-                    </div>
-                    <div className="bg-black/40 px-6 py-2 rounded-full border border-white/5 font-mono text-[10px] text-primary/80 font-bold">
-                      {userLocation.lat.toFixed(6)}, {userLocation.lng.toFixed(6)}
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    {nearbyStations.map((station) => (
-                      <div 
-                        key={station.station_id} 
-                        className="bg-background/40 p-4 rounded-2xl border border-white/5 flex items-center justify-between hover:bg-background/60 transition-all cursor-pointer group"
-                        onClick={() => handleOpenBooking(station)}
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="h-10 w-10 bg-secondary/30 rounded-full flex items-center justify-center">
-                            <MapPin className="h-5 w-5 text-muted-foreground group-hover:text-primary" />
-                          </div>
-                          <div>
-                            <h4 className="text-sm font-bold group-hover:text-primary">{station.name}</h4>
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{station.location}</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-black text-primary">{station.distance.toFixed(1)} km</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center z-10 space-y-10">
-                   <div className="relative mx-auto w-20 h-20">
-                    <div className="absolute inset-0 bg-primary/20 rounded-full animate-ping opacity-30" />
-                    <div className="relative bg-[#111113] w-20 h-20 rounded-[1.5rem] flex items-center justify-center border border-white/10 shadow-xl">
-                      <MapIcon className="h-8 w-8 text-primary" />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <h3 className="text-xl font-black tracking-tight uppercase text-muted-foreground/40">Navigation Center</h3>
-                    <p className="text-xs text-muted-foreground max-w-[240px] mx-auto leading-relaxed">
-                      Select a charging station from the list and click Trace to start your real-time journey guidance.
-                    </p>
-                  </div>
-
-                  <div className="bg-[#111113]/80 backdrop-blur-md border border-white/10 rounded-3xl p-6 flex flex-col items-center gap-6 shadow-2xl max-w-sm mx-auto">
-                    <div className="flex items-center gap-4 w-full text-left">
-                       <div className="h-12 w-12 rounded-2xl bg-indigo-500/20 flex items-center justify-center shrink-0">
-                          <LocateFixed className="h-6 w-6 text-indigo-500" />
-                       </div>
-                       <div className="flex-1">
-                          <p className="text-xs font-black text-white uppercase tracking-widest">GPS REQUIRED</p>
-                          <p className="text-[10px] text-muted-foreground font-medium">Enable location to view live distances.</p>
-                       </div>
-                    </div>
-                    <Button 
-                      onClick={() => handleGetLocation()}
-                      disabled={locating}
-                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11 rounded-xl gap-2 shadow-lg shadow-indigo-500/20"
-                    >
-                      {locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Navigation className="h-4 w-4" />}
-                      Activate GPS
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Discover and Book Section Redesign */}
-          <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <h3 className="text-2xl font-black tracking-tight text-white">Smart Search</h3>
-              <Badge className="bg-primary/20 text-primary border-none rounded-full px-3 py-1 font-bold text-[10px] uppercase tracking-widest flex items-center gap-1.5">
-                <Sparkles className="h-3 w-3 fill-primary" /> AI Optimal
-              </Badge>
+          {/* AI Recommendations Section */}
+          <section className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-bold flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary fill-primary/20" /> Smart Recommendations
+              </h3>
+              <Button 
+                onClick={getAiRecommendations} 
+                disabled={loadingAi}
+                variant="ghost" 
+                size="sm" 
+                className="text-primary hover:bg-primary/5 font-bold"
+              >
+                {loadingAi ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Sparkles className="h-4 w-4 mr-2" />}
+                Refresh AI
+              </Button>
             </div>
             
-            <div className="space-y-4">
-              <div className="relative group">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                <Input 
-                  placeholder="Search stations or cities..." 
-                  className="h-14 pl-12 bg-[#1a1a1c] border-white/5 rounded-2xl text-base focus-visible:ring-primary/40 placeholder:text-muted-foreground/40"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-
-              <div className="flex items-center gap-3">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => handleGetLocation()}
-                  className="rounded-full px-6 font-bold h-10 gap-2 bg-white/5 border-white/10 text-white hover:bg-white/10"
-                >
-                  <LocateFixed className="h-4 w-4" />
-                  Find Nearby
-                </Button>
-                <Button variant="secondary" className="rounded-full px-6 h-10 font-bold bg-indigo-600 text-white hover:bg-indigo-700">All</Button>
-                <Button variant="ghost" className="rounded-full px-6 h-10 font-bold text-muted-foreground">DC Fast</Button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4">
-              {filteredStations.length > 0 ? (
-                filteredStations.map((station, idx) => {
-                  const stationChargers = chargers.filter(c => c.station_id === station.station_id);
-                  const rate = stationChargers[0]?.rate_per_kwh || 0.35;
-                  const distance = userLocation ? calculateDistance(userLocation.lat, userLocation.lng, station.lat, station.lng) : null;
-                  
-                  return (
-                    <Card 
-                      key={station.station_id} 
-                      className="border-none bg-[#1a1a1c] hover:bg-[#202022] transition-all cursor-pointer rounded-2xl relative overflow-hidden group border border-white/5"
-                      onClick={() => handleOpenBooking(station)}
-                    >
-                      <CardContent className="p-5">
-                        <div className="flex gap-5">
-                          {/* Visual Placeholder */}
-                          <div className="h-24 w-24 rounded-2xl bg-secondary/30 flex items-center justify-center shrink-0 border border-white/5 group-hover:bg-primary/5 transition-colors">
-                            <Zap className="h-10 w-10 text-muted-foreground/30 group-hover:text-primary/40 transition-colors" />
-                          </div>
-
-                          <div className="flex-1 space-y-3 relative">
-                            {/* Distance Badge */}
-                            <div className="absolute top-0 right-0">
-                              <Badge className="bg-emerald-500/10 text-emerald-500 border-none px-3 py-0.5 rounded-full font-bold text-[10px]">
-                                {distance ? `${distance.toFixed(1)} km` : '---'}
-                              </Badge>
-                            </div>
-
-                            <div className="space-y-1">
-                              <h4 className="font-bold text-xl text-white group-hover:text-primary transition-colors">{station.name}</h4>
-                              <p className="text-sm text-muted-foreground flex items-center gap-1.5 font-medium">
-                                <MapPin className="h-3 w-3" /> {station.location}
-                              </p>
-                            </div>
-
-                            <div className="flex items-center gap-3">
-                              <Badge className="bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[10px] font-bold rounded-lg px-2.5 py-1">
-                                ₹{rate.toFixed(2)}/kWh
-                              </Badge>
-                              <Badge className="bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[10px] font-bold rounded-lg px-2.5 py-1 flex items-center gap-1">
-                                <Star className="h-3 w-3 fill-emerald-500" /> 4.5
-                              </Badge>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Trace Button Area */}
-                        <div className="mt-4 flex justify-end">
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            className="bg-transparent border-white/10 hover:border-primary hover:text-primary text-muted-foreground font-bold h-10 px-8 rounded-xl gap-2 text-xs transition-all shadow-lg shadow-black/20"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleGetDirections(station);
-                            }}
-                          >
-                            <Navigation className="h-4 w-4" /> Trace
-                          </Button>
-                        </div>
-                      </CardContent>
-
-                      {/* Top Right Recommended Badge Simulation */}
-                      {idx === 0 && (
-                        <div className="absolute top-0 right-0 h-10 w-32 overflow-hidden pointer-events-none">
-                           <div className="bg-emerald-500 text-white text-[8px] font-black uppercase tracking-tighter text-center py-1 absolute top-2 -right-8 w-40 rotate-45 shadow-lg">
-                             Recommended
-                           </div>
-                        </div>
-                      )}
-                    </Card>
-                  );
-                })
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {recommendations.length > 0 ? (
+                recommendations.map(rec => renderStationCard(rec, true))
               ) : (
-                <div className="py-20 text-center text-muted-foreground bg-white/5 rounded-2xl border border-dashed border-white/10">
-                  No stations matching your search.
-                </div>
+                <Card className="md:col-span-2 border-dashed border-white/10 bg-white/2 py-10 text-center">
+                  <p className="text-sm text-muted-foreground">Click "Refresh AI" for personalized station suggestions.</p>
+                </Card>
               )}
             </div>
-          </div>
+          </section>
+
+          {/* Nearby Search Section */}
+          <section className="space-y-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <h3 className="text-xl font-bold">Discover & Book Nearby</h3>
+              <div className="flex items-center gap-2">
+                <Button 
+                  onClick={handleGetLocation} 
+                  disabled={locating}
+                  variant="outline" 
+                  size="sm" 
+                  className="bg-indigo-600/10 border-indigo-500/20 text-indigo-500 hover:bg-indigo-600 hover:text-white rounded-full px-4 h-9 font-bold"
+                >
+                  {locating ? <Loader2 className="h-3 w-3 animate-spin mr-2" /> : <LocateFixed className="h-3 w-3 mr-2" />}
+                  Trace Location
+                </Button>
+              </div>
+            </div>
+
+            <div className="relative group">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input 
+                placeholder="Search stations or cities..." 
+                className="h-12 pl-12 bg-[#1a1a1c] border-white/5 rounded-xl focus:ring-primary/20"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-4">
+              {filteredStations.map(station => renderStationCard(station))}
+            </div>
+          </section>
         </div>
 
         <div className="space-y-6">
-          <Card className="border-none bg-[#1a1a1c] border-white/5 rounded-2xl overflow-hidden">
+          <Card className="border-none bg-[#1a1a1c] border-white/5 rounded-2xl overflow-hidden shadow-2xl">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex items-center gap-2 text-foreground">
                 <History className="h-5 w-5 text-primary" /> Recent Activity
@@ -504,9 +350,7 @@ export function UserDashboard() {
                     </div>
                   ))
                 ) : (
-                  <div className="p-10 text-center text-xs text-muted-foreground">
-                    No charging sessions yet.
-                  </div>
+                  <div className="p-10 text-center text-xs text-muted-foreground">No charging sessions yet.</div>
                 )}
               </div>
             </CardContent>
@@ -541,30 +385,22 @@ export function UserDashboard() {
                   .map((charger, idx) => (
                     <div 
                       key={charger.charger_id}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (charger.status === 'available') setSelectedChargerId(charger.charger_id);
-                      }}
+                      onClick={() => charger.status === 'available' && setSelectedChargerId(charger.charger_id)}
                       className={cn(
-                        "p-4 rounded-2xl border transition-all cursor-pointer group",
+                        "p-4 rounded-2xl border transition-all cursor-pointer",
                         selectedChargerId === charger.charger_id 
-                          ? "bg-primary/10 border-primary shadow-lg shadow-primary/5" 
+                          ? "bg-primary/10 border-primary" 
                           : "bg-background/20 border-white/5 hover:border-white/10",
-                        charger.status === 'occupied' && "opacity-50 cursor-not-allowed grayscale"
+                        charger.status === 'occupied' && "opacity-50 cursor-not-allowed"
                       )}
                     >
                       <div className="flex items-center gap-2 mb-1">
                         <Zap className={cn("h-4 w-4", selectedChargerId === charger.charger_id ? "text-primary" : "text-muted-foreground")} />
-                        <span className="text-sm font-bold text-foreground">Slot {idx + 1}</span>
+                        <span className="text-sm font-bold">Slot {idx + 1}</span>
                       </div>
                       <div className="space-y-0.5">
-                        <p className="text-[10px] text-muted-foreground font-medium">{charger.type} - {charger.type === 'DCFC' ? '50kW' : '22kW'}</p>
-                        <p className={cn(
-                          "text-[10px] font-bold uppercase tracking-widest",
-                          charger.status === 'available' ? "text-primary" : "text-destructive"
-                        )}>
-                          {charger.status}
-                        </p>
+                        <p className="text-[10px] text-muted-foreground font-medium">{charger.type}</p>
+                        <p className={cn("text-[10px] font-bold uppercase", charger.status === 'available' ? "text-primary" : "text-destructive")}>{charger.status}</p>
                       </div>
                     </div>
                   ))}
@@ -573,146 +409,42 @@ export function UserDashboard() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 flex items-center gap-1.5">
-                  <CalendarIcon className="h-3 w-3" /> Date selection
-                </label>
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Date</label>
                 <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                   <PopoverTrigger asChild>
                     <div className="relative group">
                       <Input
                         value={dateInput}
                         onChange={handleDateInputChange}
-                        placeholder="YYYY-MM-DD"
-                        className="h-12 w-full pr-10 bg-background/20 border-white/5 rounded-xl hover:bg-white/5 focus:ring-primary/20 text-sm placeholder:text-muted-foreground/30"
+                        className="h-11 bg-background/20 border-white/5 rounded-xl text-sm"
                       />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setIsCalendarOpen(true);
-                        }}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 hover:bg-white/5"
-                      >
-                         <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
-                      </Button>
+                      <Button variant="ghost" size="icon" className="absolute right-1 top-1.5 h-8 w-8"><ChevronDown className="h-4 w-4 opacity-50" /></Button>
                     </div>
                   </PopoverTrigger>
-                  <PopoverContent 
-                    className="w-[320px] p-0 bg-[#1a1a1c] border-white/10 overflow-hidden shadow-2xl" 
-                    align="start"
-                    onInteractOutside={(e) => {
-                      if (e.target instanceof Element && e.target.closest('.rdp')) {
-                        e.preventDefault();
-                      }
-                    }}
-                  >
-                    <div className="bg-[#333] p-6 text-white border-b border-white/5">
-                      <p className="text-xs font-semibold opacity-60 tracking-widest uppercase">
-                        {bookingDate ? format(bookingDate, "yyyy") : format(new Date(), "yyyy")}
-                      </p>
-                      <h3 className="text-3xl font-bold mt-1">
-                        {bookingDate ? format(bookingDate, "EEE, d MMM") : format(new Date(), "EEE, d MMM")}
-                      </h3>
+                  <PopoverContent className="w-auto p-0 bg-[#1a1a1c] border-white/10" align="start">
+                    <div className="bg-[#333] p-4 text-white border-b border-white/5">
+                      <p className="text-xs opacity-60 uppercase">{bookingDate ? format(bookingDate, "yyyy") : "---"}</p>
+                      <h3 className="text-2xl font-bold">{bookingDate ? format(bookingDate, "EEE, d MMM") : "Select Date"}</h3>
                     </div>
-                    <div className="p-2">
-                      <Calendar
-                        mode="single"
-                        selected={bookingDate}
-                        onSelect={(date) => {
-                          if (date) {
-                            setBookingDate(date);
-                          }
-                        }}
-                        initialFocus
-                        className="bg-transparent"
-                      />
-                    </div>
-                    <div className="p-4 border-t border-white/5 flex items-center justify-between bg-black/20">
-                      <Button 
-                        type="button"
-                        variant="ghost" 
-                        size="sm" 
-                        className="text-primary hover:bg-primary/5 font-bold uppercase text-[10px] tracking-widest" 
-                        onClick={() => { 
-                          setBookingDate(undefined);
-                          setDateInput('');
-                        }}
-                      >
-                        Clear
-                      </Button>
-                      <div className="flex gap-2">
-                        <Button 
-                          type="button"
-                          variant="ghost" 
-                          size="sm" 
-                          className="text-white hover:bg-white/5 font-bold uppercase text-[10px] tracking-widest" 
-                          onClick={() => setIsCalendarOpen(false)}
-                        >
-                          Cancel
-                        </Button>
-                        <Button 
-                          type="button"
-                          variant="ghost" 
-                          size="sm" 
-                          className="text-primary hover:bg-primary/5 font-bold uppercase text-[10px] tracking-widest" 
-                          onClick={() => setIsCalendarOpen(false)}
-                        >
-                          Set
-                        </Button>
-                      </div>
-                    </div>
+                    <Calendar mode="single" selected={bookingDate} onSelect={setBookingDate} />
                   </PopoverContent>
                 </Popover>
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 flex items-center gap-1.5">
-                  <Clock className="h-3 w-3" /> Time selection
-                </label>
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Time</label>
                 <Popover open={isTimePickerOpen} onOpenChange={setIsTimePickerOpen}>
                   <PopoverTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className={cn(
-                        "h-12 w-full justify-start text-left font-normal bg-background/20 border-white/5 rounded-xl hover:bg-white/5 focus:ring-primary/20",
-                        !bookingTime && "text-muted-foreground"
-                      )}
-                    >
-                      <div className="flex items-center justify-between w-full">
-                         <span>{bookingTime}</span>
-                         <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
-                      </div>
+                    <Button variant="outline" className="h-11 w-full justify-between bg-background/20 border-white/5 rounded-xl">
+                      <span>{bookingTime}</span>
+                      <ChevronDown className="h-4 w-4 opacity-50" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-[280px] p-0 bg-[#1a1a1c] border-white/10 overflow-hidden shadow-2xl" align="end">
-                    <div className="bg-[#333] p-4 text-white border-b border-white/5">
-                      <h3 className="text-xl font-bold">Pick Start Time</h3>
-                    </div>
-                    <div className="p-3 max-h-[300px] overflow-y-auto scrollbar-none">
-                      <div className="grid grid-cols-3 gap-2">
-                        {['08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00', '21:30', '22:00'].map((time) => (
-                          <Button
-                            key={time}
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={(e) => { 
-                              e.stopPropagation();
-                              setBookingTime(time); 
-                              setIsTimePickerOpen(false); 
-                            }}
-                            className={cn(
-                              "h-10 text-xs rounded-lg border-white/5 bg-white/5 hover:bg-primary/20",
-                              bookingTime === time ? "bg-primary text-white border-primary" : "text-muted-foreground"
-                            )}
-                          >
-                            {time}
-                          </Button>
-                        ))}
-                      </div>
+                  <PopoverContent className="w-[200px] p-2 bg-[#1a1a1c] border-white/10" align="end">
+                    <div className="grid grid-cols-2 gap-1 max-h-[200px] overflow-y-auto">
+                      {['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'].map(time => (
+                        <Button key={time} variant="ghost" size="sm" onClick={() => { setBookingTime(time); setIsTimePickerOpen(false); }} className="text-xs">{time}</Button>
+                      ))}
                     </div>
                   </PopoverContent>
                 </Popover>
@@ -720,9 +452,9 @@ export function UserDashboard() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Duration</label>
+              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Duration (Hours)</label>
               <Select value={bookingDuration} onValueChange={setBookingDuration}>
-                <SelectTrigger className="h-11 bg-background/20 border-white/5 rounded-xl focus:ring-primary/20">
+                <SelectTrigger className="h-11 bg-background/20 border-white/5 rounded-xl">
                   <SelectValue placeholder="Select Duration" />
                 </SelectTrigger>
                 <SelectContent className="bg-[#1a1a1c] border-white/10">
@@ -733,23 +465,12 @@ export function UserDashboard() {
               </Select>
             </div>
 
-            <div className="bg-background/20 rounded-2xl p-5 flex items-center justify-between border border-white/5">
-              <div className="space-y-1">
-                <p className="text-[10px] text-muted-foreground/60 uppercase font-bold tracking-widest">Estimated Cost</p>
-                <p className="text-xs text-muted-foreground">Based on avg 50kW consumption</p>
-              </div>
-              <div className="text-right">
-                <p className="text-2xl font-bold text-white">${getEstimatedCost()}</p>
-              </div>
+            <div className="bg-background/20 rounded-2xl p-4 flex items-center justify-between border border-white/5">
+              <p className="text-[10px] text-muted-foreground uppercase font-bold">Estimated Cost</p>
+              <p className="text-xl font-bold">${getEstimatedCost()}</p>
             </div>
 
-            <Button 
-              type="button"
-              onClick={handleConfirmBooking}
-              className="w-full teal-gradient-btn h-12 font-bold rounded-xl shadow-xl shadow-primary/20"
-            >
-              Confirm Booking
-            </Button>
+            <Button onClick={handleConfirmBooking} className="w-full teal-gradient-btn h-12 font-bold rounded-xl">Confirm Booking</Button>
           </div>
         </DialogContent>
       </Dialog>
