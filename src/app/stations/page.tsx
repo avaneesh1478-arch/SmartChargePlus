@@ -1,4 +1,3 @@
-
 "use client";
 
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
@@ -7,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, Map as MapIcon, Zap, LocateFixed, Navigation, Loader2, Star, Crosshair } from 'lucide-react';
+import { Search, Map as MapIcon, Zap, LocateFixed, Navigation, Loader2, Star, Crosshair, Navigation2, MapPin } from 'lucide-react';
 import Image from 'next/image';
 import { useState, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -59,16 +58,8 @@ export default function StationsPage() {
   };
 
   const handleGetDirections = (station: Station) => {
-    if (!userLocation) {
-      toast({
-        title: "Location Required",
-        description: "Please trace your live location first to generate accurate directions.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    const url = `https://www.google.com/maps/dir/?api=1&origin=${userLocation.lat},${userLocation.lng}&destination=${station.lat},${station.lng}&travelmode=driving`;
+    const origin = userLocation ? `${userLocation.lat},${userLocation.lng}` : "Current+Location";
+    const url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${station.lat},${station.lng}&travelmode=driving`;
     window.open(url, '_blank');
   };
 
@@ -156,57 +147,65 @@ export default function StationsPage() {
               <Card 
                 key={station.station_id} 
                 className={cn(
-                  "border-none bg-[#1a1a1c] hover:bg-[#202022] transition-all cursor-pointer rounded-2xl relative overflow-hidden group",
-                  selectedStation?.station_id === station.station_id && "ring-2 ring-primary/40 bg-[#252528]"
+                  "border-none bg-[#1a1a1c] hover:bg-[#1e1e20] transition-all rounded-[2rem] relative overflow-hidden group border border-white/5",
+                  selectedStation?.station_id === station.station_id && "ring-2 ring-primary/40"
                 )}
                 onClick={() => setSelectedStation(station)}
               >
-                <CardContent className="p-5">
-                  <div className="flex gap-5">
-                    {/* Visual Placeholder */}
-                    <div className="h-20 w-20 rounded-2xl bg-secondary/30 flex items-center justify-center shrink-0 border border-white/5 group-hover:bg-primary/5 transition-colors">
-                      <Zap className="h-8 w-8 text-muted-foreground/30 group-hover:text-primary/40 transition-colors" />
+                <CardContent className="p-6">
+                  <div className="flex gap-4">
+                    {/* Icon Box */}
+                    <div className="h-16 w-16 rounded-2xl bg-[#252528] flex items-center justify-center shrink-0 border border-white/5">
+                      <Zap className="h-6 w-6 text-muted-foreground/60" />
                     </div>
 
-                    <div className="flex-1 space-y-3 relative">
-                      {/* Distance Badge */}
+                    <div className="flex-1 min-w-0 relative">
+                      {/* Distance Badge top right */}
                       <div className="absolute top-0 right-0">
-                        <Badge className="bg-emerald-500 text-white border-none px-3 py-0.5 rounded-full font-bold text-[10px]">
+                        <Badge className="bg-[#1e2a27] text-[#4ade80] border-none px-3 py-1 rounded-full font-bold text-[11px]">
                           {station.distance ? `${station.distance.toFixed(1)} km` : '---'}
                         </Badge>
                       </div>
 
                       <div className="space-y-1">
-                        <h4 className="font-bold text-lg text-white">{station.name}</h4>
-                        <p className="text-xs text-muted-foreground flex items-center gap-1.5 font-medium">
-                          <MapPinIcon className="h-3 w-3" /> {station.location}
+                        <h4 className="font-bold text-lg text-white truncate pr-16">{station.name}</h4>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1.5 font-medium truncate">
+                          <MapPin className="h-3 w-3" /> {station.location}
                         </p>
                       </div>
 
-                      <div className="flex items-center gap-4">
-                        <div className="bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded-md text-[10px] font-bold border border-emerald-500/20">
-                          ₹25/kWh
-                        </div>
-                        <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-500">
-                          <Star className="h-3 w-3 fill-emerald-500" />
-                          4.5
-                        </div>
+                      <div className="mt-2 flex items-center gap-1.5 text-xs font-bold text-[#4ade80]">
+                        <Star className="h-3.5 w-3.5 fill-[#4ade80]" /> 4.5
                       </div>
                     </div>
                   </div>
 
-                  {/* Trace Button Area */}
-                  <div className="mt-4 flex justify-end">
+                  {/* Action Buttons */}
+                  <div className="mt-6 flex gap-3">
                     <Button 
-                      size="sm" 
                       variant="outline" 
-                      className="bg-primary/10 border-primary/20 hover:bg-primary text-primary hover:text-white font-bold h-9 px-6 rounded-xl gap-2 text-xs transition-all shadow-lg shadow-primary/5"
+                      size="sm" 
+                      className="flex-1 border-[#3b82f6]/50 text-[#60a5fa] hover:bg-[#3b82f6]/10 rounded-xl h-10 font-bold text-xs"
+                    >
+                      Book Now
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1 border-[#10b981]/50 text-[#34d399] hover:bg-[#10b981]/10 rounded-xl h-10 font-bold text-xs"
+                    >
+                      Details
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1 border-[#10b981]/50 text-[#34d399] hover:bg-[#10b981]/10 rounded-xl h-10 font-bold text-xs gap-2"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleGetDirections(station);
                       }}
                     >
-                      <Navigation className="h-3.5 w-3.5" /> Trace
+                      <Navigation2 className="h-3.5 w-3.5" /> Trace
                     </Button>
                   </div>
                 </CardContent>
@@ -273,25 +272,5 @@ export default function StationsPage() {
         </div>
       </div>
     </DashboardLayout>
-  );
-}
-
-function MapPinIcon(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
-      <circle cx="12" cy="10" r="3" />
-    </svg>
   );
 }
