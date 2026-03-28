@@ -13,6 +13,8 @@ interface AppContextType {
   users: User[];
   language: Language;
   setLanguage: (lang: Language) => void;
+  allTranslations: typeof translations;
+  updateTranslations: (lang: Language, newContent: any) => void;
   t: any;
   login: (email: string) => void;
   signup: (email: string, fullName: string) => void;
@@ -35,6 +37,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [transactions, setTransactions] = useState<Transaction[]>(MOCK_TRANSACTIONS);
   const [users, setUsers] = useState<User[]>(MOCK_USERS);
   const [language, setLanguageState] = useState<Language>('en');
+  const [allTranslations, setAllTranslations] = useState<typeof translations>(translations);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
@@ -45,9 +48,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const storedStations = localStorage.getItem('volta_stations');
     const storedChargers = localStorage.getItem('volta_chargers');
     const storedLang = localStorage.getItem('volta_lang') as Language;
+    const storedTranslations = localStorage.getItem('volta_translations');
     
     if (storedLang && ['en', 'kn', 'hi'].includes(storedLang)) {
       setLanguageState(storedLang);
+    }
+
+    if (storedTranslations) {
+      try {
+        setAllTranslations(JSON.parse(storedTranslations));
+      } catch (e) {
+        console.error("Failed to parse stored translations", e);
+      }
     }
 
     if (storedUsers) {
@@ -102,7 +114,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('volta_lang', lang);
   };
 
-  const t = translations[language];
+  const updateTranslations = (lang: Language, newContent: any) => {
+    setAllTranslations(prev => ({
+      ...prev,
+      [lang]: newContent
+    }));
+  };
+
+  const t = allTranslations[language];
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -118,6 +137,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!isLoaded) return;
     localStorage.setItem('volta_chargers', JSON.stringify(chargers));
   }, [chargers, isLoaded]);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+    localStorage.setItem('volta_translations', JSON.stringify(allTranslations));
+  }, [allTranslations, isLoaded]);
 
   const login = (email: string) => {
     const found = users.find(u => u.email.toLowerCase() === email.toLowerCase());
@@ -280,6 +304,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       users,
       language,
       setLanguage,
+      allTranslations,
+      updateTranslations,
       t,
       login, 
       signup,
