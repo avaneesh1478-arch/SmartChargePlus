@@ -6,12 +6,32 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, Map as MapIcon, Zap, LocateFixed, Navigation, Loader2, Star, Crosshair, Navigation2, MapPin } from 'lucide-react';
+import { 
+  Search, 
+  Map as MapIcon, 
+  Zap, 
+  LocateFixed, 
+  Loader2, 
+  Star, 
+  Navigation2, 
+  MapPin, 
+  X,
+  Wifi,
+  Coffee,
+  CheckCircle2,
+  Clock,
+  Info
+} from 'lucide-react';
 import Image from 'next/image';
 import { useState, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { calculateDistance, cn } from '@/lib/utils';
 import { Station } from '@/types';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogClose 
+} from '@/components/ui/dialog';
 
 export default function StationsPage() {
   const { stations, user, chargers } = useApp();
@@ -21,6 +41,10 @@ export default function StationsPage() {
   const [locating, setLocating] = useState(false);
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [activeFilter, setActiveFilter] = useState<'all' | 'dcfc'>('all');
+
+  // Details Dialog State
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [detailsStation, setDetailsStation] = useState<Station | null>(null);
 
   const handleTraceLocation = () => {
     if (!("geolocation" in navigator)) {
@@ -61,6 +85,11 @@ export default function StationsPage() {
     const origin = userLocation ? `${userLocation.lat},${userLocation.lng}` : "Current+Location";
     const url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${station.lat},${station.lng}&travelmode=driving`;
     window.open(url, '_blank');
+  };
+
+  const handleOpenDetails = (station: Station) => {
+    setDetailsStation(station);
+    setIsDetailsOpen(true);
   };
 
   const filteredStations = useMemo(() => {
@@ -141,7 +170,6 @@ export default function StationsPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-          {/* Station List */}
           <div className="space-y-4 max-h-[1000px] overflow-y-auto pr-2 scrollbar-none">
             {filteredStations.map(station => (
               <Card 
@@ -154,13 +182,11 @@ export default function StationsPage() {
               >
                 <CardContent className="p-6">
                   <div className="flex gap-4">
-                    {/* Icon Box */}
                     <div className="h-16 w-16 rounded-2xl bg-[#252528] flex items-center justify-center shrink-0 border border-white/5">
                       <Zap className="h-6 w-6 text-muted-foreground/60" />
                     </div>
 
                     <div className="flex-1 min-w-0 relative">
-                      {/* Distance Badge top right */}
                       <div className="absolute top-0 right-0">
                         <Badge className="bg-[#1e2a27] text-[#4ade80] border-none px-3 py-1 rounded-full font-bold text-[11px]">
                           {station.distance ? `${station.distance.toFixed(1)} km` : '---'}
@@ -180,7 +206,6 @@ export default function StationsPage() {
                     </div>
                   </div>
 
-                  {/* Action Buttons */}
                   <div className="mt-6 flex gap-3">
                     <Button 
                       variant="outline" 
@@ -193,6 +218,10 @@ export default function StationsPage() {
                       variant="outline" 
                       size="sm" 
                       className="flex-1 border-[#10b981]/50 text-[#34d399] hover:bg-[#10b981]/10 rounded-xl h-10 font-bold text-xs"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenDetails(station);
+                      }}
                     >
                       Details
                     </Button>
@@ -213,10 +242,8 @@ export default function StationsPage() {
             ))}
           </div>
 
-          {/* Navigation Center */}
           <div className="lg:sticky lg:top-24 space-y-6">
             <Card className="border-none bg-[#1a1a1c] min-h-[500px] overflow-hidden relative rounded-[2.5rem] shadow-2xl flex flex-col items-center justify-center border border-white/5">
-               {/* Decorative Background Grid */}
                <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
                
                <div className="text-center z-10 p-10 space-y-8">
@@ -235,7 +262,6 @@ export default function StationsPage() {
                   </div>
                </div>
 
-               {/* Live Tracking Banner */}
                <div className="mt-auto w-full p-6">
                  <div className="bg-[#111113]/80 backdrop-blur-md border border-white/10 rounded-3xl p-5 flex flex-col items-center gap-4 shadow-2xl">
                     <div className="flex items-center gap-4 w-full">
@@ -271,6 +297,133 @@ export default function StationsPage() {
           </div>
         </div>
       </div>
+
+      {/* Details Dialog */}
+      <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+        <DialogContent className="sm:max-w-[700px] bg-[#1a1a1c] border-white/5 text-white p-0 rounded-3xl overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto">
+          {detailsStation && (
+            <div className="flex flex-col">
+              <div className="relative h-64 w-full">
+                <Image 
+                  src={detailsStation.images?.[0] || 'https://picsum.photos/seed/ev-station/800/450'}
+                  alt={detailsStation.name}
+                  fill
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#1a1a1c] via-transparent to-transparent" />
+                <DialogClose asChild>
+                  <Button variant="ghost" size="icon" className="absolute top-4 right-4 h-10 w-10 rounded-full bg-black/40 hover:bg-black/60 text-white border border-white/10">
+                    <X className="h-5 w-5" />
+                  </Button>
+                </DialogClose>
+              </div>
+
+              <div className="px-8 pb-8 -mt-12 relative z-10 space-y-8">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-4xl font-black tracking-tight">{detailsStation.name}</h2>
+                    <Badge className="success-badge px-3 py-1 font-bold text-[10px] tracking-widest uppercase">Active</Badge>
+                  </div>
+                  <p className="text-muted-foreground flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-primary" /> {detailsStation.location}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-6">
+                    <div className="space-y-4">
+                      <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-primary/80">Available Services</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {detailsStation.services && detailsStation.services.length > 0 ? (
+                          detailsStation.services.map((service, i) => (
+                            <Badge key={i} variant="outline" className="bg-white/5 border-white/10 text-white rounded-xl py-2 px-4 flex items-center gap-2">
+                              {service.toLowerCase().includes('wifi') && <Wifi className="h-3 w-3 text-primary" />}
+                              {service.toLowerCase().includes('cafe') && <Coffee className="h-3 w-3 text-primary" />}
+                              {service}
+                            </Badge>
+                          ))
+                        ) : (
+                          <p className="text-xs text-muted-foreground italic">Standard network services provided.</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-primary/80">Site Features</h4>
+                      <div className="grid grid-cols-2 gap-3">
+                        {detailsStation.features && detailsStation.features.length > 0 ? (
+                          detailsStation.features.map((feature, i) => (
+                            <div key={i} className="flex items-center gap-2 text-xs font-medium text-white/80">
+                              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                              {feature}
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-xs text-muted-foreground italic">24/7 access available.</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <Card className="bg-black/20 border-white/5 rounded-3xl p-6 flex flex-col justify-between">
+                    <div className="space-y-4">
+                       <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground">Network Stats</h4>
+                       <div className="space-y-4">
+                         <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                               <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                                  <Zap className="h-4 w-4 text-primary" />
+                               </div>
+                               <span className="text-xs text-muted-foreground font-bold uppercase tracking-wider">Total Power</span>
+                            </div>
+                            <span className="text-lg font-black">{detailsStation.total_power} kW</span>
+                         </div>
+                         <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                               <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                                  <Clock className="h-4 w-4 text-primary" />
+                               </div>
+                               <span className="text-xs text-muted-foreground font-bold uppercase tracking-wider">Avg. Uptime</span>
+                            </div>
+                            <span className="text-lg font-black text-emerald-500">99.9%</span>
+                         </div>
+                       </div>
+                    </div>
+                    
+                    <Button 
+                      className="w-full teal-gradient-btn mt-8 font-bold rounded-2xl h-12"
+                      onClick={() => {
+                        setIsDetailsOpen(false);
+                        toast({ title: "Redirecting", description: "Navigating to booking portal..." });
+                      }}
+                    >
+                      Book A Slot Now
+                    </Button>
+                  </Card>
+                </div>
+
+                {detailsStation.images && detailsStation.images.length > 1 && (
+                  <div className="space-y-4">
+                    <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-primary/80">Gallery</h4>
+                    <div className="grid grid-cols-3 gap-3">
+                      {detailsStation.images.slice(1, 4).map((img, i) => (
+                        <div key={i} className="relative aspect-video rounded-2xl overflow-hidden border border-white/5 group">
+                          <Image 
+                            src={img} 
+                            alt={`Gallery ${i}`} 
+                            fill 
+                            className="object-cover transition-transform group-hover:scale-110"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }
