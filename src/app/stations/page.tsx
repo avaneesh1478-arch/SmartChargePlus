@@ -30,7 +30,9 @@ import { Station } from '@/types';
 import { 
   Dialog, 
   DialogContent, 
-  DialogClose 
+  DialogClose,
+  DialogTitle,
+  DialogDescription
 } from '@/components/ui/dialog';
 
 export default function StationsPage() {
@@ -134,7 +136,7 @@ export default function StationsPage() {
               placeholder="Search stations or cities..." 
               className="h-14 pl-12 bg-[#1a1a1c] border-white/5 rounded-2xl text-base focus-visible:ring-primary/40 placeholder:text-muted-foreground/40"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => searchQuery(e.target.value)}
             />
           </div>
 
@@ -321,12 +323,12 @@ export default function StationsPage() {
               <div className="px-8 pb-8 -mt-12 relative z-10 space-y-8">
                 <div className="space-y-2">
                   <div className="flex items-center gap-3">
-                    <h2 className="text-4xl font-black tracking-tight">{detailsStation.name}</h2>
+                    <DialogTitle className="text-4xl font-black tracking-tight">{detailsStation.name}</DialogTitle>
                     <Badge className="success-badge px-3 py-1 font-bold text-[10px] tracking-widest uppercase">Active</Badge>
                   </div>
-                  <p className="text-muted-foreground flex items-center gap-2">
+                  <DialogDescription className="text-muted-foreground flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-primary" /> {detailsStation.location}
-                  </p>
+                  </DialogDescription>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

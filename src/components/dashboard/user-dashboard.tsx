@@ -530,12 +530,12 @@ export function UserDashboard() {
                 {/* Station Identification */}
                 <div className="space-y-2">
                   <div className="flex items-center gap-3">
-                    <h2 className="text-4xl font-black tracking-tight">{detailsStation.name}</h2>
+                    <DialogTitle className="text-4xl font-black tracking-tight">{detailsStation.name}</DialogTitle>
                     <Badge className="success-badge px-3 py-1 font-bold text-[10px] tracking-widest uppercase">Active</Badge>
                   </div>
-                  <p className="text-muted-foreground flex items-center gap-2">
+                  <DialogDescription className="text-muted-foreground flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-primary" /> {detailsStation.location}
-                  </p>
+                  </DialogDescription>
                 </div>
 
                 {/* Info Grid */}
