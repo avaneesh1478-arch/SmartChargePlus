@@ -34,6 +34,9 @@ export const MOCK_STATIONS: Station[] = [
     operator_id: 'operator-1',
     total_power: 350,
     charger_count: 4,
+    images: ['https://picsum.photos/seed/st1-1/800/600', 'https://picsum.photos/seed/st1-2/800/600'],
+    services: ['WiFi', 'Cafe', 'Restrooms'],
+    features: ['24/7 Access', 'CCTV Security', 'Solar Powered'],
   },
   {
     station_id: 'st-2',
@@ -45,6 +48,8 @@ export const MOCK_STATIONS: Station[] = [
     operator_id: 'admin-1',
     total_power: 150,
     charger_count: 2,
+    services: ['Parking', 'Vending Machine'],
+    features: ['Fast Charging'],
   },
   {
     station_id: 'st-3',

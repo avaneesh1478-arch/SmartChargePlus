@@ -24,6 +24,7 @@ interface AppContextType {
   updateChargerStatus: (chargerId: string, status: Charger['status']) => void;
   addStation: (data: { name: string, email: string, address: string, chargingCost: number, lat: number, lng: number }) => void;
   removeStation: (stationId: string) => void;
+  updateStation: (stationId: string, data: Partial<Station>) => void;
   addSlot: (stationId: string, count?: number) => void;
   removeSlot: (chargerId: string) => void;
 }
@@ -203,6 +204,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setChargers(prev => prev.map(c => c.charger_id === chargerId ? { ...c, status } : c));
   };
 
+  const updateStation = (stationId: string, data: Partial<Station>) => {
+    setStations(prev => prev.map(s => s.station_id === stationId ? { ...s, ...data } : s));
+  };
+
   const addStation = (data: { name: string, email: string, address: string, chargingCost: number, lat: number, lng: number }) => {
     const newStationId = `st-${Date.now()}`;
     const opUid = `op-${newStationId}`;
@@ -313,6 +318,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       updateProfile,
       toggleCharger, 
       updateChargerStatus,
+      updateStation,
       addStation,
       removeStation,
       addSlot,

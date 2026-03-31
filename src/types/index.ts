@@ -23,6 +23,9 @@ export interface Station {
   operator_id: string;
   total_power: number;
   charger_count: number;
+  images?: string[];
+  services?: string[];
+  features?: string[];
 }
 
 export interface Charger {
