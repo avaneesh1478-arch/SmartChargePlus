@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -400,8 +401,8 @@ export function UserDashboard() {
           <div className="p-6 space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <DialogTitle className="text-xl font-bold text-foreground">{selectedStation?.name}</DialogTitle>
-                <DialogDescription className="text-xs text-muted-foreground">{selectedStation?.location}</DialogDescription>
+                <DialogTitle className="text-xl font-bold text-foreground">{selectedStation?.name || 'Book Station'}</DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground">{selectedStation?.location || 'Select booking options below'}</DialogDescription>
               </div>
               <DialogClose asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-white/5 text-muted-foreground">
@@ -418,7 +419,11 @@ export function UserDashboard() {
                   .map((charger, idx) => (
                     <div 
                       key={charger.charger_id}
-                      onClick={() => charger.status === 'available' && setSelectedChargerId(charger.charger_id)}
+                      onClick={() => {
+                        if (charger.status === 'available') {
+                          setSelectedChargerId(charger.charger_id);
+                        }
+                      }}
                       className={cn(
                         "p-4 rounded-2xl border transition-all cursor-pointer",
                         selectedChargerId === charger.charger_id 
@@ -453,10 +458,14 @@ export function UserDashboard() {
                       <ChevronDown className="h-4 w-4 opacity-50" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 bg-[#1a1a1c] border-white/10" align="start">
+                  <PopoverContent 
+                    className="w-auto p-0 bg-[#1a1a1c] border-white/10" 
+                    align="start"
+                    onOpenAutoFocus={(e) => e.preventDefault()}
+                  >
                     <div className="bg-primary/5 p-4 text-white border-b border-white/5">
-                      <p className="text-xs opacity-60 uppercase tracking-widest font-bold">{bookingDate ? format(bookingDate, "yyyy") : "Select"}</p>
-                      <h3 className="text-2xl font-bold">{bookingDate ? format(bookingDate, "EEE, d MMM") : "Date"}</h3>
+                      <p className="text-xs opacity-60 uppercase tracking-widest font-bold">{bookingDate && isValid(bookingDate) ? format(bookingDate, "yyyy") : "Select"}</p>
+                      <h3 className="text-2xl font-bold">{bookingDate && isValid(bookingDate) ? format(bookingDate, "EEE, d MMM") : "Date"}</h3>
                     </div>
                     <Calendar 
                       mode="single" 
@@ -484,13 +493,18 @@ export function UserDashboard() {
                       <ChevronDown className="h-4 w-4 opacity-50" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-[200px] p-2 bg-[#1a1a1c] border-white/10" align="end">
+                  <PopoverContent 
+                    className="w-[200px] p-2 bg-[#1a1a1c] border-white/10" 
+                    align="end"
+                    onOpenAutoFocus={(e) => e.preventDefault()}
+                  >
                     <div className="grid grid-cols-2 gap-1 max-h-[240px] overflow-y-auto scrollbar-none">
                       {['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'].map(time => (
                         <Button 
                           key={time} 
                           variant="ghost" 
                           size="sm" 
+                          type="button"
                           onClick={() => { 
                             setBookingTime(time); 
                             setIsTimePickerOpen(false); 
