@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -50,12 +51,14 @@ import { smartChargingStationRecommendation } from '@/ai/flows/smart-charging-st
 import { useToast } from '@/hooks/use-toast';
 import { Station } from '@/types';
 import { cn, calculateDistance } from '@/lib/utils';
-import { format, parse, isValid } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import Image from 'next/image';
 
 export function UserDashboard() {
   const { user, stations, chargers, transactions, t } = useApp();
   const { toast } = useToast();
+  
+  // UI States
   const [loadingAi, setLoadingAi] = useState(false);
   const [locating, setLocating] = useState(false);
   const [recommendations, setRecommendations] = useState<any[]>([]);
@@ -64,10 +67,10 @@ export function UserDashboard() {
   
   // Booking Dialog State
   const [isBookingOpen, setIsBookingOpen] = useState(false);
+  const [isBookingPending, setIsBookingPending] = useState(false);
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [selectedChargerId, setSelectedChargerId] = useState<string | null>(null);
   const [bookingDate, setBookingDate] = useState<Date | undefined>(undefined);
-  const [dateInput, setDateInput] = useState('');
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isTimePickerOpen, setIsTimePickerOpen] = useState(false);
   const [bookingTime, setBookingTime] = useState('15:30');
@@ -77,17 +80,10 @@ export function UserDashboard() {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [detailsStation, setDetailsStation] = useState<Station | null>(null);
 
+  // Initialize booking date on mount to avoid hydration errors
   useEffect(() => {
-    const today = new Date();
-    setBookingDate(today);
-    setDateInput(format(today, 'yyyy-MM-dd'));
+    setBookingDate(new Date());
   }, []);
-
-  useEffect(() => {
-    if (bookingDate) {
-      setDateInput(format(bookingDate, 'yyyy-MM-dd'));
-    }
-  }, [bookingDate]);
 
   const handleGetLocation = () => {
     if (!("geolocation" in navigator)) {
@@ -112,15 +108,6 @@ export function UserDashboard() {
     const origin = userLocation ? `${userLocation.lat},${userLocation.lng}` : "Current+Location";
     const url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${station.lat},${station.lng}&travelmode=driving`;
     window.open(url, '_blank');
-  };
-
-  const handleDateInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    setDateInput(val);
-    const parsed = parse(val, 'yyyy-MM-dd', new Date());
-    if (isValid(parsed)) {
-      setBookingDate(parsed);
-    }
   };
 
   const getAiRecommendations = async () => {
@@ -169,10 +156,14 @@ export function UserDashboard() {
 
   const handleOpenBooking = (station: Station) => {
     setSelectedStation(station);
-    setIsBookingOpen(true);
     const stationChargers = chargers.filter(c => c.station_id === station.station_id);
     const firstAvailable = stationChargers.find(c => c.status === 'available');
-    if (firstAvailable) setSelectedChargerId(firstAvailable.charger_id);
+    if (firstAvailable) {
+      setSelectedChargerId(firstAvailable.charger_id);
+    } else {
+      setSelectedChargerId(null);
+    }
+    setIsBookingOpen(true);
   };
 
   const handleOpenDetails = (station: Station) => {
@@ -182,21 +173,31 @@ export function UserDashboard() {
 
   const handleConfirmBooking = () => {
     if (!selectedChargerId) {
-      toast({ title: "Error", description: "Please select a charger slot.", variant: "destructive" });
+      toast({ title: "No Slots Available", description: "This station is currently fully occupied. Please select another station.", variant: "destructive" });
       return;
     }
-    toast({ 
-      title: "Booking Confirmed!", 
-      description: `Reserved ${selectedStation?.name} for ${bookingDuration} hour(s) at ${bookingTime}.` 
-    });
-    setIsBookingOpen(false);
+    
+    setIsBookingPending(true);
+    
+    // Simulate API delay
+    setTimeout(() => {
+      toast({ 
+        title: "Booking Confirmed!", 
+        description: `Reserved ${selectedStation?.name} for ${bookingDuration} hour(s) on ${bookingDate ? format(bookingDate, 'MMM dd') : 'today'} at ${bookingTime}.` 
+      });
+      setIsBookingPending(false);
+      setIsBookingOpen(false);
+    }, 800);
   };
 
   const getEstimatedCost = () => {
-    if (!selectedStation) return "0.00";
+    if (!selectedStation || !selectedChargerId) return "0.00";
     const charger = chargers.find(c => c.charger_id === selectedChargerId);
     const rate = charger?.rate_per_kwh || 0.45;
-    return (rate * (charger?.type === 'DCFC' ? 40 : 7) * parseInt(bookingDuration)).toFixed(2);
+    const duration = parseInt(bookingDuration) || 1;
+    // Basic estimation logic
+    const energyEstimate = charger?.type === 'DCFC' ? 40 : 7;
+    return (rate * energyEstimate * duration).toFixed(2);
   };
 
   const renderStationCard = (station: any, isAi = false) => (
@@ -423,9 +424,9 @@ export function UserDashboard() {
                       className={cn(
                         "p-4 rounded-2xl border transition-all cursor-pointer",
                         selectedChargerId === charger.charger_id 
-                          ? "bg-primary/10 border-primary" 
+                          ? "bg-primary/10 border-primary shadow-[0_0_15px_rgba(var(--primary),0.2)]" 
                           : "bg-background/20 border-white/5 hover:border-white/10",
-                        charger.status === 'occupied' && "opacity-50 cursor-not-allowed"
+                        charger.status === 'occupied' && "opacity-50 cursor-not-allowed grayscale"
                       )}
                     >
                       <div className="flex items-center gap-2 mb-1">
@@ -446,22 +447,27 @@ export function UserDashboard() {
                 <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Date</label>
                 <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className="h-11 w-full justify-between bg-background/20 border-white/5 rounded-xl text-sm px-3">
-                      <span>{dateInput || "Select Date"}</span>
+                    <Button 
+                      variant="outline" 
+                      className="h-11 w-full justify-between bg-background/20 border-white/5 rounded-xl text-sm px-3 hover:bg-white/5 transition-colors"
+                    >
+                      <span>{bookingDate && isValid(bookingDate) ? format(bookingDate, 'yyyy-MM-dd') : "Select Date"}</span>
                       <ChevronDown className="h-4 w-4 opacity-50" />
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0 bg-[#1a1a1c] border-white/10" align="start">
-                    <div className="bg-[#333] p-4 text-white border-b border-white/5">
-                      <p className="text-xs opacity-60 uppercase">{bookingDate ? format(bookingDate, "yyyy") : "---"}</p>
-                      <h3 className="text-2xl font-bold">{bookingDate ? format(bookingDate, "EEE, d MMM") : "Select Date"}</h3>
+                    <div className="bg-primary/5 p-4 text-white border-b border-white/5">
+                      <p className="text-xs opacity-60 uppercase tracking-widest font-bold">{bookingDate ? format(bookingDate, "yyyy") : "Select"}</p>
+                      <h3 className="text-2xl font-bold">{bookingDate ? format(bookingDate, "EEE, d MMM") : "Date"}</h3>
                     </div>
                     <Calendar 
                       mode="single" 
                       selected={bookingDate} 
                       onSelect={(date) => {
-                        setBookingDate(date);
-                        setIsCalendarOpen(false);
+                        if (date) {
+                          setBookingDate(date);
+                          setIsCalendarOpen(false);
+                        }
                       }} 
                     />
                   </PopoverContent>
@@ -472,13 +478,16 @@ export function UserDashboard() {
                 <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Time</label>
                 <Popover open={isTimePickerOpen} onOpenChange={setIsTimePickerOpen}>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className="h-11 w-full justify-between bg-background/20 border-white/5 rounded-xl text-sm px-3">
+                    <Button 
+                      variant="outline" 
+                      className="h-11 w-full justify-between bg-background/20 border-white/5 rounded-xl text-sm px-3 hover:bg-white/5 transition-colors"
+                    >
                       <span>{bookingTime}</span>
                       <ChevronDown className="h-4 w-4 opacity-50" />
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-[200px] p-2 bg-[#1a1a1c] border-white/10" align="end">
-                    <div className="grid grid-cols-2 gap-1 max-h-[200px] overflow-y-auto">
+                    <div className="grid grid-cols-2 gap-1 max-h-[240px] overflow-y-auto scrollbar-none">
                       {['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'].map(time => (
                         <Button 
                           key={time} 
@@ -488,7 +497,10 @@ export function UserDashboard() {
                             setBookingTime(time); 
                             setIsTimePickerOpen(false); 
                           }} 
-                          className="text-xs h-9"
+                          className={cn(
+                            "text-xs h-9 font-medium",
+                            bookingTime === time ? "bg-primary/10 text-primary" : "text-foreground/70"
+                          )}
                         >
                           {time}
                         </Button>
@@ -502,23 +514,34 @@ export function UserDashboard() {
             <div className="space-y-2">
               <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Duration (Hours)</label>
               <Select value={bookingDuration} onValueChange={setBookingDuration}>
-                <SelectTrigger className="h-11 bg-background/20 border-white/5 rounded-xl">
+                <SelectTrigger className="h-11 bg-background/20 border-white/5 rounded-xl focus:ring-primary/20">
                   <SelectValue placeholder="Select Duration" />
                 </SelectTrigger>
                 <SelectContent className="bg-[#1a1a1c] border-white/10">
                   <SelectItem value="1">1 hour</SelectItem>
                   <SelectItem value="2">2 hours</SelectItem>
                   <SelectItem value="3">3 hours</SelectItem>
+                  <SelectItem value="4">4 hours</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="bg-background/20 rounded-2xl p-4 flex items-center justify-between border border-white/5">
-              <p className="text-[10px] text-muted-foreground uppercase font-bold">Estimated Cost</p>
-              <p className="text-xl font-bold">${getEstimatedCost()}</p>
+              <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Estimated Cost</p>
+              <p className="text-xl font-bold text-primary">${getEstimatedCost()}</p>
             </div>
 
-            <Button onClick={handleConfirmBooking} className="w-full teal-gradient-btn h-12 font-bold rounded-xl">Confirm Booking</Button>
+            <Button 
+              onClick={handleConfirmBooking} 
+              disabled={isBookingPending || !selectedChargerId}
+              className="w-full teal-gradient-btn h-12 font-bold rounded-xl shadow-lg shadow-primary/20 disabled:opacity-50"
+            >
+              {isBookingPending ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                "Confirm Booking"
+              )}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
