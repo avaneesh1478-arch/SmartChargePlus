@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -23,8 +22,7 @@ import {
   Coffee,
   Wifi,
   Info,
-  ChevronRight,
-  ChevronLeft
+  Calendar as CalendarIcon
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
