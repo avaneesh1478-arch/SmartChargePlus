@@ -83,6 +83,12 @@ export function UserDashboard() {
     setDateInput(format(today, 'yyyy-MM-dd'));
   }, []);
 
+  useEffect(() => {
+    if (bookingDate) {
+      setDateInput(format(bookingDate, 'yyyy-MM-dd'));
+    }
+  }, [bookingDate]);
+
   const handleGetLocation = () => {
     if (!("geolocation" in navigator)) {
       toast({ variant: "destructive", title: "Unsupported", description: "Browser does not support geolocation." });
@@ -108,15 +114,13 @@ export function UserDashboard() {
     window.open(url, '_blank');
   };
 
-  useEffect(() => {
-    if (bookingDate) setDateInput(format(bookingDate, 'yyyy-MM-dd'));
-  }, [bookingDate]);
-
   const handleDateInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setDateInput(val);
     const parsed = parse(val, 'yyyy-MM-dd', new Date());
-    if (isValid(parsed)) setBookingDate(parsed);
+    if (isValid(parsed)) {
+      setBookingDate(parsed);
+    }
   };
 
   const getAiRecommendations = async () => {
@@ -442,21 +446,24 @@ export function UserDashboard() {
                 <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Date</label>
                 <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                   <PopoverTrigger asChild>
-                    <div className="relative group">
-                      <Input
-                        value={dateInput}
-                        onChange={handleDateInputChange}
-                        className="h-11 bg-background/20 border-white/5 rounded-xl text-sm"
-                      />
-                      <Button variant="ghost" size="icon" className="absolute right-1 top-1.5 h-8 w-8"><ChevronDown className="h-4 w-4 opacity-50" /></Button>
-                    </div>
+                    <Button variant="outline" className="h-11 w-full justify-between bg-background/20 border-white/5 rounded-xl text-sm px-3">
+                      <span>{dateInput || "Select Date"}</span>
+                      <ChevronDown className="h-4 w-4 opacity-50" />
+                    </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0 bg-[#1a1a1c] border-white/10" align="start">
                     <div className="bg-[#333] p-4 text-white border-b border-white/5">
                       <p className="text-xs opacity-60 uppercase">{bookingDate ? format(bookingDate, "yyyy") : "---"}</p>
                       <h3 className="text-2xl font-bold">{bookingDate ? format(bookingDate, "EEE, d MMM") : "Select Date"}</h3>
                     </div>
-                    <Calendar mode="single" selected={bookingDate} onSelect={setBookingDate} />
+                    <Calendar 
+                      mode="single" 
+                      selected={bookingDate} 
+                      onSelect={(date) => {
+                        setBookingDate(date);
+                        setIsCalendarOpen(false);
+                      }} 
+                    />
                   </PopoverContent>
                 </Popover>
               </div>
@@ -465,7 +472,7 @@ export function UserDashboard() {
                 <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Time</label>
                 <Popover open={isTimePickerOpen} onOpenChange={setIsTimePickerOpen}>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className="h-11 w-full justify-between bg-background/20 border-white/5 rounded-xl">
+                    <Button variant="outline" className="h-11 w-full justify-between bg-background/20 border-white/5 rounded-xl text-sm px-3">
                       <span>{bookingTime}</span>
                       <ChevronDown className="h-4 w-4 opacity-50" />
                     </Button>
@@ -473,7 +480,18 @@ export function UserDashboard() {
                   <PopoverContent className="w-[200px] p-2 bg-[#1a1a1c] border-white/10" align="end">
                     <div className="grid grid-cols-2 gap-1 max-h-[200px] overflow-y-auto">
                       {['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'].map(time => (
-                        <Button key={time} variant="ghost" size="sm" onClick={() => { setBookingTime(time); setIsTimePickerOpen(false); }} className="text-xs">{time}</Button>
+                        <Button 
+                          key={time} 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => { 
+                            setBookingTime(time); 
+                            setIsTimePickerOpen(false); 
+                          }} 
+                          className="text-xs h-9"
+                        >
+                          {time}
+                        </Button>
                       ))}
                     </div>
                   </PopoverContent>
