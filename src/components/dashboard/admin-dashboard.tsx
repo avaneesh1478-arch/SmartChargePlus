@@ -164,7 +164,7 @@ export function AdminDashboard() {
                         id="latitude"
                         type="number"
                         step="0.000001"
-                        placeholder="e.g. 40.7128"
+                        placeholder="e.g. 12.9716"
                         className="flex h-10 w-full rounded-md border-none bg-secondary/50 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 disabled:cursor-not-allowed disabled:opacity-50"
                         value={formData.latitude}
                         onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
@@ -176,7 +176,7 @@ export function AdminDashboard() {
                         id="longitude"
                         type="number"
                         step="0.000001"
-                        placeholder="e.g. -74.0060"
+                        placeholder="e.g. 77.5946"
                         className="flex h-10 w-full rounded-md border-none bg-secondary/50 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 disabled:cursor-not-allowed disabled:opacity-50"
                         value={formData.longitude}
                         onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
@@ -185,12 +185,12 @@ export function AdminDashboard() {
                   </div>
 
                   <div className="grid gap-2">
-                    <Label htmlFor="cost" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Charging Cost ($/kWh)</Label>
+                    <Label htmlFor="cost" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Charging Cost (₹/kWh)</Label>
                     <input
                       id="cost"
                       type="number"
                       step="0.01"
-                      placeholder="e.g. 0.45"
+                      placeholder="e.g. 15.00"
                       className="flex h-10 w-full rounded-md border-none bg-secondary/50 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 disabled:cursor-not-allowed disabled:opacity-50"
                       value={formData.chargingCost}
                       onChange={(e) => setFormData({ ...formData, chargingCost: e.target.value })}
@@ -210,7 +210,7 @@ export function AdminDashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Total Revenue" value="$328,450" icon={CreditCard} trend={{ value: 12, isUp: true }} />
+        <StatCard title="Total Revenue" value="₹3,28,450" icon={CreditCard} trend={{ value: 12, isUp: true }} />
         <StatCard title="Total Energy" value="1.2 GWh" icon={Zap} trend={{ value: 8.5, isUp: true }} />
         <StatCard title="Active Sessions" value="242" icon={Activity} subtext="Across the network" />
         <StatCard title="Total Users" value="12,840" icon={Users} trend={{ value: 5, isUp: true }} />
@@ -228,14 +228,14 @@ export function AdminDashboard() {
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={revenueData}>
                 <defs>
-                  <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient id="colorRev" x1="0" x2="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
                     <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                <YAxis axisLine={false} tickLine={false} tickFormatter={(val) => `$${val/1000}k`} />
+                <YAxis axisLine={false} tickLine={false} tickFormatter={(val) => `₹${val/1000}k`} />
                 <Tooltip
                   contentStyle={{ backgroundColor: 'hsl(var(--card))', border: 'none', borderRadius: '8px' }}
                   itemStyle={{ color: 'hsl(var(--primary))' }}
@@ -299,7 +299,7 @@ export function AdminDashboard() {
                   </TableCell>
                   <TableCell className="text-muted-foreground">99.9%</TableCell>
                   <TableCell className="text-right font-mono font-bold text-primary">
-                    ${(Math.random() * 5000).toFixed(2)}
+                    ₹{(Math.random() * 50000).toFixed(2)}
                   </TableCell>
                   <TableCell className="text-right">
                     <AlertDialog>

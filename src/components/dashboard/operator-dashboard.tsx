@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import { useApp } from '@/hooks/use-store';
 import { StatCard } from './stat-card';
 import { 
-  DollarSign, 
+  IndianRupee, 
   Users, 
   Zap, 
   Activity, 
@@ -35,13 +35,13 @@ import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const earningsData = [
-  { day: '02-08', amount: 240 },
-  { day: '02-09', amount: 310 },
-  { day: '02-10', amount: 190 },
-  { day: '02-11', amount: 420 },
-  { day: '02-12', amount: 370 },
-  { day: '02-13', amount: 300 },
-  { day: '02-14', amount: 160 },
+  { day: '02-08', amount: 2400 },
+  { day: '02-09', amount: 3100 },
+  { day: '02-10', amount: 1900 },
+  { day: '02-11', amount: 4200 },
+  { day: '02-12', amount: 3700 },
+  { day: '02-13', amount: 3000 },
+  { day: '02-14', amount: 1600 },
 ];
 
 export function OperatorDashboard() {
@@ -113,8 +113,8 @@ export function OperatorDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard 
           title="Weekly Revenue" 
-          value="$1,988" 
-          icon={DollarSign} 
+          value="₹19,880" 
+          icon={IndianRupee} 
           trend={{ value: 12, isUp: true }} 
           iconClassName="bg-emerald-500/10"
         />
@@ -280,9 +280,9 @@ export function OperatorDashboard() {
             </TableHeader>
             <TableBody>
               {[
-                { customer: 'John Doe', slot: 'Slot 1', time: '14:30', status: 'Completed', amount: '$24.50' },
-                { customer: 'Sarah Miller', slot: 'Slot 2', time: '15:15', status: 'Active', amount: '$12.00' },
-                { customer: 'Alex Chen', slot: 'Slot 1', time: '16:00', status: 'Pending', amount: '$45.00' },
+                { customer: 'John Doe', slot: 'Slot 1', time: '14:30', status: 'Completed', amount: '₹2,450.00' },
+                { customer: 'Sarah Miller', slot: 'Slot 2', time: '15:15', status: 'Active', amount: '₹1,200.00' },
+                { customer: 'Alex Chen', slot: 'Slot 1', time: '16:00', status: 'Pending', amount: '₹4,500.00' },
               ].map((booking, i) => (
                 <TableRow key={i} className="border-white/5 hover:bg-white/5 transition-colors">
                   <TableCell className="text-sm font-medium py-4">{booking.customer}</TableCell>

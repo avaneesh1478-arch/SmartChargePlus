@@ -1,11 +1,10 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
 import { useApp } from '@/hooks/use-store';
 import { StatCard } from './stat-card';
 import { 
-  Wallet, 
+  IndianRupee, 
   Navigation, 
   Sparkles, 
   History, 
@@ -107,14 +106,14 @@ export function UserDashboard() {
           location: s.location,
           charger_types: ['Level 2', 'DCFC'] as ('Level 2' | 'DCFC')[],
           current_load_percentage: total > 0 ? (occupied / total) * 100 : 0,
-          rate_per_kwh: stationChargers[0]?.rate_per_kwh || 0.35
+          rate_per_kwh: stationChargers[0]?.rate_per_kwh || 15.00
         };
       });
 
       const res = await smartChargingStationRecommendation({
         userLocation: userLocation 
           ? { latitude: userLocation.lat, longitude: userLocation.lng }
-          : { latitude: 40.7128, longitude: -74.0060 },
+          : { latitude: 12.9716, longitude: 77.5946 },
         vehicleChargerType: 'DCFC',
         preference: 'maximizeSpeed',
         availableStations: available
@@ -177,7 +176,7 @@ export function UserDashboard() {
   const getEstimatedCost = () => {
     if (!selectedStation || !selectedChargerId) return "0.00";
     const charger = chargers.find(c => c.charger_id === selectedChargerId);
-    const rate = charger?.rate_per_kwh || 0.45;
+    const rate = charger?.rate_per_kwh || 15.00;
     const duration = parseInt(bookingDuration) || 1;
     // Basic estimation logic
     const energyEstimate = charger?.type === 'DCFC' ? 40 : 7;
@@ -264,13 +263,13 @@ export function UserDashboard() {
             <History className="h-4 w-4" /> History
           </Button>
           <Button size="sm" className="teal-gradient-btn font-bold h-10 px-6">
-            <Wallet className="h-4 w-4" /> Top Up
+            <IndianRupee className="h-4 w-4" /> Top Up
           </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatCard title={t.dashboard.wallet} value={`$${user?.wallet_balance?.toFixed(2) || '0.00'}`} icon={Wallet} />
+        <StatCard title={t.dashboard.wallet} value={`₹${user?.wallet_balance?.toFixed(2) || '0.00'}`} icon={IndianRupee} />
         <StatCard title={t.dashboard.lastSession} value="45.2 kWh" subtext="Downtown Hub" icon={Zap} />
         <StatCard title={t.dashboard.nearbyActive} value={stations.filter(s => s.status === 'active').length} icon={Navigation} />
       </div>
@@ -363,7 +362,7 @@ export function UserDashboard() {
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-mono font-bold text-foreground">${tx.cost.toFixed(2)}</p>
+                        <p className="text-sm font-mono font-bold text-foreground">₹{tx.cost.toFixed(2)}</p>
                         <p className="text-[10px] text-primary/80 font-bold">{tx.energy_delivered} kWh</p>
                       </div>
                     </div>
@@ -447,7 +446,7 @@ export function UserDashboard() {
 
             <div className="bg-background/20 rounded-2xl p-4 flex items-center justify-between border border-white/5">
               <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Estimated Cost</p>
-              <p className="text-xl font-bold text-primary">${getEstimatedCost()}</p>
+              <p className="text-xl font-bold text-primary">₹{getEstimatedCost()}</p>
             </div>
 
             <Button 

@@ -150,7 +150,7 @@ export default function ProfilePage() {
                           <Input
                             id="contactNumber"
                             className="bg-secondary/50 border-none h-10"
-                            placeholder="e.g. +1 234 567 890"
+                            placeholder="e.g. +91 98765 43210"
                             value={formData.contactNumber}
                             onChange={(e) => setFormData({ ...formData, contactNumber: e.target.value })}
                           />
@@ -253,7 +253,7 @@ export default function ProfilePage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="bg-background/40 p-4 rounded-2xl border border-white/5 text-center">
                       <Wallet className="h-5 w-5 mx-auto mb-2 text-primary" />
-                      <p className="text-xl font-bold">${user.wallet_balance?.toFixed(2)}</p>
+                      <p className="text-xl font-bold">₹{user.wallet_balance?.toFixed(2)}</p>
                       <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Balance</p>
                     </div>
                     <div className="bg-background/40 p-4 rounded-2xl border border-white/5 text-center">
