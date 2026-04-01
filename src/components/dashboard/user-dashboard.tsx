@@ -14,7 +14,6 @@ import {
   Search, 
   Star, 
   Clock, 
-  ChevronDown,
   X,
   LocateFixed,
   Loader2,
@@ -22,10 +21,8 @@ import {
   CheckCircle2,
   Coffee,
   Wifi,
-  Info,
-  Calendar as CalendarIcon
 } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -44,13 +41,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
 import { smartChargingStationRecommendation } from '@/ai/flows/smart-charging-station-recommendation-flow';
 import { useToast } from '@/hooks/use-toast';
 import { Station } from '@/types';
 import { cn, calculateDistance } from '@/lib/utils';
-import { format, isValid } from 'date-fns';
 import Image from 'next/image';
 
 export function UserDashboard() {
@@ -69,20 +63,11 @@ export function UserDashboard() {
   const [isBookingPending, setIsBookingPending] = useState(false);
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [selectedChargerId, setSelectedChargerId] = useState<string | null>(null);
-  const [bookingDate, setBookingDate] = useState<Date | undefined>(undefined);
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const [isTimePickerOpen, setIsTimePickerOpen] = useState(false);
-  const [bookingTime, setBookingTime] = useState('15:30');
   const [bookingDuration, setBookingDuration] = useState('1');
 
   // Details Dialog State
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [detailsStation, setDetailsStation] = useState<Station | null>(null);
-
-  // Initialize booking date on mount to avoid hydration errors
-  useEffect(() => {
-    setBookingDate(new Date());
-  }, []);
 
   const handleGetLocation = () => {
     if (!("geolocation" in navigator)) {
@@ -182,7 +167,7 @@ export function UserDashboard() {
     setTimeout(() => {
       toast({ 
         title: "Booking Confirmed!", 
-        description: `Reserved ${selectedStation?.name} for ${bookingDuration} hour(s) on ${bookingDate ? format(bookingDate, 'MMM dd') : 'today'} at ${bookingTime}.` 
+        description: `Reserved ${selectedStation?.name} for ${bookingDuration} hour(s) starting now.` 
       });
       setIsBookingPending(false);
       setIsBookingOpen(false);
@@ -442,84 +427,6 @@ export function UserDashboard() {
                       </div>
                     </div>
                   ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Date</label>
-                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                  <PopoverTrigger asChild>
-                    <Button 
-                      variant="outline" 
-                      className="h-11 w-full justify-between bg-background/20 border-white/5 rounded-xl text-sm px-3 hover:bg-white/5 transition-colors"
-                    >
-                      <span>{bookingDate && isValid(bookingDate) ? format(bookingDate, 'yyyy-MM-dd') : "Select Date"}</span>
-                      <ChevronDown className="h-4 w-4 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent 
-                    className="w-auto p-0 bg-[#1a1a1c] border-white/10" 
-                    align="start"
-                    onOpenAutoFocus={(e) => e.preventDefault()}
-                  >
-                    <div className="bg-primary/5 p-4 text-white border-b border-white/5">
-                      <p className="text-xs opacity-60 uppercase tracking-widest font-bold">{bookingDate && isValid(bookingDate) ? format(bookingDate, "yyyy") : "Select"}</p>
-                      <h3 className="text-2xl font-bold">{bookingDate && isValid(bookingDate) ? format(bookingDate, "EEE, d MMM") : "Date"}</h3>
-                    </div>
-                    <Calendar 
-                      mode="single" 
-                      selected={bookingDate} 
-                      onSelect={(date) => {
-                        if (date) {
-                          setBookingDate(date);
-                          setIsCalendarOpen(false);
-                        }
-                      }} 
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Time</label>
-                <Popover open={isTimePickerOpen} onOpenChange={setIsTimePickerOpen}>
-                  <PopoverTrigger asChild>
-                    <Button 
-                      variant="outline" 
-                      className="h-11 w-full justify-between bg-background/20 border-white/5 rounded-xl text-sm px-3 hover:bg-white/5 transition-colors"
-                    >
-                      <span>{bookingTime}</span>
-                      <ChevronDown className="h-4 w-4 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent 
-                    className="w-[200px] p-2 bg-[#1a1a1c] border-white/10" 
-                    align="end"
-                    onOpenAutoFocus={(e) => e.preventDefault()}
-                  >
-                    <div className="grid grid-cols-2 gap-1 max-h-[240px] overflow-y-auto scrollbar-none">
-                      {['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'].map(time => (
-                        <Button 
-                          key={time} 
-                          variant="ghost" 
-                          size="sm" 
-                          type="button"
-                          onClick={() => { 
-                            setBookingTime(time); 
-                            setIsTimePickerOpen(false); 
-                          }} 
-                          className={cn(
-                            "text-xs h-9 font-medium",
-                            bookingTime === time ? "bg-primary/10 text-primary" : "text-foreground/70"
-                          )}
-                        >
-                          {time}
-                        </Button>
-                      ))}
-                    </div>
-                  </PopoverContent>
-                </Popover>
               </div>
             </div>
 
