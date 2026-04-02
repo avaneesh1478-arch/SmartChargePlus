@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "User": {
@@ -179,32 +180,35 @@
         },
         "userId": {
           "type": "string",
-          "description": "Reference to the End User who made this booking. (Relationship: User 1:N Booking)"
+          "description": "Reference to the End User who made this booking."
         },
         "stationId": {
           "type": "string",
-          "description": "Reference to the Station where the booking is made. (Relationship: Station 1:N Booking)"
+          "description": "Reference to the Station where the booking is made."
+        },
+        "operatorId": {
+          "type": "string",
+          "description": "The ID of the operator who manages the station."
+        },
+        "stationName": {
+          "type": "string",
+          "description": "Denormalized name of the station for display."
         },
         "bookingDate": {
           "type": "string",
-          "description": "The date of the booking in ISO format (YYYY-MM-DD)."
+          "description": "The date of the booking (YYYY-MM-DD)."
         },
         "bookingTime": {
           "type": "string",
-          "description": "The time of the booking in 24-hour format (HH:mm)."
+          "description": "The time of the booking (HH:mm)."
         },
         "status": {
           "type": "string",
-          "description": "The current status of the booking (pending, confirmed, rejected)."
+          "enum": ["pending", "confirmed", "rejected"],
+          "description": "The current status of the booking."
         },
         "createdAt": {
           "type": "string",
-          "description": "Timestamp when the booking request was created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp when the booking status was last updated.",
           "format": "date-time"
         }
       },
@@ -214,8 +218,7 @@
         "stationId",
         "bookingDate",
         "bookingTime",
-        "status",
-        "createdAt"
+        "status"
       ]
     }
   },
@@ -234,11 +237,11 @@
           "schema": {
             "$ref": "#/backend/entities/User"
           },
-          "description": "Stores individual user profiles including their email, creation timestamp, system role, and the associated station ID for operators. For authorization, a user's role and associatedStationId are retrieved from their own document (request.auth.uid == userId).",
+          "description": "Stores individual user profiles.",
           "params": [
             {
               "name": "userId",
-              "description": "The unique identifier of the user, typically matching Firebase Auth UID."
+              "description": "Firebase Auth UID."
             }
           ]
         }
@@ -250,51 +253,11 @@
           "schema": {
             "$ref": "#/backend/entities/Station"
           },
-          "description": "Stores details for each EV charging station. Includes denormalized 'operatorId' for direct association with the managing operator, crucial for authorization independence and allowing operators to list/manage their assigned stations efficiently (e.g., query.where('operatorId', '==', request.auth.uid)).",
+          "description": "Stores details for each EV charging station.",
           "params": [
             {
               "name": "stationId",
               "description": "The unique identifier of the charging station."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/stations/{stationId}/chargers/{chargerId}",
-        "definition": {
-          "entityName": "Charger",
-          "schema": {
-            "$ref": "#/backend/entities/Charger"
-          },
-          "description": "Represents individual EV charger units belonging to a specific station. Includes denormalized 'operatorId' from the parent station to ensure authorization independence, allowing security rules to directly check 'request.auth.uid == resource.data.operatorId' for operator management.",
-          "params": [
-            {
-              "name": "stationId",
-              "description": "The unique identifier of the parent charging station."
-            },
-            {
-              "name": "chargerId",
-              "description": "The unique identifier of the individual charger unit."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}/transactions/{transactionId}",
-        "definition": {
-          "entityName": "Transaction",
-          "schema": {
-            "$ref": "#/backend/entities/Transaction"
-          },
-          "description": "Records details of completed EV charging sessions, stored under the user who initiated the transaction. Path-based ownership ensures that users can only access their own transaction history, adhering to security and data privacy.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user who performed the transaction."
-            },
-            {
-              "name": "transactionId",
-              "description": "The unique identifier of the charging transaction."
             }
           ]
         }
@@ -306,7 +269,7 @@
           "schema": {
             "$ref": "#/backend/entities/Booking"
           },
-          "description": "Manages charging slot reservations. Includes denormalized 'userId' (requester), 'stationId' (booked station), and 'operatorId' (station's managing operator) for robust authorization independence. This enables atomic access checks and supports efficient, secure QAPs for both end-users and operators.",
+          "description": "Manages charging slot reservations.",
           "params": [
             {
               "name": "bookingId",
@@ -315,7 +278,6 @@
           ]
         }
       }
-    ],
-    "reasoning": "The recommended Firestore structure is designed to be secure, scalable, and debuggable, strictly adhering to the core design principles and strategy mandates. The primary goal is Authorization Independence, meaning security rules avoid hierarchical dependencies and `get()` calls for authorization decisions on the target resource. This is achieved through strategic denormalization and structural segregation.\n\n1.  **User Profiles (`/users/{userId}`):** This collection stores core user data like email and creation timestamp. The 'role' and 'associatedStationId' fields for Operators are stored here. For security rules, `request.auth.uid` will fetch its own user document to determine its role and associated station, which is considered an acceptable 'self-context' `get()` and does not violate the Authorization Independence mandate which primarily targets `get()` calls on *other* documents to authorize access to the *target resource*.\n\n2.  **Stations (`/stations/{stationId}`):** Stations are stored in a top-level collection. Crucially, each `Station` document includes the `operatorId` of the user responsible for managing it. This denormalization ensures that an operator's access to manage a station can be verified by simply checking `request.auth.uid == resource.data.operatorId`, without needing to `get()` the operator's user profile or any other related document for authorization.\n\n3.  **Chargers (`/stations/{stationId}/chargers/{chargerId}`):** Chargers are placed in a subcollection under their respective stations. To maintain Authorization Independence for chargers, each `Charger` document will also denormalize the `operatorId` from its parent `Station`. This allows operator-specific rules for chargers to directly check `request.auth.uid == resource.data.operatorId`, preventing a `get()` call to the parent `Station` for authorization. This also supports efficient collection group queries for operators listing *all* their chargers across stations.\n\n4.  **Transactions (`/users/{userId}/transactions/{transactionId}`):** Transactions are stored as a subcollection under the `users` collection. This path-based ownership provides inherent security, where users can only access their own transactions (i.e., `request.auth.uid == userId`). The `stationId` is also included directly in the document, but for read-only informational purposes, not for access control of the transaction itself.\n\n5.  **Bookings (`/bookings/{bookingId}`):** Bookings are critical for slot validation and role-based workflows. They are placed in a root-level collection for several reasons:\n    *   **QAPs (Queryable Access Patterns):** This structure supports all required queries efficiently:\n        *   **User's 'My Bookings':** A simple query `bookings.where('userId', '==', request.auth.uid)` is performant.\n        *   **Operator's Bookings:** A query `bookings.where('operatorId', '==', request.auth.uid)` is performant. This requires `operatorId` to be denormalized into the `Booking` document.\n        *   **Availability Check:** The core requirement of querying for `station_id`, `booking_date`, `booking_time`, and `status in ['confirmed', 'pending']` is highly efficient with a top-level collection and the specified composite index. No `get()` calls are needed for this client-side validation query.\n    *   **Authorization Independence (CRITICAL):** Each `Booking` document explicitly includes `userId` (the user who made the booking), `stationId` (the station being booked), and `operatorId` (the ID of the station's assigned operator). This extensive denormalization means that all authorization rules (e.g., user can cancel their booking, operator can approve/reject a booking for their station) can be evaluated solely based on the `resource.data` of the booking document itself, comparing `request.auth.uid` directly against `userId` or `operatorId`. This eliminates `get()` calls to `User` or `Station` documents for authorization of the booking resource, fulfilling Mandate A.\n\nThis structure ensures clear authorization intent, supports robust security rules, and allows for efficient queries required by both end-users and operators, while strictly adhering to the principle of Authorization Independence."
+    ]
   }
 }

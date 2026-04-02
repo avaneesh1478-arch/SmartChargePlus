@@ -1,3 +1,4 @@
+
 export type UserRole = 'ADMIN' | 'OPERATOR' | 'USER';
 
 export interface User {
@@ -46,4 +47,16 @@ export interface Transaction {
   cost: number;
   energy_delivered: number; // in kWh
   timestamp: number;
+}
+
+export interface Booking {
+  id: string;
+  userId: string;
+  stationId: string;
+  operatorId: string;
+  stationName: string;
+  bookingDate: string; // ISO format YYYY-MM-DD
+  bookingTime: string; // 24h format HH:mm
+  status: 'pending' | 'confirmed' | 'rejected';
+  createdAt: string;
 }

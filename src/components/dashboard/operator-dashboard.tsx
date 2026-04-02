@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -8,299 +9,175 @@ import {
   Users, 
   Zap, 
   Activity, 
-  Plus, 
-  Minus, 
-  Circle
+  Check, 
+  X,
+  Clock,
+  Calendar as CalendarIcon,
+  Loader2
 } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer 
-} from 'recharts';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-
-const earningsData = [
-  { day: '02-08', amount: 2400 },
-  { day: '02-09', amount: 3100 },
-  { day: '02-10', amount: 1900 },
-  { day: '02-11', amount: 4200 },
-  { day: '02-12', amount: 3700 },
-  { day: '02-13', amount: 3000 },
-  { day: '02-14', amount: 1600 },
-];
+import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, where, orderBy, doc, updateDoc } from 'firebase/firestore';
+import { Booking } from '@/types';
 
 export function OperatorDashboard() {
-  const { user, stations, chargers, updateChargerStatus, addSlot, removeSlot } = useApp();
+  const { stations } = useApp();
+  const { user: firebaseUser } = useUser();
+  const db = useFirestore();
   const { toast } = useToast();
-  const [bulkCount, setBulkCount] = useState<number>(1);
 
   const myStation = useMemo(() => {
-    if (!user) return undefined;
-    return stations.find(s => 
-      s.operator_id === user.uid || 
-      (user.associated_station_id && s.station_id === user.associated_station_id)
+    if (!firebaseUser) return undefined;
+    return stations.find(s => s.operator_id === firebaseUser.uid);
+  }, [stations, firebaseUser]);
+
+  // Fetch Live Bookings for Operator
+  const bookingsQuery = useMemoFirebase(() => {
+    if (!db || !firebaseUser) return null;
+    return query(
+      collection(db, "bookings"),
+      where("operatorId", "==", firebaseUser.uid),
+      orderBy("bookingDate", "asc"),
+      orderBy("bookingTime", "asc")
     );
-  }, [stations, user]);
+  }, [db, firebaseUser]);
 
-  const myChargers = useMemo(() => {
-    if (!myStation) return [];
-    return chargers.filter(c => c.station_id === myStation.station_id);
-  }, [chargers, myStation]);
+  const { data: bookings, isLoading: loadingBookings } = useCollection<Booking>(bookingsQuery);
 
-  const handleStatusUpdate = (chargerId: string, newStatus: any) => {
-    updateChargerStatus(chargerId, newStatus);
-    toast({
-      title: "Status Updated",
-      description: `Slot status is now ${newStatus}.`,
-    });
-  };
-
-  const handleAddSlot = () => {
-    if (!myStation) {
+  const handleUpdateStatus = async (bookingId: string, newStatus: 'confirmed' | 'rejected') => {
+    if (!db) return;
+    try {
+      await updateDoc(doc(db, "bookings", bookingId), { status: newStatus });
       toast({
-        variant: "destructive",
-        title: "Station Not Found",
-        description: "We couldn't identify your assigned station. Please contact support.",
+        title: `Booking ${newStatus === 'confirmed' ? 'Approved' : 'Rejected'}`,
+        description: `The customer has been notified of the status change.`,
       });
-      return;
+    } catch (e) {
+      toast({ title: "Error", description: "Failed to update booking status.", variant: "destructive" });
     }
-    
-    const count = Math.max(1, bulkCount);
-    addSlot(myStation.station_id, count);
-    
-    toast({
-      title: count > 1 ? "Slots Added" : "Slot Added",
-      description: count > 1 
-        ? `${count} new charging slots have been added to ${myStation.name}.`
-        : `A new charging slot has been added to ${myStation.name}.`,
-    });
-    setBulkCount(1);
   };
 
-  const handleRemoveSlot = (chargerId: string) => {
-    removeSlot(chargerId);
-    toast({
-      title: "Slot Removed",
-      description: "The charging slot has been successfully decommissioned.",
-    });
-  };
-
-  const activeSlotsCount = myChargers.filter(c => c.status === 'occupied').length;
+  const stats = useMemo(() => {
+    if (!bookings) return { confirmed: 0, pending: 0, rejected: 0 };
+    return {
+      confirmed: bookings.filter(b => b.status === 'confirmed').length,
+      pending: bookings.filter(b => b.status === 'pending').length,
+      rejected: bookings.filter(b => b.status === 'rejected').length,
+    };
+  }, [bookings]);
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
       <div className="space-y-1">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">Operator Dashboard</h1>
-        <p className="text-muted-foreground text-sm">Manage your station infrastructure and performance.</p>
+        <p className="text-muted-foreground text-sm">Manage your station bookings and infrastructure.</p>
       </div>
 
       {/* Top Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard 
-          title="Weekly Revenue" 
+          title="Revenue (Est)" 
           value="₹19,880" 
           icon={IndianRupee} 
           trend={{ value: 12, isUp: true }} 
           iconClassName="bg-emerald-500/10"
         />
         <StatCard 
-          title="Total Sessions" 
-          value="138" 
+          title="Total Requests" 
+          value={bookings?.length || 0} 
           icon={Users} 
-          trend={{ value: 8, isUp: true }} 
+          iconClassName="bg-primary/10"
+        />
+        <StatCard 
+          title="Confirmed" 
+          value={stats.confirmed} 
+          subtext="Ready to charge" 
+          icon={Check} 
           iconClassName="bg-emerald-500/10"
         />
         <StatCard 
-          title="Active Slots" 
-          value={`${activeSlotsCount}/${myChargers.length}`} 
-          subtext={myStation?.name || "Locating station..."} 
-          icon={Zap} 
-          iconClassName="bg-primary/10"
+          title="Pending" 
+          value={stats.pending} 
+          subtext="Action required" 
+          icon={Clock} 
+          iconClassName="bg-amber-500/10"
         />
-        <StatCard 
-          title="Uptime" 
-          value="98.5%" 
-          trend={{ value: 0.5, isUp: true }} 
-          icon={Activity} 
-          iconClassName="bg-primary/10"
-        />
-      </div>
-
-      {/* Slot Status Grid - 2x2 Table Format */}
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <h2 className="text-xl font-bold flex items-center gap-2">
-            Infrastructure Status — <span className="text-muted-foreground font-medium">{myStation?.name || "Initializing..."}</span>
-          </h2>
-          <div className="flex items-center gap-2 bg-secondary/20 p-1.5 rounded-xl border border-white/5">
-            <div className="flex items-center px-3 border-r border-white/10 gap-2">
-              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Qty</span>
-              <input 
-                type="number" 
-                min="1"
-                max="50"
-                value={bulkCount}
-                onChange={(e) => setBulkCount(parseInt(e.target.value) || 1)}
-                className="w-12 bg-transparent text-sm font-bold focus:outline-none text-primary"
-              />
-            </div>
-            <Button 
-              onClick={handleAddSlot}
-              size="sm" 
-              className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold gap-1.5 px-4 h-9 rounded-lg"
-            >
-              <Plus className="h-4 w-4" /> Add Slots
-            </Button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {myChargers.length > 0 ? (
-            myChargers.map((charger, idx) => (
-              <Card key={charger.charger_id} className="border-none bg-[#1a1a1c] relative overflow-hidden group">
-                {charger.status === 'occupied' && (
-                  <div className="absolute top-3 right-3">
-                    <Circle className="h-2 w-2 fill-primary text-primary" />
-                  </div>
-                )}
-                <CardContent className="p-5 space-y-4">
-                  <div className="space-y-1">
-                    <h4 className="font-bold text-foreground">Slot {idx + 1}</h4>
-                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
-                      {charger.type} - {charger.type === 'DCFC' ? '150kW' : '50kW'}
-                    </p>
-                    <p className={cn(
-                      "text-[10px] font-bold uppercase tracking-widest",
-                      charger.status === 'available' ? "text-muted-foreground/60" : "text-primary"
-                    )}>
-                      {charger.status}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Select 
-                      value={charger.status} 
-                      onValueChange={(val) => handleStatusUpdate(charger.charger_id, val)}
-                    >
-                      <SelectTrigger className="h-9 bg-background/20 border-white/5 text-[10px] font-bold uppercase tracking-wider rounded-lg focus:ring-primary/20">
-                        <SelectValue placeholder="Update Status" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-[#1a1a1c] border-white/10">
-                        <SelectItem value="available">Available</SelectItem>
-                        <SelectItem value="occupied">Occupied</SelectItem>
-                        <SelectItem value="offline">Offline</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-9 w-9 rounded-lg bg-red-500/5 hover:bg-red-500/10 text-red-500/50 hover:text-red-500 border border-red-500/10"
-                      onClick={() => handleRemoveSlot(charger.charger_id)}
-                    >
-                      <Minus className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          ) : (
-            <div className="col-span-full py-20 text-center border border-dashed border-white/5 rounded-2xl bg-white/2">
-              <Zap className="h-8 w-8 mx-auto mb-4 text-muted-foreground/20" />
-              <p className="text-sm text-muted-foreground">No charging slots found. Click "Add Slots" to initialize your infrastructure.</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Weekly Earnings Chart */}
-      <div className="space-y-4">
-        <h3 className="text-xl font-bold">Weekly Performance</h3>
-        <Card className="border-none bg-[#1a1a1c] p-6 rounded-2xl">
-          <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={earningsData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ffffff08" />
-                <XAxis 
-                  dataKey="day" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fill: '#666', fontSize: 10 }}
-                  dy={10}
-                />
-                <YAxis 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fill: '#666', fontSize: 10 }}
-                  dx={-10}
-                />
-                <Tooltip
-                  cursor={{ fill: '#ffffff05' }}
-                  contentStyle={{ backgroundColor: '#1a1a1c', border: '1px solid #ffffff10', borderRadius: '8px' }}
-                />
-                <Bar 
-                  dataKey="amount" 
-                  fill="hsl(var(--primary))" 
-                  radius={[4, 4, 0, 0]} 
-                  barSize={40}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </Card>
       </div>
 
       {/* Recent Bookings Table */}
       <div className="space-y-4">
-        <h3 className="text-xl font-bold">Recent Network Activity</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-xl font-bold">Network Booking Requests</h3>
+          {loadingBookings && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
+        </div>
+        
         <Card className="border-none bg-[#1a1a1c] overflow-hidden rounded-2xl border border-white/5">
           <Table>
             <TableHeader>
               <TableRow className="border-white/5 bg-secondary/5">
-                <TableHead className="text-[10px] font-bold uppercase tracking-widest py-4">Customer</TableHead>
-                <TableHead className="text-[10px] font-bold uppercase tracking-widest py-4">Slot ID</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest py-4">Station</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest py-4">Date</TableHead>
                 <TableHead className="text-[10px] font-bold uppercase tracking-widest py-4">Time</TableHead>
                 <TableHead className="text-[10px] font-bold uppercase tracking-widest py-4">Status</TableHead>
-                <TableHead className="text-[10px] font-bold uppercase tracking-widest py-4 text-right">Amount</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest py-4 text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {[
-                { customer: 'John Doe', slot: 'Slot 1', time: '14:30', status: 'Completed', amount: '₹2,450.00' },
-                { customer: 'Sarah Miller', slot: 'Slot 2', time: '15:15', status: 'Active', amount: '₹1,200.00' },
-                { customer: 'Alex Chen', slot: 'Slot 1', time: '16:00', status: 'Pending', amount: '₹4,500.00' },
-              ].map((booking, i) => (
-                <TableRow key={i} className="border-white/5 hover:bg-white/5 transition-colors">
-                  <TableCell className="text-sm font-medium py-4">{booking.customer}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground py-4">{booking.slot}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground py-4">{booking.time}</TableCell>
-                  <TableCell className="py-4">
-                    <span className={cn(
-                      "text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border",
-                      booking.status === 'Completed' ? "success-badge" : 
-                      booking.status === 'Active' ? "bg-primary/10 text-primary border-primary/20" : 
-                      "warning-badge"
-                    )}>
-                      {booking.status}
-                    </span>
+              {bookings && bookings.length > 0 ? (
+                bookings.map((booking) => (
+                  <TableRow key={booking.id} className="border-white/5 hover:bg-white/5 transition-colors">
+                    <TableCell className="text-sm font-medium py-4">{booking.stationName}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground py-4">
+                      <div className="flex items-center gap-2">
+                        <CalendarIcon className="h-3 w-3" /> {booking.bookingDate}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground py-4">
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-3 w-3" /> {booking.bookingTime}
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-4">
+                      <Badge variant={booking.status === 'confirmed' ? 'default' : booking.status === 'pending' ? 'secondary' : 'destructive'} className="text-[10px] uppercase">
+                        {booking.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right py-4">
+                      {booking.status === 'pending' && (
+                        <div className="flex items-center justify-end gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="bg-emerald-500/10 border-emerald-500/20 text-emerald-500 hover:bg-emerald-500 hover:text-white h-8 w-8 p-0"
+                            onClick={() => handleUpdateStatus(booking.id, 'confirmed')}
+                          >
+                            <Check className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="bg-rose-500/10 border-rose-500/20 text-rose-500 hover:bg-rose-500 hover:text-white h-8 w-8 p-0"
+                            onClick={() => handleUpdateStatus(booking.id, 'rejected')}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="py-10 text-center text-muted-foreground italic">
+                    {loadingBookings ? "Connecting to network..." : "No booking requests found for your station."}
                   </TableCell>
-                  <TableCell className="text-sm font-mono font-bold text-right py-4">{booking.amount}</TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </Card>
