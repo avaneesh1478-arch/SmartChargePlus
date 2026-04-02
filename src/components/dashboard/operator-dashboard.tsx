@@ -1,29 +1,27 @@
-
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useApp } from '@/hooks/use-store';
 import { StatCard } from './stat-card';
 import { 
   IndianRupee, 
   Users, 
-  Zap, 
-  Activity, 
   Check, 
   X,
   Clock,
   Calendar as CalendarIcon,
   Loader2
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy, doc, updateDoc } from 'firebase/firestore';
 import { Booking } from '@/types';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 export function OperatorDashboard() {
   const { stations } = useApp();
@@ -49,17 +47,25 @@ export function OperatorDashboard() {
 
   const { data: bookings, isLoading: loadingBookings } = useCollection<Booking>(bookingsQuery);
 
-  const handleUpdateStatus = async (bookingId: string, newStatus: 'confirmed' | 'rejected') => {
+  const handleUpdateStatus = (bookingId: string, newStatus: 'confirmed' | 'rejected') => {
     if (!db) return;
-    try {
-      await updateDoc(doc(db, "bookings", bookingId), { status: newStatus });
-      toast({
-        title: `Booking ${newStatus === 'confirmed' ? 'Approved' : 'Rejected'}`,
-        description: `The customer has been notified of the status change.`,
+    
+    const docRef = doc(db, "bookings", bookingId);
+    updateDoc(docRef, { status: newStatus })
+      .then(() => {
+        toast({
+          title: `Booking ${newStatus === 'confirmed' ? 'Approved' : 'Rejected'}`,
+          description: `The customer has been notified of the status change.`,
+        });
+      })
+      .catch((error) => {
+        const contextualError = new FirestorePermissionError({
+          path: docRef.path,
+          operation: 'update',
+          requestResourceData: { status: newStatus },
+        });
+        errorEmitter.emit('permission-error', contextualError);
       });
-    } catch (e) {
-      toast({ title: "Error", description: "Failed to update booking status.", variant: "destructive" });
-    }
   };
 
   const stats = useMemo(() => {
@@ -117,6 +123,10 @@ export function OperatorDashboard() {
         </div>
         
         <Card className="border-none bg-[#1a1a1c] overflow-hidden rounded-2xl border border-white/5">
+          <CardHeader className="sr-only">
+             <CardTitle>Booking Requests</CardTitle>
+             <CardDescription>View and manage slots reserved by users.</CardDescription>
+          </CardHeader>
           <Table>
             <TableHeader>
               <TableRow className="border-white/5 bg-secondary/5">

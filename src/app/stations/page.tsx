@@ -136,7 +136,7 @@ export default function StationsPage() {
               placeholder="Search stations or cities..." 
               className="h-14 pl-12 bg-[#1a1a1c] border-white/5 rounded-2xl text-base focus-visible:ring-primary/40 placeholder:text-muted-foreground/40"
               value={searchQuery}
-              onChange={(e) => searchQuery(e.target.value)}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
 

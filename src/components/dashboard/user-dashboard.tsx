@@ -1,7 +1,6 @@
-
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useApp } from '@/hooks/use-store';
 import { StatCard } from './stat-card';
 import { 
@@ -19,12 +18,10 @@ import {
   Loader2,
   Navigation2,
   CheckCircle2,
-  Coffee,
-  Wifi,
   Calendar as CalendarIcon,
   AlertCircle
 } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -33,8 +30,7 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle,
-  DialogDescription,
-  DialogClose
+  DialogDescription
 } from '@/components/ui/dialog';
 import {
   Select,
@@ -46,24 +42,22 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format, addDays } from "date-fns";
-import { smartChargingStationRecommendation } from '@/ai/flows/smart-charging-station-recommendation-flow';
 import { useToast } from '@/hooks/use-toast';
 import { Station, Booking } from '@/types';
 import { cn, calculateDistance } from '@/lib/utils';
-import Image from 'next/image';
 import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, doc, setDoc } from 'firebase/firestore';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 export function UserDashboard() {
-  const { stations, chargers, transactions, t } = useApp();
+  const { stations, t } = useApp();
   const { user: firebaseUser } = useUser();
   const db = useFirestore();
   const { toast } = useToast();
   
   // UI States
-  const [loadingAi, setLoadingAi] = useState(false);
   const [locating, setLocating] = useState(false);
-  const [recommendations, setRecommendations] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [userLocation, setUserLocation] = useState<{ lat: number, lng: number } | null>(null);
   
@@ -137,7 +131,7 @@ export function UserDashboard() {
     window.open(url, '_blank');
   };
 
-  const handleConfirmBooking = async () => {
+  const handleConfirmBooking = () => {
     if (!firebaseUser || !selectedStation || !db) return;
     
     setIsBookingPending(true);
@@ -154,18 +148,25 @@ export function UserDashboard() {
       createdAt: new Date().toISOString()
     };
 
-    try {
-      await setDoc(doc(db, "bookings", bookingId), bookingData);
-      toast({ 
-        title: "Request Sent", 
-        description: `Booking for ${dateStr} at ${selectedTime} is awaiting operator approval.` 
+    const docRef = doc(db, "bookings", bookingId);
+    setDoc(docRef, bookingData)
+      .then(() => {
+        toast({ 
+          title: "Request Sent", 
+          description: `Booking for ${dateStr} at ${selectedTime} is awaiting operator approval.` 
+        });
+        setIsBookingOpen(false);
+        setIsBookingPending(false);
+      })
+      .catch((error) => {
+        const contextualError = new FirestorePermissionError({
+          path: docRef.path,
+          operation: 'create',
+          requestResourceData: bookingData,
+        });
+        errorEmitter.emit('permission-error', contextualError);
+        setIsBookingPending(false);
       });
-      setIsBookingOpen(false);
-    } catch (e) {
-      toast({ title: "Error", description: "Failed to submit booking request.", variant: "destructive" });
-    } finally {
-      setIsBookingPending(false);
-    }
   };
 
   const filteredStations = useMemo(() => {
@@ -178,7 +179,7 @@ export function UserDashboard() {
       .sort((a, b) => (a.distance || 0) - (b.distance || 0));
   }, [stations, searchQuery, userLocation]);
 
-  const renderStationCard = (station: any, isAi = false) => (
+  const renderStationCard = (station: any) => (
     <Card 
       key={station.station_id} 
       className="border-none bg-[#1a1a1c] hover:bg-[#1e1e20] transition-all rounded-[2rem] relative overflow-hidden group border border-white/5"
