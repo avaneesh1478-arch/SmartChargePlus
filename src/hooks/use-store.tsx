@@ -4,6 +4,8 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { User, Station, Charger, Transaction } from '@/types';
 import { MOCK_USERS, MOCK_STATIONS, MOCK_CHARGERS, MOCK_TRANSACTIONS } from '@/lib/mock-data';
 import { translations, Language } from '@/lib/translations';
+import { useAuth, useUser } from '@/firebase';
+import { signInAnonymously } from 'firebase/auth';
 
 interface AppContextType {
   user: User | null;
@@ -40,6 +42,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<Language>('en');
   const [allTranslations, setAllTranslations] = useState<typeof translations>(translations);
   const [isLoaded, setIsLoaded] = useState(false);
+
+  // Firebase Auth hooks
+  const auth = useAuth();
+  const { user: firebaseUser } = useUser();
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -110,6 +116,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setIsLoaded(true);
   }, []);
 
+  // Synchronize local user with Firebase Auth session
+  useEffect(() => {
+    if (isLoaded && user && !firebaseUser && auth) {
+      // For MVP, bridge local login to Firebase using anonymous auth
+      // This ensures requests carry a valid token for security rules
+      signInAnonymously(auth).catch(err => console.error("Firebase Sync Error:", err));
+    }
+  }, [user, firebaseUser, auth, isLoaded]);
+
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
     localStorage.setItem('volta_lang', lang);
@@ -176,6 +191,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     setUser(null);
     localStorage.removeItem('volta_user');
+    if (auth) auth.signOut();
   };
 
   const updateProfile = (data: Partial<User>) => {

@@ -21,7 +21,7 @@ import {
   Calendar as CalendarIcon,
   AlertCircle
 } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -72,7 +72,8 @@ export function UserDashboard() {
   const dateStr = useMemo(() => format(selectedDate, "yyyy-MM-dd"), [selectedDate]);
   
   const availabilityQuery = useMemoFirebase(() => {
-    if (!db || !selectedStation || !dateStr || !selectedTime) return null;
+    // Only fire the query if we have a valid station, date, time AND an authenticated user
+    if (!db || !selectedStation || !dateStr || !selectedTime || !firebaseUser) return null;
     return query(
       collection(db, "bookings"),
       where("stationId", "==", selectedStation.station_id),
@@ -80,7 +81,7 @@ export function UserDashboard() {
       where("bookingTime", "==", selectedTime),
       where("status", "in", ["pending", "confirmed"])
     );
-  }, [db, selectedStation, dateStr, selectedTime]);
+  }, [db, selectedStation, dateStr, selectedTime, firebaseUser]);
 
   const { data: conflicts, isLoading: isValidating } = useCollection(availabilityQuery);
   const isUnavailable = conflicts && conflicts.length > 0;
@@ -297,6 +298,7 @@ export function UserDashboard() {
               <CardTitle className="text-lg flex items-center gap-2 text-foreground">
                 <History className="h-5 w-5 text-primary" /> My Bookings
               </CardTitle>
+              <CardDescription className="sr-only">Your recent charging session history.</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-white/5">
@@ -347,7 +349,7 @@ export function UserDashboard() {
                       {format(selectedDate, "PPP")}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 bg-card border-border" align="start">
+                  <PopoverContent className="w-auto p-0 bg-card border-border" align="start" onOpenAutoFocus={(e) => e.preventDefault()}>
                     <Calendar
                       mode="single"
                       selected={selectedDate}
