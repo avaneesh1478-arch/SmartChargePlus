@@ -19,7 +19,10 @@ import {
   Navigation2,
   CheckCircle2,
   Calendar as CalendarIcon,
-  AlertCircle
+  AlertCircle,
+  Wifi,
+  Coffee,
+  Info
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,7 +33,8 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle,
-  DialogDescription
+  DialogDescription,
+  DialogClose
 } from '@/components/ui/dialog';
 import {
   Select,
@@ -49,6 +53,7 @@ import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebas
 import { collection, query, where, doc, setDoc } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import Image from 'next/image';
 
 export function UserDashboard() {
   const { stations, t } = useApp();
@@ -68,11 +73,14 @@ export function UserDashboard() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedTime, setSelectedTime] = useState<string>("08:00");
 
+  // Details Dialog State
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [detailsStation, setDetailsStation] = useState<Station | null>(null);
+
   // Availability Check
   const dateStr = useMemo(() => format(selectedDate, "yyyy-MM-dd"), [selectedDate]);
   
   const availabilityQuery = useMemoFirebase(() => {
-    // Only fire the query if we have a valid station, date, time AND an authenticated user
     if (!db || !selectedStation || !dateStr || !selectedTime || !firebaseUser) return null;
     return query(
       collection(db, "bookings"),
@@ -132,6 +140,11 @@ export function UserDashboard() {
     window.open(url, '_blank');
   };
 
+  const handleOpenDetails = (station: Station) => {
+    setDetailsStation(station);
+    setIsDetailsOpen(true);
+  };
+
   const handleConfirmBooking = () => {
     if (!firebaseUser || !selectedStation || !db) return;
     
@@ -180,7 +193,7 @@ export function UserDashboard() {
       .sort((a, b) => (a.distance || 0) - (b.distance || 0));
   }, [stations, searchQuery, userLocation]);
 
-  const renderStationCard = (station: any) => (
+  const renderStationCard = (station: Station) => (
     <Card 
       key={station.station_id} 
       className="border-none bg-[#111113] hover:bg-[#161618] transition-all rounded-[1.5rem] relative overflow-hidden group border border-white/5"
@@ -199,9 +212,9 @@ export function UserDashboard() {
             </div>
 
             <div className="space-y-1">
-              <h4 className="font-bold text-xl text-white truncate pr-16 tracking-tight">{station.name || station.station_name}</h4>
+              <h4 className="font-bold text-xl text-white truncate pr-16 tracking-tight">{station.name}</h4>
               <p className="text-sm text-muted-foreground/60 flex items-center gap-1.5 font-medium truncate">
-                <MapPin className="h-3.5 w-3.5" /> {station.location || 'Network Station'}
+                <MapPin className="h-3.5 w-3.5" /> {station.location}
               </p>
             </div>
 
@@ -226,10 +239,18 @@ export function UserDashboard() {
           <Button 
             variant="outline" 
             size="sm" 
+            className="flex-1 border-[#10b981]/40 text-[#34d399] hover:bg-[#10b981]/10 rounded-xl h-11 font-bold text-sm"
+            onClick={() => handleOpenDetails(station)}
+          >
+            Details
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
             className="flex-1 border-[#10b981]/40 text-[#34d399] hover:bg-[#10b981]/10 rounded-xl h-11 font-bold text-sm gap-2"
             onClick={(e) => {
               e.stopPropagation();
-              handleGetDirections(station as Station);
+              handleGetDirections(station);
             }}
           >
             <Navigation2 className="h-4 w-4" /> Trace
@@ -405,6 +426,134 @@ export function UserDashboard() {
               {isBookingPending ? <Loader2 className="h-5 w-5 animate-spin" /> : "Request Booking"}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Details Dialog */}
+      <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+        <DialogContent className="sm:max-w-[700px] bg-[#1a1a1c] border-white/5 text-white p-0 rounded-3xl overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto">
+          {detailsStation && (
+            <div className="flex flex-col">
+              <div className="relative h-64 w-full">
+                <Image 
+                  src={detailsStation.images?.[0] || 'https://picsum.photos/seed/ev-station/800/450'}
+                  alt={detailsStation.name}
+                  fill
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#1a1a1c] via-transparent to-transparent" />
+                <DialogClose asChild>
+                  <Button variant="ghost" size="icon" className="absolute top-4 right-4 h-10 w-10 rounded-full bg-black/40 hover:bg-black/60 text-white border border-white/10">
+                    <X className="h-5 w-5" />
+                  </Button>
+                </DialogClose>
+              </div>
+
+              <div className="px-8 pb-8 -mt-12 relative z-10 space-y-8">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    <DialogTitle className="text-4xl font-black tracking-tight">{detailsStation.name}</DialogTitle>
+                    <Badge className="success-badge px-3 py-1 font-bold text-[10px] tracking-widest uppercase">Active</Badge>
+                  </div>
+                  <DialogDescription className="text-muted-foreground flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-primary" /> {detailsStation.location}
+                  </DialogDescription>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-6">
+                    <div className="space-y-4">
+                      <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-primary/80">Available Services</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {detailsStation.services && detailsStation.services.length > 0 ? (
+                          detailsStation.services.map((service, i) => (
+                            <Badge key={i} variant="outline" className="bg-white/5 border-white/10 text-white rounded-xl py-2 px-4 flex items-center gap-2">
+                              {service.toLowerCase().includes('wifi') && <Wifi className="h-3 w-3 text-primary" />}
+                              {service.toLowerCase().includes('cafe') && <Coffee className="h-3 w-3 text-primary" />}
+                              {service}
+                            </Badge>
+                          ))
+                        ) : (
+                          <p className="text-xs text-muted-foreground italic">Standard network services provided.</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-primary/80">Site Features</h4>
+                      <div className="grid grid-cols-2 gap-3">
+                        {detailsStation.features && detailsStation.features.length > 0 ? (
+                          detailsStation.features.map((feature, i) => (
+                            <div key={i} className="flex items-center gap-2 text-xs font-medium text-white/80">
+                              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                              {feature}
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-xs text-muted-foreground italic">24/7 access available.</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <Card className="bg-black/20 border-white/5 rounded-3xl p-6 flex flex-col justify-between">
+                    <div className="space-y-4">
+                       <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground">Network Stats</h4>
+                       <div className="space-y-4">
+                         <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                               <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                                  <Zap className="h-4 w-4 text-primary" />
+                               </div>
+                               <span className="text-xs text-muted-foreground font-bold uppercase tracking-wider">Total Power</span>
+                            </div>
+                            <span className="text-lg font-black">{detailsStation.total_power} kW</span>
+                         </div>
+                         <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                               <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                                  <Clock className="h-4 w-4 text-primary" />
+                               </div>
+                               <span className="text-xs text-muted-foreground font-bold uppercase tracking-wider">Avg. Uptime</span>
+                            </div>
+                            <span className="text-lg font-black text-emerald-500">99.9%</span>
+                         </div>
+                       </div>
+                    </div>
+                    
+                    <Button 
+                      className="w-full teal-gradient-btn mt-8 font-bold rounded-2xl h-12"
+                      onClick={() => {
+                        setIsDetailsOpen(false);
+                        setSelectedStation(detailsStation);
+                        setIsBookingOpen(true);
+                      }}
+                    >
+                      Book A Slot Now
+                    </Button>
+                  </Card>
+                </div>
+
+                {detailsStation.images && detailsStation.images.length > 1 && (
+                  <div className="space-y-4">
+                    <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-primary/80">Gallery</h4>
+                    <div className="grid grid-cols-3 gap-3">
+                      {detailsStation.images.slice(1, 4).map((img, i) => (
+                        <div key={i} className="relative aspect-video rounded-2xl overflow-hidden border border-white/5 group">
+                          <Image 
+                            src={img} 
+                            alt={`Gallery ${i}`} 
+                            fill 
+                            className="object-cover transition-transform group-hover:scale-110"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
