@@ -19,8 +19,7 @@ import {
   Wifi,
   Coffee,
   CheckCircle2,
-  Clock,
-  Info
+  Clock
 } from 'lucide-react';
 import Image from 'next/image';
 import { useState, useMemo } from 'react';

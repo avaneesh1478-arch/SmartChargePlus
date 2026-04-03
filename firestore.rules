@@ -58,9 +58,8 @@ service cloud.firestore {
     }
 
     match /bookings/{bookingId} {
-      // Allow all signed-in users to list bookings for availability checks and history.
-      // Security is maintained by filtering queries by userId or operatorId in the UI, 
-      // or specifically by stationId for availability validation.
+      // Allow all signed-in users to list/read bookings for availability checks and network-wide tracking.
+      // Security is maintained by app logic filtering, but rules must allow the 'list' method.
       allow read: if isSignedIn();
       
       allow create: if isCreatingAsOwner('userId') && request.resource.data.status == 'pending';
@@ -68,7 +67,7 @@ service cloud.firestore {
       // Operators can update status; Users can cancel (update status to rejected/cancelled)
       allow update: if isSignedIn() && (
         isExistingOwner(resource.data.userId) || 
-        resource.data.operatorId == request.auth.uid
+        request.resource.data.operatorId == request.auth.uid
       );
       
       allow delete: if isExistingOwner(resource.data.userId);
