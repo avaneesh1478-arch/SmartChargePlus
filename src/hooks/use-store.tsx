@@ -120,7 +120,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (isLoaded && user && !firebaseUser && auth) {
       // For MVP, bridge local login to Firebase using anonymous auth
-      // This ensures requests carry a valid token for security rules
       signInAnonymously(auth).catch(err => console.error("Firebase Sync Error:", err));
     }
   }, [user, firebaseUser, auth, isLoaded]);

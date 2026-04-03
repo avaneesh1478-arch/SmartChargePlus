@@ -35,7 +35,7 @@ import {
 } from '@/components/ui/dialog';
 
 export default function StationsPage() {
-  const { stations, user, chargers } = useApp();
+  const { stations, chargers } = useApp();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [userLocation, setUserLocation] = useState<{ lat: number, lng: number } | null>(null);

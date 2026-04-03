@@ -59,8 +59,7 @@ service cloud.firestore {
 
     match /bookings/{bookingId} {
       // Allow all signed-in users to list/read bookings for availability checks and network-wide tracking.
-      // Security is maintained by app logic filtering, but rules must allow the 'list' method.
-      allow read: if isSignedIn();
+      allow list, get: if isSignedIn();
       
       allow create: if isCreatingAsOwner('userId') && request.resource.data.status == 'pending';
       
