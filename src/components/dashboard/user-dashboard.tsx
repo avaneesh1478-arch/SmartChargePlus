@@ -183,39 +183,39 @@ export function UserDashboard() {
   const renderStationCard = (station: any) => (
     <Card 
       key={station.station_id} 
-      className="border-none bg-[#1a1a1c] hover:bg-[#1e1e20] transition-all rounded-[2rem] relative overflow-hidden group border border-white/5"
+      className="border-none bg-[#111113] hover:bg-[#161618] transition-all rounded-[1.5rem] relative overflow-hidden group border border-white/5"
     >
       <CardContent className="p-6">
         <div className="flex gap-4">
-          <div className="h-16 w-16 rounded-2xl bg-[#252528] flex items-center justify-center shrink-0 border border-white/5">
-            <Zap className="h-6 w-6 text-muted-foreground/60" />
+          <div className="h-20 w-20 rounded-2xl bg-[#1c1c1f] flex items-center justify-center shrink-0 border border-white/5">
+            <Zap className="h-8 w-8 text-muted-foreground/40" />
           </div>
 
           <div className="flex-1 min-w-0 relative">
             <div className="absolute top-0 right-0">
-              <Badge className="bg-[#1e2a27] text-[#4ade80] border-none px-3 py-1 rounded-full font-bold text-[11px]">
+              <Badge className="bg-[#1e2a27]/40 text-[#4ade80] border-none px-3 py-1 rounded-full font-bold text-[11px] tracking-tight">
                 {station.distance ? `${station.distance.toFixed(1)} km` : '---'}
               </Badge>
             </div>
 
             <div className="space-y-1">
-              <h4 className="font-bold text-lg text-white truncate pr-16">{station.name || station.station_name}</h4>
-              <p className="text-xs text-muted-foreground flex items-center gap-1.5 font-medium truncate">
-                <MapPin className="h-3 w-3" /> {station.location || 'Network Station'}
+              <h4 className="font-bold text-xl text-white truncate pr-16 tracking-tight">{station.name || station.station_name}</h4>
+              <p className="text-sm text-muted-foreground/60 flex items-center gap-1.5 font-medium truncate">
+                <MapPin className="h-3.5 w-3.5" /> {station.location || 'Network Station'}
               </p>
             </div>
 
-            <div className="mt-2 flex items-center gap-1.5 text-xs font-bold text-[#4ade80]">
-              <Star className="h-3.5 w-3.5 fill-[#4ade80]" /> 4.5
+            <div className="mt-2 flex items-center gap-1.5 text-sm font-bold text-[#4ade80]">
+              <Star className="h-4 w-4 fill-[#4ade80]" /> 4.5
             </div>
           </div>
         </div>
 
-        <div className="mt-6 flex gap-3">
+        <div className="mt-8 flex gap-3">
           <Button 
             variant="outline" 
             size="sm" 
-            className="flex-1 border-[#3b82f6]/50 text-[#60a5fa] hover:bg-[#3b82f6]/10 rounded-xl h-10 font-bold text-xs"
+            className="flex-1 border-[#3b82f6]/40 text-[#60a5fa] hover:bg-[#3b82f6]/10 rounded-xl h-11 font-bold text-sm"
             onClick={() => {
               setSelectedStation(station);
               setIsBookingOpen(true);
@@ -226,13 +226,13 @@ export function UserDashboard() {
           <Button 
             variant="outline" 
             size="sm" 
-            className="flex-1 border-[#10b981]/50 text-[#34d399] hover:bg-[#10b981]/10 rounded-xl h-10 font-bold text-xs gap-2"
+            className="flex-1 border-[#10b981]/40 text-[#34d399] hover:bg-[#10b981]/10 rounded-xl h-11 font-bold text-sm gap-2"
             onClick={(e) => {
               e.stopPropagation();
               handleGetDirections(station as Station);
             }}
           >
-            <Navigation2 className="h-3.5 w-3.5" /> Trace
+            <Navigation2 className="h-4 w-4" /> Trace
           </Button>
         </div>
       </CardContent>
