@@ -213,6 +213,10 @@ export default function StationsPage() {
                       variant="outline" 
                       size="sm" 
                       className="flex-1 border-[#3b82f6]/40 text-[#60a5fa] hover:bg-[#3b82f6]/10 rounded-xl h-11 font-bold text-sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toast({ title: "Booking", description: "Navigating to dashboard booking portal..." });
+                      }}
                     >
                       Book Now
                     </Button>
@@ -396,31 +400,13 @@ export default function StationsPage() {
                       className="w-full teal-gradient-btn mt-8 font-bold rounded-2xl h-12"
                       onClick={() => {
                         setIsDetailsOpen(false);
-                        toast({ title: "Redirecting", description: "Navigating to booking portal..." });
+                        toast({ title: "Redirecting", description: "Navigating to booking portal in dashboard..." });
                       }}
                     >
                       Book A Slot Now
                     </Button>
                   </Card>
                 </div>
-
-                {detailsStation.images && detailsStation.images.length > 1 && (
-                  <div className="space-y-4">
-                    <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-primary/80">Gallery</h4>
-                    <div className="grid grid-cols-3 gap-3">
-                      {detailsStation.images.slice(1, 4).map((img, i) => (
-                        <div key={i} className="relative aspect-video rounded-2xl overflow-hidden border border-white/5 group">
-                          <Image 
-                            src={img} 
-                            alt={`Gallery ${i}`} 
-                            fill 
-                            className="object-cover transition-transform group-hover:scale-110"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           )}

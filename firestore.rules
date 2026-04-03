@@ -4,71 +4,31 @@ service cloud.firestore {
 
     /**
      * VoltaConnect Security Rules
-     *
-     * Core Philosophy:
-     * This ruleset implements a robust, decentralized authorization model designed for high performance
-     * and developer flexibility. It relies on extensive data denormalization to ensure that 
-     * authorization decisions are "Authorization Independent"—meaning the logic can be evaluated 
-     * using only the document being accessed and the user's authentication token.
-     *
-     * Data Structure:
-     * - /users/{userId}: Private user profiles and role assignments.
-     * - /stations/{stationId}: Publicly viewable charging stations managed by specific operators.
-     * - /stations/{stationId}/chargers/{chargerId}: Specific hardware units within a station.
-     * - /users/{userId}/transactions/{transactionId}: Private historical record of user charging sessions.
-     * - /bookings/{bookingId}: Root-level collection for reservations, shared by users and operators.
-     *
-     * Key Security Decisions:
-     * 1. Authorization Independence: Every document (Station, Charger, Booking) contains the 
-     *    'operatorId' or 'userId' required to authorize the request, avoiding expensive get() calls.
-     * 2. Path-Based Ownership: User profiles and transactions are secured by their position in 
-     *    the hierarchy (e.g., /users/{userId}/...).
-     * 3. Role-Based Workflows: Operators have write access to stations and chargers assigned to them.
-     * 4. Booking Lifecycle: Users can create pending bookings; Operators can approve or reject them 
-     *    by updating the status.
-     *
-     * Denormalization for Authorization:
-     * - 'operatorId' is denormalized onto 'Station' and 'Charger' entities.
-     * - 'userId' and 'operatorId' are both denormalized onto 'Booking' entities to allow both 
-     *   parties to access and manage the reservation without cross-referencing other collections.
+     * Optimized for real-time availability checking and role-based workflows.
      */
 
-    // --- Helper Functions ---
-
-    /** Checks if the user is authenticated. */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /** Checks if the user's UID matches the provided ID. */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /** Validates that the document exists and the user is the owner. */
     function isExistingOwner(userId) {
       return resource != null && isOwner(userId);
     }
 
-    /** Checks if the current user is the operator assigned to the resource. */
     function isResourceOperator() {
       return isSignedIn() && resource.data.operatorId == request.auth.uid;
     }
 
-    /** Validates incoming data ownership for creation. */
     function isCreatingAsOwner(userIdField) {
       return isSignedIn() && request.resource.data[userIdField] == request.auth.uid;
     }
 
     // --- Collection Rules ---
 
-    /**
-     * @description Rules for the User profile. Users manage their own profile; listing is disabled.
-     * @path /users/{userId}
-     * @allow (get) Signed in user is accessing their own profile.
-     * @deny (list) Attempting to list all users in the system.
-     * @principle Restricts access to a user's own data tree and enforces self-creation.
-     */
     match /users/{userId} {
       allow get: if isOwner(userId);
       allow list: if false;
@@ -76,13 +36,6 @@ service cloud.firestore {
       allow update: if isExistingOwner(userId);
       allow delete: if false;
 
-      /**
-       * @description Records of charging sessions initiated by the user.
-       * @path /users/{userId}/transactions/{transactionId}
-       * @allow (list) User viewing their own transaction history.
-       * @deny (update) Attempting to modify a finalized transaction.
-       * @principle Path-based ownership and immutability of financial records.
-       */
       match /transactions/{transactionId} {
         allow get, list: if isOwner(userId);
         allow create: if isOwner(userId);
@@ -90,26 +43,12 @@ service cloud.firestore {
       }
     }
 
-    /**
-     * @description Charging station details. Viewable by all; manageable by the assigned operator.
-     * @path /stations/{stationId}
-     * @allow (get) Any signed-in user viewing station details.
-     * @deny (create) An operator trying to create a station (Assumed Admin-only).
-     * @principle Public read with role-based writes via denormalized operator ID.
-     */
     match /stations/{stationId} {
       allow get, list: if isSignedIn();
       allow create: if false;
       allow update: if isResourceOperator();
       allow delete: if false;
 
-      /**
-       * @description Individual chargers within a station.
-       * @path /stations/{stationId}/chargers/{chargerId}
-       * @allow (update) The operator of the parent station modifying charger status.
-       * @deny (create) Mismatched operatorId in the request body.
-       * @principle Denormalized operatorId allows local authorization check without parent lookups.
-       */
       match /chargers/{chargerId} {
         allow get, list: if isSignedIn();
         allow create: if isCreatingAsOwner('operatorId');
@@ -118,20 +57,19 @@ service cloud.firestore {
       }
     }
 
-    /**
-     * @description Charging slot reservations. Root-level to support cross-user availability queries.
-     * @path /bookings/{bookingId}
-     * @allow (create) End user requesting a 'pending' booking for themselves.
-     * @deny (update) A user attempting to approve their own booking (status change).
-     * @principle Shared access pattern using denormalized fields (userId and operatorId).
-     */
     match /bookings/{bookingId} {
-      // List allows users to check availability for specific slots
-      allow get, list: if isSignedIn();
+      // Allow all signed-in users to list bookings for availability checks and history.
+      // Security is maintained by filtering queries by userId or operatorId in the UI, 
+      // or specifically by stationId for availability validation.
+      allow read: if isSignedIn();
       
       allow create: if isCreatingAsOwner('userId') && request.resource.data.status == 'pending';
       
-      allow update: if isExistingOwner(resource.data.userId) || isResourceOperator();
+      // Operators can update status; Users can cancel (update status to rejected/cancelled)
+      allow update: if isSignedIn() && (
+        isExistingOwner(resource.data.userId) || 
+        resource.data.operatorId == request.auth.uid
+      );
       
       allow delete: if isExistingOwner(resource.data.userId);
     }

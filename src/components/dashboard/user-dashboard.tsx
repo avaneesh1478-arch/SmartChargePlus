@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '@/hooks/use-store';
 import { StatCard } from './stat-card';
 import { 
   IndianRupee, 
   Navigation, 
-  Sparkles, 
   History, 
   MapPin, 
   Zap, 
@@ -21,8 +20,7 @@ import {
   Calendar as CalendarIcon,
   AlertCircle,
   Wifi,
-  Coffee,
-  Info
+  Coffee
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -61,23 +59,19 @@ export function UserDashboard() {
   const db = useFirestore();
   const { toast } = useToast();
   
-  // UI States
   const [locating, setLocating] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [userLocation, setUserLocation] = useState<{ lat: number, lng: number } | null>(null);
   
-  // Booking Dialog State
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [isBookingPending, setIsBookingPending] = useState(false);
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedTime, setSelectedTime] = useState<string>("08:00");
 
-  // Details Dialog State
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [detailsStation, setDetailsStation] = useState<Station | null>(null);
 
-  // Availability Check
   const dateStr = useMemo(() => format(selectedDate, "yyyy-MM-dd"), [selectedDate]);
   
   const availabilityQuery = useMemoFirebase(() => {
@@ -94,7 +88,6 @@ export function UserDashboard() {
   const { data: conflicts, isLoading: isValidating } = useCollection(availabilityQuery);
   const isUnavailable = conflicts && conflicts.length > 0;
 
-  // Fetch My Bookings
   const myBookingsQuery = useMemoFirebase(() => {
     if (!db || !firebaseUser) return null;
     return query(
@@ -105,7 +98,6 @@ export function UserDashboard() {
 
   const { data: myBookings } = useCollection<Booking>(myBookingsQuery);
 
-  // Time slots generation
   const timeSlots = useMemo(() => {
     const slots = [];
     for (let h = 8; h <= 22; h++) {
@@ -351,7 +343,6 @@ export function UserDashboard() {
         </div>
       </div>
 
-      {/* Booking Dialog */}
       <Dialog open={isBookingOpen} onOpenChange={setIsBookingOpen}>
         <DialogContent className="sm:max-w-[500px] bg-card border-border text-foreground p-0 rounded-3xl overflow-hidden shadow-2xl">
           <div className="p-6 space-y-6">
@@ -370,7 +361,7 @@ export function UserDashboard() {
                       {format(selectedDate, "PPP")}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 bg-card border-border" align="start" onOpenAutoFocus={(e) => e.preventDefault()}>
+                  <PopoverContent className="w-auto p-0 bg-card border-border" align="start">
                     <Calendar
                       mode="single"
                       selected={selectedDate}
@@ -429,7 +420,6 @@ export function UserDashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Details Dialog */}
       <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
         <DialogContent className="sm:max-w-[700px] bg-[#1a1a1c] border-white/5 text-white p-0 rounded-3xl overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto">
           {detailsStation && (
@@ -533,24 +523,6 @@ export function UserDashboard() {
                     </Button>
                   </Card>
                 </div>
-
-                {detailsStation.images && detailsStation.images.length > 1 && (
-                  <div className="space-y-4">
-                    <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-primary/80">Gallery</h4>
-                    <div className="grid grid-cols-3 gap-3">
-                      {detailsStation.images.slice(1, 4).map((img, i) => (
-                        <div key={i} className="relative aspect-video rounded-2xl overflow-hidden border border-white/5 group">
-                          <Image 
-                            src={img} 
-                            alt={`Gallery ${i}`} 
-                            fill 
-                            className="object-cover transition-transform group-hover:scale-110"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           )}
