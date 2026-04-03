@@ -86,7 +86,7 @@ export default function AdminContentPage() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Go to Dashboard Button</Label>
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Login Button</Label>
                 <Input 
                   value={content.hero.goDashboard} 
                   onChange={(e) => updateField(lang, 'hero', 'goDashboard', e.target.value)}

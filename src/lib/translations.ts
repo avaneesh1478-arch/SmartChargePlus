@@ -12,7 +12,7 @@ export const translations = {
       title: "Smart Charge+",
       subtitle: "Real-time station availability, advance booking, and intelligent management — all in one platform.",
       findStation: "Find a Station",
-      goDashboard: "Go to Dashboard"
+      goDashboard: "Login"
     },
     howItWorks: {
       title: "How It Works",
@@ -54,7 +54,7 @@ export const translations = {
       title: "ಸ್ಮಾರ್ಟ್ ಚಾರ್ಜ್+",
       subtitle: "ನೈಜ-ಸಮಯದ ನಿಲ್ದಾಣದ ಲಭ್ಯತೆ, ಮುಂಗಡ ಬುಕಿಂಗ್ ಮತ್ತು ಬುದ್ಧಿವಂತ ನಿರ್ವಹಣೆ — ಎಲ್ಲವೂ ಒಂದೇ ವೇದಿಕೆಯಲ್ಲಿ.",
       findStation: "ನಿಲ್ದಾಣವನ್ನು ಹುಡುಕಿ",
-      goDashboard: "ಡ್ಯಾಶ್‌ಬೋರ್ಡ್‌ಗೆ ಹೋಗಿ"
+      goDashboard: "ಲಾಗಿನ್"
     },
     howItWorks: {
       title: "ಇದು ಹೇಗೆ ಕೆಲಸ ಮಾಡುತ್ತದೆ",
@@ -96,7 +96,7 @@ export const translations = {
       title: "स्मार्ट चार्ज+",
       subtitle: "वास्तविक समय में स्टेशन की उपलब्धता, अग्रिम बुकिंग और बुद्धिमान प्रबंधन — सब एक ही प्लेटफॉर्म पर।",
       findStation: "स्टेशन खोजें",
-      goDashboard: "डैशबोर्ड पर जाएं"
+      goDashboard: "लॉगिन"
     },
     howItWorks: {
       title: "यह कैसे काम करता है",
