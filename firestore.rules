@@ -15,45 +15,25 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    function isExistingOwner(userId) {
-      return resource != null && isOwner(userId);
-    }
-
-    function isResourceOperator() {
-      return isSignedIn() && resource.data.operatorId == request.auth.uid;
-    }
-
-    function isCreatingAsOwner(userIdField) {
-      return isSignedIn() && request.resource.data[userIdField] == request.auth.uid;
-    }
-
     // --- Collection Rules ---
 
     match /users/{userId} {
-      allow get: if isOwner(userId);
+      allow get, create, update: if isOwner(userId);
       allow list: if false;
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if false;
 
       match /transactions/{transactionId} {
         allow get, list: if isOwner(userId);
         allow create: if isOwner(userId);
-        allow update, delete: if false;
       }
     }
 
     match /stations/{stationId} {
       allow get, list: if isSignedIn();
       allow create: if false;
-      allow update: if isResourceOperator();
-      allow delete: if false;
+      allow update: if isSignedIn() && resource.data.operator_id == request.auth.uid;
 
       match /chargers/{chargerId} {
         allow get, list: if isSignedIn();
-        allow create: if isCreatingAsOwner('operatorId');
-        allow update: if isResourceOperator();
-        allow delete: if isResourceOperator();
       }
     }
 
@@ -61,15 +41,16 @@ service cloud.firestore {
       // Allow all signed-in users to list/read bookings for availability checks and network-wide tracking.
       allow list, get: if isSignedIn();
       
-      allow create: if isCreatingAsOwner('userId') && request.resource.data.status == 'pending';
+      // Users can create their own pending bookings
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
       
       // Operators can update status; Users can cancel (update status to rejected/cancelled)
       allow update: if isSignedIn() && (
-        isExistingOwner(resource.data.userId) || 
-        request.resource.data.operatorId == request.auth.uid
+        resource.data.userId == request.auth.uid || 
+        resource.data.operatorId == request.auth.uid
       );
       
-      allow delete: if isExistingOwner(resource.data.userId);
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
   }
 }
