@@ -30,7 +30,7 @@ service cloud.firestore {
     match /stations/{stationId} {
       allow get, list: if isSignedIn();
       allow create: if false;
-      allow update: if isSignedIn() && resource.data.operator_id == request.auth.uid;
+      allow update: if isSignedIn() && (resource.data.operator_id == request.auth.uid || resource.data.operatorId == request.auth.uid);
 
       match /chargers/{chargerId} {
         allow get, list: if isSignedIn();
@@ -39,6 +39,7 @@ service cloud.firestore {
 
     match /bookings/{bookingId} {
       // Allow all signed-in users to list/read bookings for availability checks and network-wide tracking.
+      // This is critical for the real-time availability check feature.
       allow list, get: if isSignedIn();
       
       // Users can create their own pending bookings
