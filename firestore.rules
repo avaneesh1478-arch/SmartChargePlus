@@ -38,9 +38,9 @@ service cloud.firestore {
     }
 
     match /bookings/{bookingId} {
-      // Allow all signed-in users to list/read bookings for availability checks and network-wide tracking.
-      // This is critical for the real-time availability check feature.
-      allow list, get: if isSignedIn();
+      // Explicitly allow read (get + list) for all authenticated users.
+      // This is required for real-time availability checks and cross-role dashboard views.
+      allow read: if request.auth != null;
       
       // Users can create their own pending bookings
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;

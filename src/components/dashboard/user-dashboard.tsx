@@ -231,7 +231,7 @@ export function UserDashboard() {
           <Button 
             variant="outline" 
             size="sm" 
-            className="flex-1 border-[#10b981]/40 text-[#34d399] hover:bg-[#10b981]/10 rounded-xl h-11 font-bold text-sm"
+            className="flex-1 border-emerald-500/20 text-emerald-500 hover:bg-emerald-500/10 rounded-xl h-11 font-bold text-sm"
             onClick={() => handleOpenDetails(station)}
           >
             Details
@@ -239,7 +239,7 @@ export function UserDashboard() {
           <Button 
             variant="outline" 
             size="sm" 
-            className="flex-1 border-[#10b981]/40 text-[#34d399] hover:bg-[#10b981]/10 rounded-xl h-11 font-bold text-sm gap-2"
+            className="flex-1 border-emerald-500/20 text-emerald-500 hover:bg-emerald-500/10 rounded-xl h-11 font-bold text-sm gap-2"
             onClick={(e) => {
               e.stopPropagation();
               handleGetDirections(station);

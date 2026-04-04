@@ -33,10 +33,12 @@ import {
   DialogTitle,
   DialogDescription
 } from '@/components/ui/dialog';
+import { useRouter } from 'next/navigation';
 
 export default function StationsPage() {
   const { stations, chargers } = useApp();
   const { toast } = useToast();
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [userLocation, setUserLocation] = useState<{ lat: number, lng: number } | null>(null);
   const [locating, setLocating] = useState(false);
@@ -214,7 +216,7 @@ export default function StationsPage() {
                       className="flex-1 border-[#3b82f6]/40 text-[#60a5fa] hover:bg-[#3b82f6]/10 rounded-xl h-11 font-bold text-sm"
                       onClick={(e) => {
                         e.stopPropagation();
-                        toast({ title: "Booking", description: "Navigating to dashboard booking portal..." });
+                        router.push('/dashboard');
                       }}
                     >
                       Book Now
@@ -222,7 +224,7 @@ export default function StationsPage() {
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className="flex-1 border-[#10b981]/40 text-[#34d399] hover:bg-[#10b981]/10 rounded-xl h-11 font-bold text-sm"
+                      className="flex-1 border-emerald-500/20 text-emerald-500 hover:bg-emerald-500/10 rounded-xl h-11 font-bold text-sm"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleOpenDetails(station);
@@ -233,7 +235,7 @@ export default function StationsPage() {
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className="flex-1 border-[#10b981]/40 text-[#34d399] hover:bg-[#10b981]/10 rounded-xl h-11 font-bold text-sm gap-2"
+                      className="flex-1 border-emerald-500/20 text-emerald-500 hover:bg-emerald-500/10 rounded-xl h-11 font-bold text-sm gap-2"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleGetDirections(station);
@@ -399,7 +401,7 @@ export default function StationsPage() {
                       className="w-full teal-gradient-btn mt-8 font-bold rounded-2xl h-12"
                       onClick={() => {
                         setIsDetailsOpen(false);
-                        toast({ title: "Redirecting", description: "Navigating to booking portal in dashboard..." });
+                        router.push('/dashboard');
                       }}
                     >
                       Book A Slot Now
