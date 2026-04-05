@@ -178,7 +178,7 @@ export default function StationsPage() {
               <Card 
                 key={station.station_id} 
                 className={cn(
-                  "border-none bg-[#111113] hover:bg-[#161618] transition-all rounded-[1.5rem] relative overflow-hidden group border border-white/5",
+                  "border-none bg-[#111113] hover:bg-[#161618] transition-all rounded-[1.5rem] relative overflow-hidden group border border-white/5 shadow-lg",
                   selectedStation?.station_id === station.station_id && "ring-1 ring-primary/40"
                 )}
                 onClick={() => setSelectedStation(station)}
@@ -186,12 +186,12 @@ export default function StationsPage() {
                 <CardContent className="p-6">
                   <div className="flex gap-4">
                     <div className="h-20 w-20 rounded-2xl bg-[#1c1c1f] flex items-center justify-center shrink-0 border border-white/5">
-                      <Zap className="h-8 w-8 text-muted-foreground/40" />
+                      <Zap className="h-8 w-8 text-primary/60" />
                     </div>
 
                     <div className="flex-1 min-w-0 relative">
                       <div className="absolute top-0 right-0">
-                        <Badge className="bg-[#1e2a27]/40 text-[#4ade80] border-none px-3 py-1 rounded-full font-bold text-[11px] tracking-tight">
+                        <Badge className="bg-emerald-500/10 text-emerald-500 border-none px-3 py-1 rounded-full font-bold text-[11px] tracking-tight">
                           {station.distance ? `${station.distance.toFixed(1)} km` : '---'}
                         </Badge>
                       </div>
@@ -199,12 +199,12 @@ export default function StationsPage() {
                       <div className="space-y-1">
                         <h4 className="font-bold text-xl text-white truncate pr-16 tracking-tight">{station.name}</h4>
                         <p className="text-sm text-muted-foreground/60 flex items-center gap-1.5 font-medium truncate">
-                          <MapPin className="h-3.5 w-3.5" /> {station.location}
+                          <MapPin className="h-3.5 w-3.5 text-primary/40" /> {station.location}
                         </p>
                       </div>
 
-                      <div className="mt-2 flex items-center gap-1.5 text-sm font-bold text-[#4ade80]">
-                        <Star className="h-4 w-4 fill-[#4ade80]" /> 4.5
+                      <div className="mt-2 flex items-center gap-1.5 text-sm font-bold text-emerald-400">
+                        <Star className="h-4 w-4 fill-emerald-400" /> 4.8
                       </div>
                     </div>
                   </div>
@@ -213,7 +213,7 @@ export default function StationsPage() {
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className="flex-1 border-[#3b82f6]/40 text-[#60a5fa] hover:bg-[#3b82f6]/10 rounded-xl h-11 font-bold text-sm"
+                      className="flex-1 border-blue-500/20 text-blue-400 hover:bg-blue-500/10 rounded-xl h-11 font-bold text-sm"
                       onClick={(e) => {
                         e.stopPropagation();
                         router.push('/dashboard');
@@ -413,6 +413,6 @@ export default function StationsPage() {
           )}
         </DialogContent>
       </Dialog>
-    </DashboardLayout>
+    </div>
   );
 }

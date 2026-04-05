@@ -106,7 +106,7 @@ export default function Home() {
               asChild
             >
               <Link href={user ? "/dashboard" : "/login"}>
-                {user ? t.hero.goDashboard : t.nav.signIn}
+                {t.hero.goDashboard}
               </Link>
             </Button>
           </div>
