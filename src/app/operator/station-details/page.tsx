@@ -8,8 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Info, Plus, X, Save, Image as ImageIcon, CheckCircle2, Zap } from 'lucide-react';
-import { useState, useEffect, useMemo } from 'react';
+import { Info, Plus, X, Save, Image as ImageIcon, CheckCircle2, Zap, Upload } from 'lucide-react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Station } from '@/types';
 import Image from 'next/image';
@@ -17,6 +17,7 @@ import Image from 'next/image';
 export default function OperatorStationDetailsPage() {
   const { user, stations, updateStation } = useApp();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const myStation = useMemo(() => {
     if (!user) return undefined;
@@ -83,6 +84,25 @@ export default function OperatorStationDetailsPage() {
       ...prev,
       [field]: prev[field].filter((_, i) => i !== index)
     }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setFormData(prev => ({
+          ...prev,
+          images: [...prev.images, base64String]
+        }));
+        toast({
+          title: "Image Uploaded",
+          description: "Your photo has been added to the station gallery.",
+        });
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   return (
@@ -211,7 +231,28 @@ export default function OperatorStationDetailsPage() {
                     </Button>
                   </div>
                   
-                  <div className="grid grid-cols-1 gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="h-px flex-1 bg-white/5" />
+                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">or</span>
+                    <div className="h-px flex-1 bg-white/5" />
+                  </div>
+
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    className="hidden" 
+                    ref={fileInputRef} 
+                    onChange={handleFileChange}
+                  />
+                  <Button 
+                    variant="outline" 
+                    className="w-full bg-secondary/20 border-white/5 h-11 gap-2 font-bold"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Upload className="h-4 w-4" /> Upload from Gallery
+                  </Button>
+                  
+                  <div className="grid grid-cols-1 gap-4 pt-4">
                     {formData.images.length > 0 ? (
                       formData.images.map((img, i) => (
                         <div key={i} className="relative group rounded-2xl overflow-hidden aspect-video border border-white/5">
