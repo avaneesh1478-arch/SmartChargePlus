@@ -1,6 +1,7 @@
+
 "use client";
 
-import { LayoutDashboard, Zap, Activity, Users, CreditCard, LogOut, ShieldCheck, Map as MapIcon, History, FileText, Info } from 'lucide-react';
+import { LayoutDashboard, Zap, Activity, Users, CreditCard, LogOut, ShieldCheck, Map as MapIcon, History, FileText } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -31,7 +32,6 @@ export function AppSidebar() {
     { title: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', roles: ['ADMIN', 'OPERATOR', 'USER'] },
     { title: 'Stations', icon: MapIcon, path: '/stations', roles: ['ADMIN', 'OPERATOR', 'USER'] },
     { title: 'Analytics', icon: Activity, path: '/analytics', roles: ['ADMIN', 'OPERATOR'] },
-    { title: 'Station Details', icon: Info, path: '/operator/station-details', roles: ['OPERATOR'] },
     { title: 'Users', icon: Users, path: '/users', roles: ['ADMIN'] },
     { title: 'Content', icon: FileText, path: '/admin/content', roles: ['ADMIN'] },
     { title: 'Wallet', icon: CreditCard, path: '/wallet', roles: ['USER'] },

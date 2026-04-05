@@ -54,7 +54,7 @@ export function OperatorDashboard() {
     <div className="space-y-8 max-w-7xl mx-auto">
       <div className="space-y-1">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">Operator Dashboard</h1>
-        <p className="text-muted-foreground text-sm">Manage your station bookings and infrastructure.</p>
+        <p className="text-muted-foreground text-sm">Manage your station booking requests.</p>
       </div>
 
       {/* Top Stats */}
