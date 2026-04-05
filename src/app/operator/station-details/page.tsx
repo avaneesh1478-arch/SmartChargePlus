@@ -105,6 +105,11 @@ export default function OperatorStationDetailsPage() {
     }
   };
 
+  const isValidImageSrc = (src: string) => {
+    if (!src) return false;
+    return src.startsWith('http') || src.startsWith('data:image/');
+  };
+
   return (
     <DashboardLayout>
       <div className="max-w-4xl mx-auto space-y-8">
@@ -115,9 +120,11 @@ export default function OperatorStationDetailsPage() {
             </h1>
             <p className="text-muted-foreground text-sm">Configure how your station appears to EV drivers.</p>
           </div>
-          <Button onClick={handleSave} className="teal-gradient-btn gap-2 h-11 px-8 font-bold">
-            <Save className="h-4 w-4" /> Save All Changes
-          </Button>
+          <div className="flex gap-3">
+            <Button onClick={handleSave} className="teal-gradient-btn gap-2 h-11 px-8 font-bold">
+              <Save className="h-4 w-4" /> Save All Changes
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -255,16 +262,23 @@ export default function OperatorStationDetailsPage() {
                   <div className="grid grid-cols-1 gap-4 pt-4">
                     {formData.images.length > 0 ? (
                       formData.images.map((img, i) => (
-                        <div key={i} className="relative group rounded-2xl overflow-hidden aspect-video border border-white/5">
-                          <Image 
-                            src={img} 
-                            alt={`Station photo ${i + 1}`} 
-                            fill 
-                            className="object-cover transition-transform group-hover:scale-105"
-                            onError={(e) => {
-                              (e.target as any).src = 'https://picsum.photos/seed/error/800/450';
-                            }}
-                          />
+                        <div key={i} className="relative group rounded-2xl overflow-hidden aspect-video border border-white/5 bg-[#1c1c1f]">
+                          {isValidImageSrc(img) ? (
+                            <Image 
+                              src={img} 
+                              alt={`Station photo ${i + 1}`} 
+                              fill 
+                              className="object-cover transition-transform group-hover:scale-105"
+                              onError={(e) => {
+                                (e.target as any).src = 'https://picsum.photos/seed/error/800/450';
+                              }}
+                            />
+                          ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center space-y-2">
+                               <ImageIcon className="h-8 w-8 text-muted-foreground/40" />
+                               <span className="text-[10px] text-muted-foreground/60">Invalid Image Source</span>
+                            </div>
+                          )}
                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                             <Button 
                               variant="destructive" 
