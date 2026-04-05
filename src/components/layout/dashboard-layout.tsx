@@ -3,7 +3,7 @@
 import { ReactNode } from 'react';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/app-sidebar';
-import { User, Bell, Search, Globe, Check } from 'lucide-react';
+import { Bell, Search, Globe, Check } from 'lucide-react';
 import { useApp } from '@/hooks/use-store';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -25,6 +25,8 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
     { id: 'kn', name: 'ಕನ್ನಡ' },
     { id: 'hi', name: 'हिन्दी' },
   ] as const;
+
+  const profileImg = user?.profileImage || `https://picsum.photos/seed/${user?.uid}/40/40`;
 
   return (
     <SidebarProvider>
@@ -73,13 +75,13 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
               className="flex items-center gap-3 pl-2 border-l hover:opacity-80 transition-opacity"
             >
               <div className="flex flex-col items-end hidden sm:flex">
-                <span className="text-sm font-medium">{user?.email}</span>
+                <span className="text-sm font-medium">{user?.fullName || user?.email?.split('@')[0]}</span>
                 <Badge variant="outline" className="text-[10px] h-4 py-0 success-badge">
                   {user?.role}
                 </Badge>
               </div>
               <Avatar className="h-8 w-8 ring-2 ring-primary/20">
-                <AvatarImage src={`https://picsum.photos/seed/${user?.uid}/40/40`} />
+                <AvatarImage src={profileImg} />
                 <AvatarFallback className="bg-primary text-primary-foreground">
                   {user?.email?.[0].toUpperCase()}
                 </AvatarFallback>

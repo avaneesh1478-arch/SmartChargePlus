@@ -7,6 +7,7 @@ import { Zap, Globe, User, MapPin, Clock, Shield, ChevronRight, Check } from 'lu
 import Image from 'next/image';
 import Link from 'next/link';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,6 +26,8 @@ export default function Home() {
     { id: 'kn', name: 'ಕನ್ನಡ', label: 'Kannada' },
     { id: 'hi', name: 'हिन्दी', label: 'Hindi' },
   ] as const;
+
+  const profileImg = user?.profileImage || `https://picsum.photos/seed/${user?.uid}/40/40`;
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground selection:bg-primary/30">
@@ -59,9 +62,18 @@ export default function Home() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-white/5 backdrop-blur-sm border border-white/10" asChild>
+          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-white/5 backdrop-blur-sm border border-white/10 p-0 overflow-hidden" asChild>
              <Link href={user ? "/dashboard" : "/login"}>
-                <User className="h-4 w-4" />
+                {user ? (
+                  <Avatar className="h-full w-full">
+                    <AvatarImage src={profileImg} />
+                    <AvatarFallback className="bg-primary text-primary-foreground">
+                      {user.email[0].toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                ) : (
+                  <User className="h-4 w-4" />
+                )}
              </Link>
           </Button>
         </div>
@@ -106,7 +118,7 @@ export default function Home() {
               asChild
             >
               <Link href={user ? "/dashboard" : "/login"}>
-                {t.hero.goDashboard}
+                {user ? t.nav.dashboard : t.hero.goDashboard}
               </Link>
             </Button>
           </div>
