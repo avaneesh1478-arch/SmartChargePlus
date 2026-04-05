@@ -1,7 +1,6 @@
-
 "use client";
 
-import { LayoutDashboard, Zap, Activity, Users, CreditCard, LogOut, ShieldCheck, Map as MapIcon, History, FileText, Info } from 'lucide-react';
+import { LayoutDashboard, Zap, Activity, Users, CreditCard, LogOut, ShieldCheck, Map as MapIcon, History, FileText } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -30,7 +29,6 @@ export function AppSidebar() {
 
   const menuItems = [
     { title: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', roles: ['ADMIN', 'OPERATOR', 'USER'] },
-    { title: 'Station Details', icon: Info, path: '/operator/station-details', roles: ['OPERATOR'] },
     { title: 'Stations', icon: MapIcon, path: '/stations', roles: ['ADMIN', 'OPERATOR', 'USER'] },
     { title: 'Analytics', icon: Activity, path: '/analytics', roles: ['ADMIN', 'OPERATOR'] },
     { title: 'Users', icon: Users, path: '/users', roles: ['ADMIN'] },
@@ -39,13 +37,13 @@ export function AppSidebar() {
     { title: 'Charging History', icon: History, path: '/history', roles: ['USER'] },
   ];
 
-  const filteredItems = menuItems.filter(item => user && item.roles.includes(user.role));
+  const filteredItems = menuItems.filter(item => user && item.roles.includes(item.role));
 
   return (
     <Sidebar collapsible="icon" className="border-r border-border">
       <SidebarHeader className="flex items-center gap-2 px-4 py-6">
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-          <Zap className="h-6 w-6" />
+          < Zap className="h-6 w-6" />
         </div>
         <div className="flex flex-col gap-0.5 leading-none transition-all group-data-[collapsible=icon]:hidden">
           <span className="text-xl font-bold tracking-tight text-primary">Smart Charge+</span>

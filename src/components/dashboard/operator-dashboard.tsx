@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useMemo } from 'react';
@@ -10,15 +9,13 @@ import {
   Check, 
   X,
   Clock,
-  Calendar as CalendarIcon,
-  Settings
+  Calendar as CalendarIcon
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import Link from 'next/link';
 
 export function OperatorDashboard() {
   const { user: appUser, bookings, updateBookingStatus } = useApp();
@@ -57,13 +54,8 @@ export function OperatorDashboard() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Operator Dashboard</h1>
-          <p className="text-muted-foreground text-sm">Manage your station, content, and booking requests.</p>
+          <p className="text-muted-foreground text-sm">Manage your booking requests and network performance.</p>
         </div>
-        <Button variant="outline" asChild className="border-white/10 bg-white/5 hover:bg-white/10 gap-2 h-10">
-          <Link href="/operator/station-details">
-            <Settings className="h-4 w-4" /> Manage Station Content
-          </Link>
-        </Button>
       </div>
 
       {/* Top Stats */}
