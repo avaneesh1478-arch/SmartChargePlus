@@ -9,9 +9,9 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { User, Mail, Shield, Zap, Wallet, MapPin, Calendar, Settings, LogOut, Phone, Camera, ArrowLeft } from 'lucide-react';
+import { User, Mail, Shield, Zap, Wallet, MapPin, Calendar, Settings, LogOut, Phone, Camera, ArrowLeft, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 
@@ -20,6 +20,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -61,6 +62,25 @@ export default function ProfilePage() {
     setIsEditDialogOpen(false);
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setFormData(prev => ({
+          ...prev,
+          profileImage: base64String
+        }));
+        toast({
+          title: "Image Uploaded",
+          description: "Your profile photo has been updated.",
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   // Role-specific data
   const myStation = user.role === 'OPERATOR' 
     ? stations.find(s => s.operator_id === user.uid || s.station_id === user.associated_station_id)
@@ -100,7 +120,10 @@ export default function ProfilePage() {
                     {user.email[0].toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                <div 
+                  className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                  onClick={() => setIsEditDialogOpen(true)}
+                >
                   <Camera className="h-6 w-6 text-white" />
                 </div>
               </div>
@@ -166,14 +189,32 @@ export default function ProfilePage() {
                           />
                         </div>
                         <div className="grid gap-2">
-                          <Label htmlFor="profileImage" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Profile Image URL</Label>
-                          <Input
-                            id="profileImage"
-                            className="bg-secondary/50 border-none h-10"
-                            placeholder="https://..."
-                            value={formData.profileImage}
-                            onChange={(e) => setFormData({ ...formData, profileImage: e.target.value })}
-                          />
+                          <Label htmlFor="profileImage" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Profile Image</Label>
+                          <div className="flex gap-2">
+                            <Input
+                              id="profileImage"
+                              className="bg-secondary/50 border-none h-10 flex-1"
+                              placeholder="https://..."
+                              value={formData.profileImage}
+                              onChange={(e) => setFormData({ ...formData, profileImage: e.target.value })}
+                            />
+                            <input 
+                              type="file" 
+                              accept="image/*" 
+                              className="hidden" 
+                              ref={fileInputRef} 
+                              onChange={handleFileChange}
+                            />
+                            <Button 
+                              type="button"
+                              variant="outline" 
+                              className="bg-secondary/20 border-white/5 h-10 px-3"
+                              onClick={() => fileInputRef.current?.click()}
+                              title="Upload from gallery"
+                            >
+                              <Upload className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                       </div>
                       <DialogFooter>
