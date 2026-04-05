@@ -6,6 +6,7 @@ service cloud.firestore {
      * VoltaConnect Security Rules
      * Optimized for real-time availability checking and role-based workflows.
      * Updated: July 2026 - Broadening bookings access to resolve permission issues.
+     * Force redeploy: v1.0.1
      */
 
     function isSignedIn() {

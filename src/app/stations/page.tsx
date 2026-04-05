@@ -303,116 +303,116 @@ export default function StationsPage() {
             </Card>
           </div>
         </div>
-      </div>
 
-      {/* Details Dialog */}
-      <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-        <DialogContent className="sm:max-w-[700px] bg-[#1a1a1c] border-white/5 text-white p-0 rounded-3xl overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto">
-          {detailsStation && (
-            <div className="flex flex-col">
-              <div className="relative h-64 w-full">
-                <Image 
-                  src={detailsStation.images?.[0] || 'https://picsum.photos/seed/ev-station/800/450'}
-                  alt={detailsStation.name}
-                  fill
-                  className="object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#1a1a1c] via-transparent to-transparent" />
-                <DialogClose asChild>
-                  <Button variant="ghost" size="icon" className="absolute top-4 right-4 h-10 w-10 rounded-full bg-black/40 hover:bg-black/60 text-white border border-white/10">
-                    <X className="h-5 w-5" />
-                  </Button>
-                </DialogClose>
-              </div>
-
-              <div className="px-8 pb-8 -mt-12 relative z-10 space-y-8">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3">
-                    <DialogTitle className="text-4xl font-black tracking-tight">{detailsStation.name}</DialogTitle>
-                    <Badge className="success-badge px-3 py-1 font-bold text-[10px] tracking-widest uppercase">Active</Badge>
-                  </div>
-                  <DialogDescription className="text-muted-foreground flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-primary" /> {detailsStation.location}
-                  </DialogDescription>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-6">
-                    <div className="space-y-4">
-                      <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-primary/80">Available Services</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {detailsStation.services && detailsStation.services.length > 0 ? (
-                          detailsStation.services.map((service, i) => (
-                            <Badge key={i} variant="outline" className="bg-white/5 border-white/10 text-white rounded-xl py-2 px-4 flex items-center gap-2">
-                              {service.toLowerCase().includes('wifi') && <Wifi className="h-3 w-3 text-primary" />}
-                              {service.toLowerCase().includes('cafe') && <Coffee className="h-3 w-3 text-primary" />}
-                              {service}
-                            </Badge>
-                          ))
-                        ) : (
-                          <p className="text-xs text-muted-foreground italic">Standard network services provided.</p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="space-y-4">
-                      <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-primary/80">Site Features</h4>
-                      <div className="grid grid-cols-2 gap-3">
-                        {detailsStation.features && detailsStation.features.length > 0 ? (
-                          detailsStation.features.map((feature, i) => (
-                            <div key={i} className="flex items-center gap-2 text-xs font-medium text-white/80">
-                              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                              {feature}
-                            </div>
-                          ))
-                        ) : (
-                          <p className="text-xs text-muted-foreground italic">24/7 access available.</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <Card className="bg-black/20 border-white/5 rounded-3xl p-6 flex flex-col justify-between">
-                    <div className="space-y-4">
-                       <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground">Network Stats</h4>
-                       <div className="space-y-4">
-                         <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                               <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                                  <Zap className="h-4 w-4 text-primary" />
-                               </div>
-                               <span className="text-xs text-muted-foreground font-bold uppercase tracking-wider">Total Power</span>
-                            </div>
-                            <span className="text-lg font-black">{detailsStation.total_power} kW</span>
-                         </div>
-                         <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                               <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                                  <Clock className="h-4 w-4 text-primary" />
-                               </div>
-                               <span className="text-xs text-muted-foreground font-bold uppercase tracking-wider">Avg. Uptime</span>
-                            </div>
-                            <span className="text-lg font-black text-emerald-500">99.9%</span>
-                         </div>
-                       </div>
-                    </div>
-                    
-                    <Button 
-                      className="w-full teal-gradient-btn mt-8 font-bold rounded-2xl h-12"
-                      onClick={() => {
-                        setIsDetailsOpen(false);
-                        router.push('/dashboard');
-                      }}
-                    >
-                      Book A Slot Now
+        {/* Details Dialog */}
+        <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+          <DialogContent className="sm:max-w-[700px] bg-[#1a1a1c] border-white/5 text-white p-0 rounded-3xl overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto">
+            {detailsStation && (
+              <div className="flex flex-col">
+                <div className="relative h-64 w-full">
+                  <Image 
+                    src={detailsStation.images?.[0] || 'https://picsum.photos/seed/ev-station/800/450'}
+                    alt={detailsStation.name}
+                    fill
+                    className="object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#1a1a1c] via-transparent to-transparent" />
+                  <DialogClose asChild>
+                    <Button variant="ghost" size="icon" className="absolute top-4 right-4 h-10 w-10 rounded-full bg-black/40 hover:bg-black/60 text-white border border-white/10">
+                      <X className="h-5 w-5" />
                     </Button>
-                  </Card>
+                  </DialogClose>
+                </div>
+
+                <div className="px-8 pb-8 -mt-12 relative z-10 space-y-8">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3">
+                      <DialogTitle className="text-4xl font-black tracking-tight">{detailsStation.name}</DialogTitle>
+                      <Badge className="success-badge px-3 py-1 font-bold text-[10px] tracking-widest uppercase">Active</Badge>
+                    </div>
+                    <DialogDescription className="text-muted-foreground flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-primary" /> {detailsStation.location}
+                    </DialogDescription>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-6">
+                      <div className="space-y-4">
+                        <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-primary/80">Available Services</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {detailsStation.services && detailsStation.services.length > 0 ? (
+                            detailsStation.services.map((service, i) => (
+                              <Badge key={i} variant="outline" className="bg-white/5 border-white/10 text-white rounded-xl py-2 px-4 flex items-center gap-2">
+                                {service.toLowerCase().includes('wifi') && <Wifi className="h-3 w-3 text-primary" />}
+                                {service.toLowerCase().includes('cafe') && <Coffee className="h-3 w-3 text-primary" />}
+                                {service}
+                              </Badge>
+                            ))
+                          ) : (
+                            <p className="text-xs text-muted-foreground italic">Standard network services provided.</p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-primary/80">Site Features</h4>
+                        <div className="grid grid-cols-2 gap-3">
+                          {detailsStation.features && detailsStation.features.length > 0 ? (
+                            detailsStation.features.map((feature, i) => (
+                              <div key={i} className="flex items-center gap-2 text-xs font-medium text-white/80">
+                                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                                {feature}
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-xs text-muted-foreground italic">24/7 access available.</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <Card className="bg-black/20 border-white/5 rounded-3xl p-6 flex flex-col justify-between">
+                      <div className="space-y-4">
+                         <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground">Network Stats</h4>
+                         <div className="space-y-4">
+                           <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                 <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                                    <Zap className="h-4 w-4 text-primary" />
+                                 </div>
+                                 <span className="text-xs text-muted-foreground font-bold uppercase tracking-wider">Total Power</span>
+                              </div>
+                              <span className="text-lg font-black">{detailsStation.total_power} kW</span>
+                           </div>
+                           <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                 <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                                    <Clock className="h-4 w-4 text-primary" />
+                                 </div>
+                                 <span className="text-xs text-muted-foreground font-bold uppercase tracking-wider">Avg. Uptime</span>
+                              </div>
+                              <span className="text-lg font-black text-emerald-500">99.9%</span>
+                           </div>
+                         </div>
+                      </div>
+                      
+                      <Button 
+                        className="w-full teal-gradient-btn mt-8 font-bold rounded-2xl h-12"
+                        onClick={() => {
+                          setIsDetailsOpen(false);
+                          router.push('/dashboard');
+                        }}
+                      >
+                        Book A Slot Now
+                      </Button>
+                    </Card>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
+    </DashboardLayout>
   );
 }
