@@ -1,7 +1,8 @@
+
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, Station, Charger, Transaction } from '@/types';
+import { User, Station, Charger, Transaction, Booking } from '@/types';
 import { MOCK_USERS, MOCK_STATIONS, MOCK_CHARGERS, MOCK_TRANSACTIONS } from '@/lib/mock-data';
 import { translations, Language } from '@/lib/translations';
 import { useAuth, useUser } from '@/firebase';
@@ -13,6 +14,7 @@ interface AppContextType {
   chargers: Charger[];
   transactions: Transaction[];
   users: User[];
+  bookings: Booking[];
   language: Language;
   setLanguage: (lang: Language) => void;
   allTranslations: typeof translations;
@@ -29,6 +31,8 @@ interface AppContextType {
   updateStation: (stationId: string, data: Partial<Station>) => void;
   addSlot: (stationId: string, count?: number) => void;
   removeSlot: (chargerId: string) => void;
+  addBooking: (booking: Booking) => void;
+  updateBookingStatus: (bookingId: string, status: Booking['status']) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -39,6 +43,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [chargers, setChargers] = useState<Charger[]>(MOCK_CHARGERS);
   const [transactions, setTransactions] = useState<Transaction[]>(MOCK_TRANSACTIONS);
   const [users, setUsers] = useState<User[]>(MOCK_USERS);
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [language, setLanguageState] = useState<Language>('en');
   const [allTranslations, setAllTranslations] = useState<typeof translations>(translations);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -54,6 +59,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const storedUsers = localStorage.getItem('volta_all_users');
     const storedStations = localStorage.getItem('volta_stations');
     const storedChargers = localStorage.getItem('volta_chargers');
+    const storedBookings = localStorage.getItem('volta_bookings');
     const storedLang = localStorage.getItem('volta_lang') as Language;
     const storedTranslations = localStorage.getItem('volta_translations');
     
@@ -66,6 +72,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setAllTranslations(JSON.parse(storedTranslations));
       } catch (e) {
         console.error("Failed to parse stored translations", e);
+      }
+    }
+
+    if (storedBookings) {
+      try {
+        setBookings(JSON.parse(storedBookings));
+      } catch (e) {
+        console.error("Failed to parse stored bookings", e);
       }
     }
 
@@ -119,7 +133,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Synchronize local user with Firebase Auth session
   useEffect(() => {
     if (isLoaded && user && !firebaseUser && auth) {
-      // For MVP, bridge local login to Firebase using anonymous auth
       signInAnonymously(auth).catch(err => console.error("Firebase Sync Error:", err));
     }
   }, [user, firebaseUser, auth, isLoaded]);
@@ -152,6 +165,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!isLoaded) return;
     localStorage.setItem('volta_chargers', JSON.stringify(chargers));
   }, [chargers, isLoaded]);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+    localStorage.setItem('volta_bookings', JSON.stringify(bookings));
+  }, [bookings, isLoaded]);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -315,6 +333,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     ));
   };
 
+  const addBooking = (booking: Booking) => {
+    setBookings(prev => [...prev, booking]);
+  };
+
+  const updateBookingStatus = (bookingId: string, status: Booking['status']) => {
+    setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status } : b));
+  };
+
   return (
     <AppContext.Provider value={{ 
       user, 
@@ -322,6 +348,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       chargers, 
       transactions, 
       users,
+      bookings,
       language,
       setLanguage,
       allTranslations,
@@ -337,7 +364,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       addStation,
       removeStation,
       addSlot,
-      removeSlot
+      removeSlot,
+      addBooking,
+      updateBookingStatus
     }}>
       {children}
     </AppContext.Provider>

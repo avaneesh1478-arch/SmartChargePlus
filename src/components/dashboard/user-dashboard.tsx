@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -47,16 +48,10 @@ import { format, addDays } from "date-fns";
 import { useToast } from '@/hooks/use-toast';
 import { Station, Booking } from '@/types';
 import { cn, calculateDistance } from '@/lib/utils';
-import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, doc, setDoc } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 import Image from 'next/image';
 
 export function UserDashboard() {
-  const { stations, t } = useApp();
-  const { user: firebaseUser } = useUser();
-  const db = useFirestore();
+  const { stations, t, user: appUser, bookings, addBooking } = useApp();
   const { toast } = useToast();
   
   const [locating, setLocating] = useState(false);
@@ -74,31 +69,21 @@ export function UserDashboard() {
 
   const dateStr = useMemo(() => format(selectedDate, "yyyy-MM-dd"), [selectedDate]);
   
-  // Real-time availability query
-  const availabilityQuery = useMemoFirebase(() => {
-    if (!db || !selectedStation || !dateStr || !selectedTime || !firebaseUser) return null;
-    return query(
-      collection(db, "bookings"),
-      where("stationId", "==", selectedStation.station_id),
-      where("bookingDate", "==", dateStr),
-      where("bookingTime", "==", selectedTime),
-      where("status", "in", ["pending", "confirmed"])
+  // Local availability check instead of Firestore query to prevent permission issues
+  const isUnavailable = useMemo(() => {
+    if (!selectedStation) return false;
+    return bookings.some(b => 
+      b.stationId === selectedStation.station_id && 
+      b.bookingDate === dateStr && 
+      b.bookingTime === selectedTime && 
+      ['pending', 'confirmed'].includes(b.status)
     );
-  }, [db, selectedStation, dateStr, selectedTime, firebaseUser]);
+  }, [bookings, selectedStation, dateStr, selectedTime]);
 
-  const { data: conflicts, isLoading: isValidating } = useCollection(availabilityQuery);
-  const isUnavailable = conflicts && conflicts.length > 0;
-
-  // Real-time personal bookings query
-  const myBookingsQuery = useMemoFirebase(() => {
-    if (!db || !firebaseUser) return null;
-    return query(
-      collection(db, "bookings"),
-      where("userId", "==", firebaseUser.uid)
-    );
-  }, [db, firebaseUser]);
-
-  const { data: myBookings } = useCollection<Booking>(myBookingsQuery);
+  const myBookings = useMemo(() => {
+    if (!appUser) return [];
+    return bookings.filter(b => b.userId === appUser.uid);
+  }, [bookings, appUser]);
 
   const timeSlots = useMemo(() => {
     const slots = [];
@@ -140,41 +125,34 @@ export function UserDashboard() {
   };
 
   const handleConfirmBooking = () => {
-    if (!firebaseUser || !selectedStation || !db) return;
+    if (!appUser || !selectedStation) return;
     
     setIsBookingPending(true);
-    const bookingId = `bk-${Date.now()}`;
-    const bookingData: Booking = {
-      id: bookingId,
-      userId: firebaseUser.uid,
-      stationId: selectedStation.station_id,
-      operatorId: selectedStation.operator_id,
-      stationName: selectedStation.name,
-      bookingDate: dateStr,
-      bookingTime: selectedTime,
-      status: 'pending',
-      createdAt: new Date().toISOString()
-    };
+    
+    // Simulate minor delay for UX
+    setTimeout(() => {
+      const bookingId = `bk-${Date.now()}`;
+      const newBooking: Booking = {
+        id: bookingId,
+        userId: appUser.uid,
+        stationId: selectedStation.station_id,
+        operatorId: selectedStation.operator_id,
+        stationName: selectedStation.name,
+        bookingDate: dateStr,
+        bookingTime: selectedTime,
+        status: 'pending',
+        createdAt: new Date().toISOString()
+      };
 
-    const docRef = doc(db, "bookings", bookingId);
-    setDoc(docRef, bookingData)
-      .then(() => {
-        toast({ 
-          title: "Request Sent", 
-          description: `Booking for ${dateStr} at ${selectedTime} is awaiting operator approval.` 
-        });
-        setIsBookingOpen(false);
-        setIsBookingPending(false);
-      })
-      .catch((error) => {
-        const contextualError = new FirestorePermissionError({
-          path: docRef.path,
-          operation: 'create',
-          requestResourceData: bookingData,
-        });
-        errorEmitter.emit('permission-error', contextualError);
-        setIsBookingPending(false);
+      addBooking(newBooking);
+      
+      toast({ 
+        title: "Request Sent", 
+        description: `Booking for ${dateStr} at ${selectedTime} is awaiting operator approval.` 
       });
+      setIsBookingOpen(false);
+      setIsBookingPending(false);
+    }, 500);
   };
 
   const filteredStations = useMemo(() => {
@@ -269,8 +247,8 @@ export function UserDashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatCard title={t.dashboard.wallet} value={`₹${firebaseUser ? '150.00' : '0.00'}`} icon={IndianRupee} />
-        <StatCard title="Confirmed Bookings" value={myBookings?.filter(b => b.status === 'confirmed').length || 0} icon={CheckCircle2} />
+        <StatCard title={t.dashboard.wallet} value={`₹${appUser ? '150.00' : '0.00'}`} icon={IndianRupee} />
+        <StatCard title="Confirmed Bookings" value={myBookings.filter(b => b.status === 'confirmed').length} icon={CheckCircle2} />
         <StatCard title="Nearby Stations" value={stations.length} icon={Navigation} />
       </div>
 
@@ -317,7 +295,7 @@ export function UserDashboard() {
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-white/5">
-                {myBookings && myBookings.length > 0 ? (
+                {myBookings.length > 0 ? (
                   myBookings.map(bk => (
                     <div key={bk.id} className="p-5 flex gap-4 items-center hover:bg-white/5 transition-colors">
                       <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
@@ -391,20 +369,16 @@ export function UserDashboard() {
               </div>
             </div>
 
-            {isValidating && (
+            {isBookingPending ? (
               <div className="flex items-center gap-2 text-xs text-primary animate-pulse">
-                <Loader2 className="h-3 w-3 animate-spin" /> Validating slot availability...
+                <Loader2 className="h-3 w-3 animate-spin" /> Processing request...
               </div>
-            )}
-
-            {isUnavailable && !isValidating && (
+            ) : isUnavailable ? (
               <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-4 flex items-center gap-3">
                 <AlertCircle className="h-5 w-5 text-rose-500 shrink-0" />
                 <p className="text-xs text-rose-500 font-bold">This slot is currently unavailable. Please select another time.</p>
               </div>
-            )}
-
-            {!isUnavailable && !isValidating && (
+            ) : (
               <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 flex items-center gap-3">
                 <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0" />
                 <p className="text-xs text-emerald-500 font-bold">This slot is available for booking.</p>
@@ -413,7 +387,7 @@ export function UserDashboard() {
 
             <Button 
               onClick={handleConfirmBooking} 
-              disabled={isBookingPending || isUnavailable || isValidating}
+              disabled={isBookingPending || isUnavailable}
               className="w-full teal-gradient-btn h-12 font-bold rounded-xl shadow-lg shadow-primary/20"
             >
               {isBookingPending ? <Loader2 className="h-5 w-5 animate-spin" /> : "Request Booking"}

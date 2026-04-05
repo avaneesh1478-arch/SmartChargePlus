@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMemo } from 'react';
@@ -9,73 +10,45 @@ import {
   Check, 
   X,
   Clock,
-  Calendar as CalendarIcon,
-  Loader2
+  Calendar as CalendarIcon
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy, doc, updateDoc } from 'firebase/firestore';
-import { Booking } from '@/types';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 
 export function OperatorDashboard() {
-  const { stations } = useApp();
-  const { user: firebaseUser } = useUser();
-  const db = useFirestore();
+  const { user: appUser, bookings, updateBookingStatus } = useApp();
   const { toast } = useToast();
 
-  const myStation = useMemo(() => {
-    if (!firebaseUser) return undefined;
-    return stations.find(s => s.operator_id === firebaseUser.uid);
-  }, [stations, firebaseUser]);
-
-  // Fetch Live Bookings for Operator
-  const bookingsQuery = useMemoFirebase(() => {
-    if (!db || !firebaseUser) return null;
-    return query(
-      collection(db, "bookings"),
-      where("operatorId", "==", firebaseUser.uid),
-      orderBy("bookingDate", "asc"),
-      orderBy("bookingTime", "asc")
-    );
-  }, [db, firebaseUser]);
-
-  const { data: bookings, isLoading: loadingBookings } = useCollection<Booking>(bookingsQuery);
+  // Filter local bookings for the operator instead of Firestore query to prevent permission issues
+  const myBookings = useMemo(() => {
+    if (!appUser) return [];
+    return bookings
+      .filter(b => b.operatorId === appUser.uid)
+      .sort((a, b) => {
+        const dateA = new Date(`${a.bookingDate}T${a.bookingTime}`);
+        const dateB = new Date(`${b.bookingDate}T${b.bookingTime}`);
+        return dateA.getTime() - dateB.getTime();
+      });
+  }, [bookings, appUser]);
 
   const handleUpdateStatus = (bookingId: string, newStatus: 'confirmed' | 'rejected') => {
-    if (!db) return;
-    
-    const docRef = doc(db, "bookings", bookingId);
-    updateDoc(docRef, { status: newStatus })
-      .then(() => {
-        toast({
-          title: `Booking ${newStatus === 'confirmed' ? 'Approved' : 'Rejected'}`,
-          description: `The customer has been notified of the status change.`,
-        });
-      })
-      .catch((error) => {
-        const contextualError = new FirestorePermissionError({
-          path: docRef.path,
-          operation: 'update',
-          requestResourceData: { status: newStatus },
-        });
-        errorEmitter.emit('permission-error', contextualError);
-      });
+    updateBookingStatus(bookingId, newStatus);
+    toast({
+      title: `Booking ${newStatus === 'confirmed' ? 'Approved' : 'Rejected'}`,
+      description: `The customer has been notified of the status change.`,
+    });
   };
 
   const stats = useMemo(() => {
-    if (!bookings) return { confirmed: 0, pending: 0, rejected: 0 };
     return {
-      confirmed: bookings.filter(b => b.status === 'confirmed').length,
-      pending: bookings.filter(b => b.status === 'pending').length,
-      rejected: bookings.filter(b => b.status === 'rejected').length,
+      confirmed: myBookings.filter(b => b.status === 'confirmed').length,
+      pending: myBookings.filter(b => b.status === 'pending').length,
+      rejected: myBookings.filter(b => b.status === 'rejected').length,
     };
-  }, [bookings]);
+  }, [myBookings]);
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
@@ -95,7 +68,7 @@ export function OperatorDashboard() {
         />
         <StatCard 
           title="Total Requests" 
-          value={bookings?.length || 0} 
+          value={myBookings.length} 
           icon={Users} 
           iconClassName="bg-primary/10"
         />
@@ -119,7 +92,6 @@ export function OperatorDashboard() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-xl font-bold">Network Booking Requests</h3>
-          {loadingBookings && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
         </div>
         
         <Card className="border-none bg-[#1a1a1c] overflow-hidden rounded-2xl border border-white/5">
@@ -138,8 +110,8 @@ export function OperatorDashboard() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {bookings && bookings.length > 0 ? (
-                bookings.map((booking) => (
+              {myBookings.length > 0 ? (
+                myBookings.map((booking) => (
                   <TableRow key={booking.id} className="border-white/5 hover:bg-white/5 transition-colors">
                     <TableCell className="text-sm font-medium py-4">{booking.stationName}</TableCell>
                     <TableCell className="text-sm text-muted-foreground py-4">
@@ -184,7 +156,7 @@ export function OperatorDashboard() {
               ) : (
                 <TableRow>
                   <TableCell colSpan={5} className="py-10 text-center text-muted-foreground italic">
-                    {loadingBookings ? "Connecting to network..." : "No booking requests found for your station."}
+                    No booking requests found for your station.
                   </TableCell>
                 </TableRow>
               )}

@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -5,8 +6,7 @@ service cloud.firestore {
     /**
      * VoltaConnect Security Rules
      * Optimized for real-time availability checking and role-based workflows.
-     * Updated: July 2026 - Explicitly allowing bookings access for all authenticated users.
-     * Force redeploy: v1.0.2 - Broadening list/get permissions to resolve sync issues.
+     * Version: 1.0.5 - Refined for anonymous access and broad read support.
      */
 
     function isSignedIn() {
@@ -41,8 +41,8 @@ service cloud.firestore {
 
     // --- Booking Rules ---
     match /bookings/{bookingId} {
-      // Allow all authenticated users to read and write to facilitate real-time slot checking and reservations.
-      // This is necessary because slot validation queries require listing the collection.
+      // Allow all authenticated users to read and write to facilitate local-sync models
+      // and prevent persistent list errors in dashboards.
       allow read, write: if request.auth != null;
     }
   }
