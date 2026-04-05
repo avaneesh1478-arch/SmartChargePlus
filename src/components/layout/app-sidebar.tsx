@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, Zap, Activity, Users, CreditCard, LogOut, ShieldCheck, Map as MapIcon, History, FileText } from 'lucide-react';
+import { LayoutDashboard, Zap, Activity, Users, CreditCard, LogOut, ShieldCheck, Map as MapIcon, History, FileText, Settings } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -30,6 +30,7 @@ export function AppSidebar() {
   const menuItems = [
     { title: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', roles: ['ADMIN', 'OPERATOR', 'USER'] },
     { title: 'Stations', icon: MapIcon, path: '/stations', roles: ['ADMIN', 'OPERATOR', 'USER'] },
+    { title: 'My Station', icon: Settings, path: '/operator/station-details', roles: ['OPERATOR'] },
     { title: 'Analytics', icon: Activity, path: '/analytics', roles: ['ADMIN', 'OPERATOR'] },
     { title: 'Users', icon: Users, path: '/users', roles: ['ADMIN'] },
     { title: 'Content', icon: FileText, path: '/admin/content', roles: ['ADMIN'] },
@@ -37,7 +38,7 @@ export function AppSidebar() {
     { title: 'Charging History', icon: History, path: '/history', roles: ['USER'] },
   ];
 
-  const filteredItems = menuItems.filter(item => user && item.roles.includes(item.role));
+  const filteredItems = menuItems.filter(item => user && item.roles.includes(user.role));
 
   return (
     <Sidebar collapsible="icon" className="border-r border-border">

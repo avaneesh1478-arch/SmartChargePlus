@@ -9,17 +9,20 @@ import {
   Check, 
   X,
   Clock,
-  Calendar as CalendarIcon
+  Calendar as CalendarIcon,
+  Settings
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useRouter } from 'next/navigation';
 
 export function OperatorDashboard() {
   const { user: appUser, bookings, updateBookingStatus } = useApp();
   const { toast } = useToast();
+  const router = useRouter();
 
   // Filter local bookings for the operator
   const myBookings = useMemo(() => {
@@ -56,6 +59,13 @@ export function OperatorDashboard() {
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Operator Dashboard</h1>
           <p className="text-muted-foreground text-sm">Manage your booking requests and network performance.</p>
         </div>
+        <Button 
+          variant="outline" 
+          onClick={() => router.push('/operator/station-details')}
+          className="bg-secondary/20 border-white/5 gap-2 font-bold h-10 px-6"
+        >
+          <Settings className="h-4 w-4 text-primary" /> Manage Station
+        </Button>
       </div>
 
       {/* Top Stats */}
