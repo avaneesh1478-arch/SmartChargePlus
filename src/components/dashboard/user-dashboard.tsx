@@ -22,7 +22,8 @@ import {
   AlertCircle,
   Wifi,
   Coffee,
-  Check
+  Check,
+  ChevronRight
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -83,11 +84,9 @@ export function UserDashboard() {
 
   const estimatedCost = useMemo(() => {
     if (!selectedCharger) return 0;
-    // Simple calculation: rate * duration (hours) * some average kW factor for visual
     return selectedCharger.rate_per_kwh * parseInt(duration) * (selectedCharger.type === 'DCFC' ? 50 : 7);
   }, [selectedCharger, duration]);
 
-  // Local availability check
   const isUnavailable = useMemo(() => {
     if (!selectedStation || !selectedChargerId) return false;
     return bookings.some(b => 
@@ -223,7 +222,6 @@ export function UserDashboard() {
             className="flex-1 border-blue-500/20 text-blue-400 hover:bg-blue-500/10 rounded-xl h-11 font-bold text-sm"
             onClick={() => {
               setSelectedStation(station);
-              // Auto-select first available charger
               const available = chargers.find(c => c.station_id === station.station_id && c.status === 'available');
               setSelectedChargerId(available?.charger_id || null);
               setIsBookingOpen(true);
@@ -314,7 +312,6 @@ export function UserDashboard() {
               <CardTitle className="text-lg flex items-center gap-2 text-foreground">
                 <History className="h-5 w-5 text-primary" /> My Bookings
               </CardTitle>
-              <CardDescription className="sr-only">Your recent charging session history.</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-white/5">
@@ -456,7 +453,7 @@ export function UserDashboard() {
             <div className="bg-[#1c1c1f] rounded-2xl p-5 flex items-center justify-between">
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground font-medium">Estimated Cost</p>
-                <p className="text-[10px] text-muted-foreground/60">Based on avg {selectedCharg?.type === 'DCFC' ? '50kW' : '7kW'} consumption</p>
+                <p className="text-[10px] text-muted-foreground/60">Based on avg {selectedCharger?.type === 'DCFC' ? '50kW' : '7kW'} consumption</p>
               </div>
               <div className="text-2xl font-black">
                 ₹{estimatedCost.toFixed(2)}
@@ -478,7 +475,7 @@ export function UserDashboard() {
               {isBookingPending ? <Loader2 className="h-5 w-5 animate-spin" /> : "Confirm Booking"}
             </Button>
           </div>
-        </div>
+        </DialogContent>
       </Dialog>
 
       <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
@@ -577,7 +574,6 @@ export function UserDashboard() {
                       onClick={() => {
                         setIsDetailsOpen(false);
                         setSelectedStation(detailsStation);
-                        // Auto-select first available charger
                         const available = chargers.find(c => c.station_id === detailsStation.station_id && c.status === 'available');
                         setSelectedChargerId(available?.charger_id || null);
                         setIsBookingOpen(true);
@@ -595,20 +591,3 @@ export function UserDashboard() {
     </div>
   );
 }
-
-const ChevronRight = ({ className }: { className?: string }) => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    width="24" 
-    height="24" 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2" 
-    strokeLinecap="round" 
-    strokeLinejoin="round" 
-    className={className}
-  >
-    <path d="m9 18 6-6-6-6"/>
-  </svg>
-);
