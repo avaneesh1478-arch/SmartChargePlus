@@ -45,10 +45,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format, addDays } from "date-fns";
 import { useToast } from '@/hooks/use-toast';
-import { Station, Booking, Charger } from '@/types';
+import { Station, Booking } from '@/types';
 import { cn, calculateDistance } from '@/lib/utils';
 import Image from 'next/image';
 
@@ -65,9 +64,10 @@ export function UserDashboard() {
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [selectedChargerId, setSelectedChargerId] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [tempDate, setTempDate] = useState<Date>(new Date());
   const [selectedTime, setSelectedTime] = useState<string>("08:00");
   const [duration, setDuration] = useState<string>("1");
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [detailsStation, setDetailsStation] = useState<Station | null>(null);
@@ -85,7 +85,6 @@ export function UserDashboard() {
 
   const estimatedCost = useMemo(() => {
     if (!selectedCharger) return 0;
-    // DCFC uses approx 50kW average, Level 2 approx 7kW
     return selectedCharger.rate_per_kwh * parseInt(duration) * (selectedCharger.type === 'DCFC' ? 50 : 7);
   }, [selectedCharger, duration]);
 
@@ -400,29 +399,17 @@ export function UserDashboard() {
                 <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                   <CalendarIcon className="h-3 w-3" /> Date
                 </label>
-                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full h-11 justify-between text-left font-normal bg-[#1c1c1f] border-none rounded-xl">
-                      <span className="truncate">{format(selectedDate, "PPP")}</span>
-                      <ChevronRight className="h-4 w-4 rotate-90 text-muted-foreground" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 bg-card border-border" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={(date) => {
-                        if (date) {
-                          setSelectedDate(date);
-                          setIsCalendarOpen(false); // Close calendar on selection
-                        }
-                      }}
-                      disabled={(date) => date < new Date() || date > addDays(new Date(), 7)}
-                      initialFocus
-                      className="rounded-xl"
-                    />
-                  </PopoverContent>
-                </Popover>
+                <Button 
+                  variant="outline" 
+                  className="w-full h-11 justify-between text-left font-normal bg-[#1c1c1f] border-none rounded-xl"
+                  onClick={() => {
+                    setTempDate(selectedDate);
+                    setIsDatePickerOpen(true);
+                  }}
+                >
+                  <span className="truncate">{format(selectedDate, "PPP")}</span>
+                  <ChevronRight className="h-4 w-4 rotate-90 text-muted-foreground" />
+                </Button>
               </div>
 
               <div className="space-y-2">
@@ -480,6 +467,40 @@ export function UserDashboard() {
               className="w-full teal-gradient-btn h-14 font-black text-base rounded-2xl shadow-xl shadow-primary/20 transition-all hover:scale-[1.02]"
             >
               {isBookingPending ? <Loader2 className="h-5 w-5 animate-spin" /> : "Confirm Booking"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* High Fidelity Date Picker Dialog */}
+      <Dialog open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+        <DialogContent className="sm:max-w-[360px] p-0 bg-[#1a1a1c] border-white/5 rounded-3xl overflow-hidden shadow-2xl">
+          <div className="bg-[#555555] p-6 space-y-1">
+            <p className="text-xs font-bold text-white/70 tracking-widest uppercase">{format(tempDate, "yyyy")}</p>
+            <h3 className="text-3xl font-bold text-white">{format(tempDate, "EEE, d MMM")}</h3>
+          </div>
+          <div className="p-2">
+             <Calendar
+                mode="single"
+                selected={tempDate}
+                onSelect={(date) => date && setTempDate(date)}
+                disabled={(date) => date < new Date() || date > addDays(new Date(), 30)}
+                initialFocus
+                className="rounded-xl w-full"
+             />
+          </div>
+          <div className="p-4 flex items-center justify-end gap-2 bg-[#1a1a1c]">
+            <Button variant="ghost" className="text-primary font-bold px-6" onClick={() => setIsDatePickerOpen(false)}>Clear</Button>
+            <Button variant="ghost" className="text-primary font-bold px-6" onClick={() => setIsDatePickerOpen(false)}>Cancel</Button>
+            <Button 
+              variant="ghost" 
+              className="text-primary font-bold px-6" 
+              onClick={() => {
+                setSelectedDate(tempDate);
+                setIsDatePickerOpen(false);
+              }}
+            >
+              Set
             </Button>
           </div>
         </DialogContent>
