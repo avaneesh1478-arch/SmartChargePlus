@@ -67,6 +67,7 @@ export function UserDashboard() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedTime, setSelectedTime] = useState<string>("08:00");
   const [duration, setDuration] = useState<string>("1");
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [detailsStation, setDetailsStation] = useState<Station | null>(null);
@@ -84,6 +85,7 @@ export function UserDashboard() {
 
   const estimatedCost = useMemo(() => {
     if (!selectedCharger) return 0;
+    // DCFC uses approx 50kW average, Level 2 approx 7kW
     return selectedCharger.rate_per_kwh * parseInt(duration) * (selectedCharger.type === 'DCFC' ? 50 : 7);
   }, [selectedCharger, duration]);
 
@@ -398,7 +400,7 @@ export function UserDashboard() {
                 <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                   <CalendarIcon className="h-3 w-3" /> Date
                 </label>
-                <Popover>
+                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="w-full h-11 justify-between text-left font-normal bg-[#1c1c1f] border-none rounded-xl">
                       <span className="truncate">{format(selectedDate, "PPP")}</span>
@@ -409,7 +411,12 @@ export function UserDashboard() {
                     <Calendar
                       mode="single"
                       selected={selectedDate}
-                      onSelect={(date) => date && setSelectedDate(date)}
+                      onSelect={(date) => {
+                        if (date) {
+                          setSelectedDate(date);
+                          setIsCalendarOpen(false); // Close calendar on selection
+                        }
+                      }}
                       disabled={(date) => date < new Date() || date > addDays(new Date(), 7)}
                       initialFocus
                       className="rounded-xl"
