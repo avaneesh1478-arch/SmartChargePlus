@@ -346,17 +346,17 @@ export function UserDashboard() {
       <Dialog open={isBookingOpen} onOpenChange={setIsBookingOpen}>
         <DialogContent className="sm:max-w-[500px] bg-[#111113] border-white/10 text-white p-0 rounded-3xl overflow-hidden shadow-2xl">
           <div className="p-6 space-y-8">
-            <div className="flex justify-between items-start">
-              <div>
-                <h2 className="text-2xl font-bold tracking-tight">{selectedStation?.name}</h2>
-                <p className="text-sm text-muted-foreground">{selectedStation?.location}</p>
+            <DialogHeader className="flex flex-row justify-between items-start space-y-0 text-left">
+              <div className="space-y-1">
+                <DialogTitle className="text-2xl font-bold tracking-tight">{selectedStation?.name}</DialogTitle>
+                <DialogDescription className="text-sm text-muted-foreground">{selectedStation?.location}</DialogDescription>
               </div>
               <DialogClose asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-white">
                   <X className="h-4 w-4" />
                 </Button>
               </DialogClose>
-            </div>
+            </DialogHeader>
 
             <div className="space-y-4">
               <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Select a Charger</h3>
