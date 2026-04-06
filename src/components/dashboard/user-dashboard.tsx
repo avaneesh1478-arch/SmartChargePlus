@@ -21,7 +21,8 @@ import {
   Calendar as CalendarIcon,
   AlertCircle,
   Wifi,
-  Coffee
+  Coffee,
+  Check
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -46,12 +47,12 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format, addDays } from "date-fns";
 import { useToast } from '@/hooks/use-toast';
-import { Station, Booking } from '@/types';
+import { Station, Booking, Charger } from '@/types';
 import { cn, calculateDistance } from '@/lib/utils';
 import Image from 'next/image';
 
 export function UserDashboard() {
-  const { stations, t, user: appUser, bookings, addBooking } = useApp();
+  const { stations, chargers, t, user: appUser, bookings, addBooking } = useApp();
   const { toast } = useToast();
   
   const [locating, setLocating] = useState(false);
@@ -61,24 +62,42 @@ export function UserDashboard() {
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [isBookingPending, setIsBookingPending] = useState(false);
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
+  const [selectedChargerId, setSelectedChargerId] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedTime, setSelectedTime] = useState<string>("08:00");
+  const [duration, setDuration] = useState<string>("1");
 
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [detailsStation, setDetailsStation] = useState<Station | null>(null);
 
   const dateStr = useMemo(() => format(selectedDate, "yyyy-MM-dd"), [selectedDate]);
   
-  // Local availability check instead of Firestore query to prevent permission issues
+  const stationChargers = useMemo(() => {
+    if (!selectedStation) return [];
+    return chargers.filter(c => c.station_id === selectedStation.station_id);
+  }, [chargers, selectedStation]);
+
+  const selectedCharger = useMemo(() => {
+    return stationChargers.find(c => c.charger_id === selectedChargerId);
+  }, [stationChargers, selectedChargerId]);
+
+  const estimatedCost = useMemo(() => {
+    if (!selectedCharger) return 0;
+    // Simple calculation: rate * duration (hours) * some average kW factor for visual
+    return selectedCharger.rate_per_kwh * parseInt(duration) * (selectedCharger.type === 'DCFC' ? 50 : 7);
+  }, [selectedCharger, duration]);
+
+  // Local availability check
   const isUnavailable = useMemo(() => {
-    if (!selectedStation) return false;
+    if (!selectedStation || !selectedChargerId) return false;
     return bookings.some(b => 
       b.stationId === selectedStation.station_id && 
+      b.chargerId === selectedChargerId &&
       b.bookingDate === dateStr && 
       b.bookingTime === selectedTime && 
       ['pending', 'confirmed'].includes(b.status)
     );
-  }, [bookings, selectedStation, dateStr, selectedTime]);
+  }, [bookings, selectedStation, selectedChargerId, dateStr, selectedTime]);
 
   const myBookings = useMemo(() => {
     if (!appUser) return [];
@@ -125,11 +144,10 @@ export function UserDashboard() {
   };
 
   const handleConfirmBooking = () => {
-    if (!appUser || !selectedStation) return;
+    if (!appUser || !selectedStation || !selectedChargerId) return;
     
     setIsBookingPending(true);
     
-    // Simulate minor delay for UX
     setTimeout(() => {
       const bookingId = `bk-${Date.now()}`;
       const newBooking: Booking = {
@@ -138,8 +156,10 @@ export function UserDashboard() {
         stationId: selectedStation.station_id,
         operatorId: selectedStation.operator_id,
         stationName: selectedStation.name,
+        chargerId: selectedChargerId,
         bookingDate: dateStr,
         bookingTime: selectedTime,
+        duration: parseInt(duration),
         status: 'pending',
         createdAt: new Date().toISOString()
       };
@@ -203,6 +223,9 @@ export function UserDashboard() {
             className="flex-1 border-blue-500/20 text-blue-400 hover:bg-blue-500/10 rounded-xl h-11 font-bold text-sm"
             onClick={() => {
               setSelectedStation(station);
+              // Auto-select first available charger
+              const available = chargers.find(c => c.station_id === station.station_id && c.status === 'available');
+              setSelectedChargerId(available?.charger_id || null);
               setIsBookingOpen(true);
             }}
           >
@@ -247,7 +270,7 @@ export function UserDashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatCard title={t.dashboard.wallet} value={`₹${appUser ? '150.00' : '0.00'}`} icon={IndianRupee} />
+        <StatCard title={t.dashboard.wallet} value={`₹${appUser?.wallet_balance?.toFixed(2) || '0.00'}`} icon={IndianRupee} />
         <StatCard title="Confirmed Bookings" value={myBookings.filter(b => b.status === 'confirmed').length} icon={CheckCircle2} />
         <StatCard title="Nearby Stations" value={stations.length} icon={Navigation} />
       </div>
@@ -324,21 +347,65 @@ export function UserDashboard() {
       </div>
 
       <Dialog open={isBookingOpen} onOpenChange={setIsBookingOpen}>
-        <DialogContent className="sm:max-w-[500px] bg-card border-border text-foreground p-0 rounded-3xl overflow-hidden shadow-2xl">
-          <div className="p-6 space-y-6">
-            <DialogHeader>
-              <DialogTitle className="text-xl font-bold text-foreground">Request Slot: {selectedStation?.name}</DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground">Choose your preferred time for charging.</DialogDescription>
-            </DialogHeader>
+        <DialogContent className="sm:max-w-[500px] bg-[#111113] border-white/10 text-white p-0 rounded-3xl overflow-hidden shadow-2xl">
+          <div className="p-6 space-y-8">
+            <div className="flex justify-between items-start">
+              <div>
+                <h2 className="text-2xl font-bold tracking-tight">{selectedStation?.name}</h2>
+                <p className="text-sm text-muted-foreground">{selectedStation?.location}</p>
+              </div>
+              <DialogClose asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-white">
+                  <X className="h-4 w-4" />
+                </Button>
+              </DialogClose>
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-4">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Select a Charger</h3>
+              <div className="grid grid-cols-2 gap-3">
+                {stationChargers.map((charger, i) => (
+                  <button
+                    key={charger.charger_id}
+                    onClick={() => setSelectedChargerId(charger.charger_id)}
+                    className={cn(
+                      "flex flex-col p-4 rounded-xl border transition-all text-left",
+                      selectedChargerId === charger.charger_id 
+                        ? "bg-primary/10 border-primary" 
+                        : "bg-[#1c1c1f] border-white/5 hover:border-white/10"
+                    )}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-bold flex items-center gap-1.5">
+                        <Zap className={cn("h-3 w-3", selectedChargerId === charger.charger_id ? "text-primary" : "text-muted-foreground")} />
+                        Slot {i + 1}
+                      </span>
+                      {selectedChargerId === charger.charger_id && <Check className="h-3 w-3 text-primary" />}
+                    </div>
+                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">
+                      {charger.type} • {charger.type === 'DCFC' ? '150kW' : '22kW'}
+                    </span>
+                    <span className={cn(
+                      "text-[10px] font-bold",
+                      charger.status === 'available' ? "text-emerald-500" : "text-rose-500"
+                    )}>
+                      {charger.status === 'available' ? 'Available' : 'Occupied'}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Booking Date</label>
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                  <CalendarIcon className="h-3 w-3" /> Date
+                </label>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full h-11 justify-start text-left font-normal bg-secondary/30 border-none rounded-xl">
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {format(selectedDate, "PPP")}
+                    <Button variant="outline" className="w-full h-11 justify-between text-left font-normal bg-[#1c1c1f] border-none rounded-xl">
+                      <span className="truncate">{format(selectedDate, "PPP")}</span>
+                      <ChevronRight className="h-4 w-4 rotate-90 text-muted-foreground" />
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0 bg-card border-border" align="start">
@@ -355,9 +422,11 @@ export function UserDashboard() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Booking Time</label>
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                  <Clock className="h-3 w-3" /> Start Time
+                </label>
                 <Select value={selectedTime} onValueChange={setSelectedTime}>
-                  <SelectTrigger className="h-11 bg-secondary/30 border-none rounded-xl focus:ring-primary/20">
+                  <SelectTrigger className="h-11 bg-[#1c1c1f] border-none rounded-xl focus:ring-primary/20">
                     <SelectValue placeholder="Select Time" />
                   </SelectTrigger>
                   <SelectContent className="bg-card border-border max-h-[300px]">
@@ -369,31 +438,47 @@ export function UserDashboard() {
               </div>
             </div>
 
-            {isBookingPending ? (
-              <div className="flex items-center gap-2 text-xs text-primary animate-pulse">
-                <Loader2 className="h-3 w-3 animate-spin" /> Processing request...
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Duration</label>
+              <Select value={duration} onValueChange={setDuration}>
+                <SelectTrigger className="h-11 bg-[#1c1c1f] border-none rounded-xl focus:ring-primary/20">
+                  <SelectValue placeholder="Select Duration" />
+                </SelectTrigger>
+                <SelectContent className="bg-card border-border">
+                  <SelectItem value="1">1 hour</SelectItem>
+                  <SelectItem value="2">2 hours</SelectItem>
+                  <SelectItem value="3">3 hours</SelectItem>
+                  <SelectItem value="4">4 hours</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="bg-[#1c1c1f] rounded-2xl p-5 flex items-center justify-between">
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground font-medium">Estimated Cost</p>
+                <p className="text-[10px] text-muted-foreground/60">Based on avg {selectedCharg?.type === 'DCFC' ? '50kW' : '7kW'} consumption</p>
               </div>
-            ) : isUnavailable ? (
+              <div className="text-2xl font-black">
+                ₹{estimatedCost.toFixed(2)}
+              </div>
+            </div>
+
+            {isUnavailable && !isBookingPending && (
               <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-4 flex items-center gap-3">
                 <AlertCircle className="h-5 w-5 text-rose-500 shrink-0" />
-                <p className="text-xs text-rose-500 font-bold">This slot is currently unavailable. Please select another time.</p>
-              </div>
-            ) : (
-              <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 flex items-center gap-3">
-                <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0" />
-                <p className="text-xs text-emerald-500 font-bold">This slot is available for booking.</p>
+                <p className="text-xs text-rose-500 font-bold">This slot is currently unavailable at this time.</p>
               </div>
             )}
 
             <Button 
               onClick={handleConfirmBooking} 
-              disabled={isBookingPending || isUnavailable}
-              className="w-full teal-gradient-btn h-12 font-bold rounded-xl shadow-lg shadow-primary/20"
+              disabled={isBookingPending || isUnavailable || !selectedChargerId}
+              className="w-full teal-gradient-btn h-14 font-black text-base rounded-2xl shadow-xl shadow-primary/20 transition-all hover:scale-[1.02]"
             >
-              {isBookingPending ? <Loader2 className="h-5 w-5 animate-spin" /> : "Request Booking"}
+              {isBookingPending ? <Loader2 className="h-5 w-5 animate-spin" /> : "Confirm Booking"}
             </Button>
           </div>
-        </DialogContent>
+        </div>
       </Dialog>
 
       <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
@@ -492,6 +577,9 @@ export function UserDashboard() {
                       onClick={() => {
                         setIsDetailsOpen(false);
                         setSelectedStation(detailsStation);
+                        // Auto-select first available charger
+                        const available = chargers.find(c => c.station_id === detailsStation.station_id && c.status === 'available');
+                        setSelectedChargerId(available?.charger_id || null);
                         setIsBookingOpen(true);
                       }}
                     >
@@ -507,3 +595,20 @@ export function UserDashboard() {
     </div>
   );
 }
+
+const ChevronRight = ({ className }: { className?: string }) => (
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    width="24" 
+    height="24" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={className}
+  >
+    <path d="m9 18 6-6-6-6"/>
+  </svg>
+);

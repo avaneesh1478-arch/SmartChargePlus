@@ -59,4 +59,6 @@ export interface Booking {
   bookingTime: string; // 24h format HH:mm
   status: 'pending' | 'confirmed' | 'rejected';
   createdAt: string;
+  chargerId?: string;
+  duration?: number; // in hours
 }
