@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useApp } from '@/hooks/use-store';
@@ -8,14 +9,14 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Info, Plus, X, Save, Image as ImageIcon, CheckCircle2, Zap, Upload } from 'lucide-react';
+import { Info, Plus, X, Save, Image as ImageIcon, CheckCircle2, Zap, Upload, Trash2 } from 'lucide-react';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { Station } from '@/types';
+import { Station, Charger } from '@/types';
 import Image from 'next/image';
 
 export default function OperatorStationDetailsPage() {
-  const { user, stations, updateStation } = useApp();
+  const { user, stations, chargers, updateStation, addSlot, removeSlot } = useApp();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -26,6 +27,11 @@ export default function OperatorStationDetailsPage() {
       (user.associated_station_id && s.station_id === user.associated_station_id)
     );
   }, [stations, user]);
+
+  const myChargers = useMemo(() => {
+    if (!myStation) return [];
+    return chargers.filter(c => c.station_id === myStation.station_id);
+  }, [chargers, myStation]);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -110,9 +116,25 @@ export default function OperatorStationDetailsPage() {
     return src.startsWith('http') || src.startsWith('data:image/');
   };
 
+  const handleAddSlot = () => {
+    addSlot(myStation.station_id, 1);
+    toast({
+      title: "Slot Added",
+      description: "A new charging slot has been commissioned at your station.",
+    });
+  };
+
+  const handleRemoveSlot = (chargerId: string) => {
+    removeSlot(chargerId);
+    toast({
+      title: "Slot Removed",
+      description: "The charging slot has been decommissioned.",
+    });
+  };
+
   return (
     <DashboardLayout>
-      <div className="max-w-4xl mx-auto space-y-8">
+      <div className="max-w-6xl mx-auto space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
@@ -127,9 +149,9 @@ export default function OperatorStationDetailsPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* General Info */}
-          <div className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* General Info & Infrastructure */}
+          <div className="lg:col-span-2 space-y-6">
             <Card className="border-none bg-[#1a1a1c] border-white/5">
               <CardHeader>
                 <CardTitle className="text-lg">Core Information</CardTitle>
@@ -156,62 +178,107 @@ export default function OperatorStationDetailsPage() {
             </Card>
 
             <Card className="border-none bg-[#1a1a1c] border-white/5">
-              <CardHeader>
-                <CardTitle className="text-lg">Services & Amenities</CardTitle>
-                <CardDescription>Add facilities available at your location.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex gap-2">
-                  <Input 
-                    placeholder="e.g. WiFi, Cafe, Restrooms" 
-                    value={newService}
-                    onChange={(e) => setNewService(e.target.value)}
-                    className="bg-secondary/30 border-none h-10"
-                    onKeyDown={(e) => e.key === 'Enter' && addItem('services', newService, setNewService)}
-                  />
-                  <Button variant="outline" size="icon" onClick={() => addItem('services', newService, setNewService)} className="bg-secondary/30 border-none">
-                    <Plus className="h-4 w-4" />
-                  </Button>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div className="space-y-1">
+                  <CardTitle className="text-lg">Charging Slots</CardTitle>
+                  <CardDescription>Manage your technical infrastructure and availability.</CardDescription>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {formData.services.map((item, i) => (
-                    <Badge key={i} className="bg-primary/10 text-primary border-primary/20 gap-1 px-3 py-1">
-                      {item}
-                      <X className="h-3 w-3 cursor-pointer hover:text-white" onClick={() => removeItem('services', i)} />
-                    </Badge>
-                  ))}
+                <Button onClick={handleAddSlot} className="teal-gradient-btn h-9 px-4 text-xs font-bold gap-2">
+                  <Plus className="h-4 w-4" /> Add Slot
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {myChargers.length > 0 ? (
+                    myChargers.map((charger, idx) => (
+                      <div key={charger.charger_id} className="flex items-center justify-between p-4 bg-secondary/20 rounded-2xl border border-white/5 group hover:border-primary/20 transition-all">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                            <Zap className="h-5 w-5 text-primary" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold">Slot {idx + 1}</p>
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{charger.type} • {charger.rate_per_kwh} ₹/kWh</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                           <Badge variant={charger.status === 'available' ? 'default' : 'secondary'} className={charger.status === 'available' ? 'success-badge text-[10px] uppercase' : 'text-[10px] uppercase'}>
+                             {charger.status}
+                           </Badge>
+                           <Button variant="ghost" size="icon" onClick={() => handleRemoveSlot(charger.charger_id)} className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10">
+                             <Trash2 className="h-4 w-4" />
+                           </Button>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="col-span-full py-10 text-center bg-secondary/10 border border-dashed border-white/5 rounded-2xl">
+                      <p className="text-xs text-muted-foreground">No slots configured. Click "Add Slot" to begin.</p>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="border-none bg-[#1a1a1c] border-white/5">
-              <CardHeader>
-                <CardTitle className="text-lg">Station Features</CardTitle>
-                <CardDescription>Highlight technical or site-specific advantages.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex gap-2">
-                  <Input 
-                    placeholder="e.g. Solar Powered, 24/7 Access" 
-                    value={newFeature}
-                    onChange={(e) => setNewFeature(e.target.value)}
-                    className="bg-secondary/30 border-none h-10"
-                    onKeyDown={(e) => e.key === 'Enter' && addItem('features', newFeature, setNewFeature)}
-                  />
-                  <Button variant="outline" size="icon" onClick={() => addItem('features', newFeature, setNewFeature)} className="bg-secondary/30 border-none">
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {formData.features.map((item, i) => (
-                    <Badge key={i} className="success-badge gap-1 px-3 py-1">
-                      <CheckCircle2 className="h-3 w-3" /> {item}
-                      <X className="h-3 w-3 cursor-pointer hover:text-white" onClick={() => removeItem('features', i)} />
-                    </Badge>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card className="border-none bg-[#1a1a1c] border-white/5">
+                <CardHeader>
+                  <CardTitle className="text-lg">Services & Amenities</CardTitle>
+                  <CardDescription>Facilities available at your location.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex gap-2">
+                    <Input 
+                      placeholder="e.g. WiFi, Cafe" 
+                      value={newService}
+                      onChange={(e) => setNewService(e.target.value)}
+                      className="bg-secondary/30 border-none h-10"
+                      onKeyDown={(e) => e.key === 'Enter' && addItem('services', newService, setNewService)}
+                    />
+                    <Button variant="outline" size="icon" onClick={() => addItem('services', newService, setNewService)} className="bg-secondary/30 border-none">
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {formData.services.map((item, i) => (
+                      <Badge key={i} className="bg-primary/10 text-primary border-primary/20 gap-1 px-3 py-1">
+                        {item}
+                        <X className="h-3 w-3 cursor-pointer hover:text-white" onClick={() => removeItem('services', i)} />
+                      </Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-none bg-[#1a1a1c] border-white/5">
+                <CardHeader>
+                  <CardTitle className="text-lg">Station Features</CardTitle>
+                  <CardDescription>Technical or site-specific advantages.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex gap-2">
+                    <Input 
+                      placeholder="e.g. Solar Powered" 
+                      value={newFeature}
+                      onChange={(e) => setNewFeature(e.target.value)}
+                      className="bg-secondary/30 border-none h-10"
+                      onKeyDown={(e) => e.key === 'Enter' && addItem('features', newFeature, setNewFeature)}
+                    />
+                    <Button variant="outline" size="icon" onClick={() => addItem('features', newFeature, setNewFeature)} className="bg-secondary/30 border-none">
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {formData.features.map((item, i) => (
+                      <Badge key={i} className="success-badge gap-1 px-3 py-1">
+                        <CheckCircle2 className="h-3 w-3" /> {item}
+                        <X className="h-3 w-3 cursor-pointer hover:text-white" onClick={() => removeItem('features', i)} />
+                      </Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
 
           {/* Visuals */}
