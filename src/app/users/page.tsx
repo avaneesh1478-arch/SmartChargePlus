@@ -12,12 +12,9 @@ import {
   Users, 
   Search, 
   Mail, 
-  Phone, 
-  Calendar, 
   Shield, 
-  ExternalLink,
-  MapPin,
-  Eye
+  Eye,
+  User as UserIcon
 } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import {
@@ -33,11 +30,13 @@ export default function UsersPage() {
   const { user: currentUser, users } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Only show users with the 'USER' role (EV Drivers)
   const filteredUsers = useMemo(() => {
     return users.filter(u => 
-      u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (u.fullName && u.fullName.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      u.role.toLowerCase().includes(searchQuery.toLowerCase())
+      u.role === 'USER' && (
+        u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (u.fullName && u.fullName.toLowerCase().includes(searchQuery.toLowerCase()))
+      )
     );
   }, [users, searchQuery]);
 
@@ -58,19 +57,19 @@ export default function UsersPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
             <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
-              <Users className="h-7 w-7 text-primary" /> User Directory
+              <Users className="h-7 w-7 text-primary" /> Driver Directory
             </h1>
-            <p className="text-muted-foreground text-sm">Monitor and manage all accounts registered across the network.</p>
+            <p className="text-muted-foreground text-sm">Monitor and manage all EV Driver accounts registered in the network.</p>
           </div>
           <Badge variant="outline" className="h-10 px-4 success-badge hidden sm:flex items-center gap-2">
-            <Shield className="h-4 w-4" /> {users.length} Registered Accounts
+            <UserIcon className="h-4 w-4" /> {filteredUsers.length} Active Drivers
           </Badge>
         </div>
 
         <div className="relative group">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
           <Input 
-            placeholder="Search by name, email, or role..." 
+            placeholder="Search drivers by name or email..." 
             className="h-12 pl-12 bg-[#1a1a1c] border-white/5 rounded-xl focus:ring-primary/20"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -81,9 +80,9 @@ export default function UsersPage() {
           <Table>
             <TableHeader>
               <TableRow className="border-white/5 bg-secondary/5">
-                <TableHead className="py-4">User</TableHead>
+                <TableHead className="py-4">Driver</TableHead>
                 <TableHead className="py-4">Email</TableHead>
-                <TableHead className="py-4">Role</TableHead>
+                <TableHead className="py-4">Wallet Balance</TableHead>
                 <TableHead className="py-4">Contact</TableHead>
                 <TableHead className="py-4 text-right">Actions</TableHead>
               </TableRow>
@@ -117,14 +116,9 @@ export default function UsersPage() {
                       </div>
                     </TableCell>
                     <TableCell className="py-4">
-                      <Badge variant="outline" className={cn(
-                        "text-[10px] uppercase font-bold tracking-tight",
-                        user.role === 'ADMIN' ? "border-primary text-primary bg-primary/5" :
-                        user.role === 'OPERATOR' ? "border-amber-500/50 text-amber-500 bg-amber-500/5" :
-                        "border-emerald-500/50 text-emerald-500 bg-emerald-500/5"
-                      )}>
-                        {user.role}
-                      </Badge>
+                      <span className="text-sm font-bold text-primary">
+                        ₹{user.wallet_balance?.toFixed(2) || '0.00'}
+                      </span>
                     </TableCell>
                     <TableCell className="py-4">
                       <span className="text-sm text-muted-foreground">
@@ -141,10 +135,10 @@ export default function UsersPage() {
                         <DialogContent className="sm:max-w-[425px] bg-[#1a1a1c] border-white/5">
                           <DialogHeader>
                             <DialogTitle className="text-xl font-bold flex items-center gap-2">
-                               <Shield className="h-5 w-5 text-primary" /> Profile Overview
+                               <Shield className="h-5 w-5 text-primary" /> Driver Profile
                             </DialogTitle>
                             <DialogDescription className="text-muted-foreground">
-                              Quick view of the user's registered details.
+                              Quick view of the driver's registered details.
                             </DialogDescription>
                           </DialogHeader>
                           
@@ -189,7 +183,7 @@ export default function UsersPage() {
               ) : (
                 <TableRow>
                   <TableCell colSpan={5} className="py-20 text-center text-muted-foreground italic">
-                    {searchQuery ? `No users found matching "${searchQuery}"` : "No registered users found."}
+                    {searchQuery ? `No drivers found matching "${searchQuery}"` : "No registered EV drivers found."}
                   </TableCell>
                 </TableRow>
               )}
