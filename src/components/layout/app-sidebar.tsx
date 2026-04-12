@@ -1,3 +1,4 @@
+
 "use client";
 
 import { LayoutDashboard, Zap, Activity, Users, CreditCard, LogOut, ShieldCheck, Map as MapIcon, History, FileText, Settings } from 'lucide-react';
@@ -29,7 +30,12 @@ export function AppSidebar() {
 
   const menuItems = [
     { title: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', roles: ['ADMIN', 'OPERATOR', 'USER'] },
-    { title: 'Stations', icon: MapIcon, path: '/stations', roles: ['ADMIN', 'OPERATOR', 'USER'] },
+    { 
+      title: 'Stations', 
+      icon: MapIcon, 
+      path: user?.role === 'ADMIN' ? '/admin/stations' : '/stations', 
+      roles: ['ADMIN', 'OPERATOR', 'USER'] 
+    },
     { title: 'My Station', icon: Settings, path: '/operator/station-details', roles: ['OPERATOR'] },
     { title: 'Analytics', icon: Activity, path: '/analytics', roles: ['ADMIN', 'OPERATOR'] },
     { title: 'Users', icon: Users, path: '/users', roles: ['ADMIN'] },
@@ -38,7 +44,10 @@ export function AppSidebar() {
     { title: 'Charging History', icon: History, path: '/history', roles: ['USER'] },
   ];
 
-  const filteredItems = menuItems.filter(item => user && item.roles.includes(user.role));
+  const filteredItems = menuItems.filter(item => user && item.roles.includes(item.roles.includes(user.role) ? user.role : ''));
+
+  // Fix: filteredItems mapping was slightly off in logic, corrected to:
+  const actualFilteredItems = menuItems.filter(item => user && item.roles.includes(user.role));
 
   return (
     <Sidebar collapsible="icon" className="border-r border-border">
@@ -56,7 +65,7 @@ export function AppSidebar() {
           <SidebarGroupLabel className="group-data-[collapsible=icon]:hidden">Main Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {filteredItems.map((item) => (
+              {actualFilteredItems.map((item) => (
                 <SidebarMenuItem key={item.path}>
                   <SidebarMenuButton
                     onClick={() => router.push(item.path)}
