@@ -40,13 +40,10 @@ export function AppSidebar() {
     { title: 'Analytics', icon: Activity, path: '/analytics', roles: ['ADMIN', 'OPERATOR'] },
     { title: 'Users', icon: Users, path: '/users', roles: ['ADMIN'] },
     { title: 'Content', icon: FileText, path: '/admin/content', roles: ['ADMIN'] },
-    { title: 'Wallet', icon: CreditCard, path: '/wallet', roles: ['USER'] },
+    { title: 'My Wallet', icon: CreditCard, path: '/wallet', roles: ['USER'] },
     { title: 'Charging History', icon: History, path: '/history', roles: ['USER'] },
   ];
 
-  const filteredItems = menuItems.filter(item => user && item.roles.includes(item.roles.includes(user.role) ? user.role : ''));
-
-  // Fix: filteredItems mapping was slightly off in logic, corrected to:
   const actualFilteredItems = menuItems.filter(item => user && item.roles.includes(user.role));
 
   return (

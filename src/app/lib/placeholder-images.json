@@ -18,6 +18,18 @@
       "description": "Dark themed map showing charging locations",
       "imageUrl": "https://picsum.photos/seed/ev-map/800/600",
       "imageHint": "night map"
+    },
+    {
+      "id": "wallet-card-bg",
+      "description": "Futuristic EV charging with windmill and green energy",
+      "imageUrl": "https://picsum.photos/seed/ev-green-energy/800/400",
+      "imageHint": "ev windmill"
+    },
+    {
+      "id": "wallet-footer-bg",
+      "description": "Electric car charging promo graphic",
+      "imageUrl": "https://picsum.photos/seed/ev-promo/800/200",
+      "imageHint": "ev promo"
     }
   ]
 }
