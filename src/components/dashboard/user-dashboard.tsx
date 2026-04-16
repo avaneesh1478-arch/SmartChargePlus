@@ -50,10 +50,12 @@ import { useToast } from '@/hooks/use-toast';
 import { Station, Booking } from '@/types';
 import { cn, calculateDistance } from '@/lib/utils';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 export function UserDashboard() {
   const { stations, chargers, t, user: appUser, bookings, addBooking } = useApp();
   const { toast } = useToast();
+  const router = useRouter();
   
   const [locating, setLocating] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -262,7 +264,11 @@ export function UserDashboard() {
           <p className="text-muted-foreground text-sm">{t.dashboard.ecoSystem}</p>
         </div>
         <div className="flex gap-3">
-          <Button size="sm" className="teal-gradient-btn font-bold h-10 px-6">
+          <Button 
+            size="sm" 
+            className="teal-gradient-btn font-bold h-10 px-6"
+            onClick={() => router.push('/wallet')}
+          >
             <IndianRupee className="h-4 w-4" /> Top Up
           </Button>
         </div>
@@ -476,8 +482,8 @@ export function UserDashboard() {
       <Dialog open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
         <DialogContent className="sm:max-w-[360px] p-0 bg-[#1a1a1c] border-white/5 rounded-3xl overflow-hidden shadow-2xl">
           <div className="bg-[#555555] p-6 space-y-1">
-            <p className="text-xs font-bold text-white/70 tracking-widest uppercase">{format(tempDate, "yyyy")}</p>
-            <h3 className="text-3xl font-bold text-white">{format(tempDate, "EEE, d MMM")}</h3>
+            <DialogTitle className="text-xs font-bold text-white/70 tracking-widest uppercase">{format(tempDate, "yyyy")}</DialogTitle>
+            <DialogDescription className="text-3xl font-bold text-white">{format(tempDate, "EEE, d MMM")}</DialogDescription>
           </div>
           <div className="p-2">
              <Calendar
