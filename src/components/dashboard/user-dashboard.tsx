@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from 'react';
@@ -43,7 +42,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/select";
+} from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { format, addDays } from "date-fns";
 import { useToast } from '@/hooks/use-toast';
