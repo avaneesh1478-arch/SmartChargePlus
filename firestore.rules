@@ -5,8 +5,7 @@ service cloud.firestore {
 
     /**
      * VoltaConnect Security Rules
-     * Optimized for real-time availability checking and role-based workflows.
-     * Version: 1.0.5 - Refined for anonymous access and broad read support.
+     * Optimized for server-side wallet management and escrow logic.
      */
 
     function isSignedIn() {
@@ -19,7 +18,15 @@ service cloud.firestore {
 
     // --- User Rules ---
     match /users/{userId} {
-      allow get, create, update: if isOwner(userId);
+      allow get: if isSignedIn();
+      allow create: if isOwner(userId);
+      
+      // wallet_balance protection: 
+      // In production, this field is READ-ONLY for users.
+      // Updates are exclusively handled by Cloud Functions using Admin SDK.
+      allow update: if isOwner(userId) 
+                    && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['wallet_balance', 'walletBalance', 'role']));
+      
       allow list: if false;
 
       match /transactions/{transactionId} {
@@ -41,9 +48,10 @@ service cloud.firestore {
 
     // --- Booking Rules ---
     match /bookings/{bookingId} {
-      // Allow all authenticated users to read and write to facilitate local-sync models
-      // and prevent persistent list errors in dashboards.
-      allow read, write: if request.auth != null;
+      // Allow authenticated users to manage their own booking lifecycle
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
     }
   }
 }

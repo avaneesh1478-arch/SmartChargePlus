@@ -333,12 +333,63 @@ export function AppProvider({ children }: { children: ReactNode }) {
     ));
   };
 
+  /**
+   * Automated "Escrow" Logic (On Booking Creation)
+   * This logic handles funds deduction and escrowing when a user reserves a slot.
+   */
   const addBooking = (booking: Booking) => {
-    setBookings(prev => [...prev, booking]);
+    const bookingAmount = booking.amount || 0;
+    const currentUser = users.find(u => u.uid === booking.userId);
+    
+    if (currentUser) {
+      const currentBalance = currentUser.wallet_balance || 0;
+      
+      if (currentBalance >= bookingAmount) {
+        // Sufficient funds: Deduct from wallet and mark as pending
+        const updatedUser = { ...currentUser, wallet_balance: currentBalance - bookingAmount };
+        setUsers(prev => prev.map(u => u.uid === currentUser.uid ? updatedUser : u));
+        
+        // Update local session if it's the current user
+        if (user && user.uid === currentUser.uid) {
+           setUser(updatedUser);
+           localStorage.setItem('volta_user', JSON.stringify(updatedUser));
+        }
+
+        setBookings(prev => [...prev, { ...booking, status: 'pending' }]);
+      } else {
+        // Insufficient funds: Mark as failed
+        setBookings(prev => [...prev, { ...booking, status: 'failed_insufficient_funds' }]);
+      }
+    }
   };
 
+  /**
+   * Automated "Refund" Logic (On Status Change)
+   * If a booking is rejected by an operator, the escrowed funds are returned to the user.
+   */
   const updateBookingStatus = (bookingId: string, status: Booking['status']) => {
-    setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status } : b));
+    setBookings(prev => {
+      const booking = prev.find(b => b.id === bookingId);
+      
+      if (booking && booking.status === 'pending' && status === 'rejected') {
+        // Refund detected: Increment user balance
+        const targetUser = users.find(u => u.uid === booking.userId);
+        if (targetUser) {
+          const refundAmount = booking.amount || 0;
+          const updatedUser = { ...targetUser, wallet_balance: (targetUser.wallet_balance || 0) + refundAmount };
+          
+          setUsers(allUsers => allUsers.map(u => u.uid === targetUser.uid ? updatedUser : u));
+          
+          // Update local session if it's the current user
+          if (user && user.uid === targetUser.uid) {
+             setUser(updatedUser);
+             localStorage.setItem('volta_user', JSON.stringify(updatedUser));
+          }
+        }
+      }
+      
+      return prev.map(b => b.id === bookingId ? { ...b, status } : b);
+    });
   };
 
   return (

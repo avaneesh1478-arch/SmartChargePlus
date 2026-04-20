@@ -28,6 +28,10 @@
           "type": "string",
           "description": "Timestamp when the user account was created.",
           "format": "date-time"
+        },
+        "wallet_balance": {
+          "type": "number",
+          "description": "The current credit balance of the user."
         }
       },
       "required": [
@@ -82,92 +86,6 @@
         "chargerCount"
       ]
     },
-    "Charger": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Charger",
-      "type": "object",
-      "description": "Represents an individual EV charger unit within a station.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Charger entity."
-        },
-        "stationId": {
-          "type": "string",
-          "description": "Reference to the Station this charger belongs to. (Relationship: Station 1:N Charger)"
-        },
-        "type": {
-          "type": "string",
-          "description": "Type of charger (e.g., Level 2, DCFC)."
-        },
-        "currentUsage": {
-          "type": "number",
-          "description": "Current power usage of the charger in kW."
-        },
-        "status": {
-          "type": "string",
-          "description": "Current operational status of the charger (available, occupied, out_of_service)."
-        },
-        "ratePerKwh": {
-          "type": "number",
-          "description": "Charging rate per kilowatt-hour for this charger."
-        }
-      },
-      "required": [
-        "id",
-        "stationId",
-        "type",
-        "currentUsage",
-        "status",
-        "ratePerKwh"
-      ]
-    },
-    "Transaction": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Transaction",
-      "type": "object",
-      "description": "Records details of a completed EV charging session.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Transaction entity."
-        },
-        "userId": {
-          "type": "string",
-          "description": "Reference to the End User who initiated the transaction. (Relationship: User 1:N Transaction)"
-        },
-        "stationId": {
-          "type": "string",
-          "description": "Reference to the Station where the transaction occurred. (Relationship: Station 1:N Transaction)"
-        },
-        "duration": {
-          "type": "number",
-          "description": "Duration of the charging session in minutes."
-        },
-        "cost": {
-          "type": "number",
-          "description": "Total cost of the charging session."
-        },
-        "energyDelivered": {
-          "type": "number",
-          "description": "Total energy delivered during the session in kWh."
-        },
-        "timestamp": {
-          "type": "string",
-          "description": "Date and time when the transaction was recorded.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "userId",
-        "stationId",
-        "duration",
-        "cost",
-        "energyDelivered",
-        "timestamp"
-      ]
-    },
     "Booking": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Booking",
@@ -204,8 +122,12 @@
         },
         "status": {
           "type": "string",
-          "enum": ["pending", "confirmed", "rejected"],
+          "enum": ["pending", "confirmed", "rejected", "failed_insufficient_funds"],
           "description": "The current status of the booking."
+        },
+        "amount": {
+          "type": "number",
+          "description": "The cost escrowed for this booking."
         },
         "createdAt": {
           "type": "string",

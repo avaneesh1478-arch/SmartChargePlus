@@ -57,8 +57,9 @@ export interface Booking {
   stationName: string;
   bookingDate: string; // ISO format YYYY-MM-DD
   bookingTime: string; // 24h format HH:mm
-  status: 'pending' | 'confirmed' | 'rejected';
+  status: 'pending' | 'confirmed' | 'rejected' | 'failed_insufficient_funds';
   createdAt: string;
   chargerId?: string;
   duration?: number; // in hours
+  amount?: number; // The escrowed cost
 }

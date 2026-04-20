@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useApp } from '@/hooks/use-store';
 import { StatCard } from './stat-card';
 import { 
@@ -43,7 +43,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/components/select";
 import { Calendar } from "@/components/ui/calendar";
 import { format, addDays } from "date-fns";
 import { useToast } from '@/hooks/use-toast';
@@ -74,6 +74,26 @@ export function UserDashboard() {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [detailsStation, setDetailsStation] = useState<Station | null>(null);
 
+  // Monitor Rejections for Refunds
+  const prevBookingsRef = useRef<Booking[]>([]);
+  useEffect(() => {
+    if (!appUser) return;
+    
+    const myBookings = bookings.filter(b => b.userId === appUser.uid);
+    
+    myBookings.forEach(current => {
+      const previous = prevBookingsRef.current.find(p => p.id === current.id);
+      if (previous && previous.status === 'pending' && current.status === 'rejected') {
+        toast({
+          title: "Booking Rejected",
+          description: `₹${current.amount?.toFixed(2)} has been credited back to your wallet.`,
+        });
+      }
+    });
+    
+    prevBookingsRef.current = myBookings;
+  }, [bookings, appUser, toast]);
+
   const dateStr = useMemo(() => format(selectedDate, "yyyy-MM-dd"), [selectedDate]);
   
   const stationChargers = useMemo(() => {
@@ -101,9 +121,11 @@ export function UserDashboard() {
     );
   }, [bookings, selectedStation, selectedChargerId, dateStr, selectedTime]);
 
-  const myBookings = useMemo(() => {
+  const myBookingsSorted = useMemo(() => {
     if (!appUser) return [];
-    return bookings.filter(b => b.userId === appUser.uid);
+    return bookings
+      .filter(b => b.userId === appUser.uid)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [bookings, appUser]);
 
   const timeSlots = useMemo(() => {
@@ -148,6 +170,16 @@ export function UserDashboard() {
   const handleConfirmBooking = () => {
     if (!appUser || !selectedStation || !selectedChargerId) return;
     
+    // Check local balance before attempting (Frontend check)
+    if ((appUser.wallet_balance || 0) < estimatedCost) {
+      toast({
+        variant: "destructive",
+        title: "Insufficient Credits",
+        description: "Please top up your wallet to book this slot.",
+      });
+      return;
+    }
+
     setIsBookingPending(true);
     
     setTimeout(() => {
@@ -163,6 +195,7 @@ export function UserDashboard() {
         bookingTime: selectedTime,
         duration: parseInt(duration),
         status: 'pending',
+        amount: estimatedCost, // Passing cost for escrow
         createdAt: new Date().toISOString()
       };
 
@@ -170,7 +203,7 @@ export function UserDashboard() {
       
       toast({ 
         title: "Request Sent", 
-        description: `Booking for ${dateStr} at ${selectedTime} is awaiting operator approval.` 
+        description: `₹${estimatedCost.toFixed(2)} has been escrowed. Awaiting operator approval.` 
       });
       setIsBookingOpen(false);
       setIsBookingPending(false);
@@ -276,7 +309,7 @@ export function UserDashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatCard title={t.dashboard.wallet} value={`₹${appUser?.wallet_balance?.toFixed(2) || '0.00'}`} icon={IndianRupee} />
-        <StatCard title="Confirmed Bookings" value={myBookings.filter(b => b.status === 'confirmed').length} icon={CheckCircle2} />
+        <StatCard title="Confirmed Bookings" value={myBookingsSorted.filter(b => b.status === 'confirmed').length} icon={CheckCircle2} />
         <StatCard title="Nearby Stations" value={stations.length} icon={Navigation} />
       </div>
 
@@ -322,8 +355,8 @@ export function UserDashboard() {
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-white/5">
-                {myBookings.length > 0 ? (
-                  myBookings.map(bk => (
+                {myBookingsSorted.length > 0 ? (
+                  myBookingsSorted.map(bk => (
                     <div key={bk.id} className="p-5 flex gap-4 items-center hover:bg-white/5 transition-colors">
                       <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                         <Zap className="h-5 w-5 text-primary" />
@@ -335,8 +368,11 @@ export function UserDashboard() {
                         </p>
                       </div>
                       <div className="text-right">
-                        <Badge variant={bk.status === 'confirmed' ? 'default' : bk.status === 'pending' ? 'secondary' : 'destructive'} className="text-[10px] uppercase">
-                          {bk.status}
+                        <Badge 
+                          variant={bk.status === 'confirmed' ? 'default' : bk.status === 'pending' ? 'secondary' : 'destructive'} 
+                          className="text-[10px] uppercase"
+                        >
+                          {bk.status === 'failed_insufficient_funds' ? 'No Funds' : bk.status}
                         </Badge>
                       </div>
                     </div>
@@ -564,16 +600,12 @@ export function UserDashboard() {
                     <div className="space-y-4">
                       <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-primary/80">Site Features</h4>
                       <div className="grid grid-cols-2 gap-3">
-                        {detailsStation.features && detailsStation.features.length > 0 ? (
-                          detailsStation.features.map((feature, i) => (
-                            <div key={i} className="flex items-center gap-2 text-xs font-medium text-white/80">
-                              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                              {feature}
-                            </div>
-                          ))
-                        ) : (
-                          <p className="text-xs text-muted-foreground italic">24/7 access available.</p>
-                        )}
+                        {detailsStation.features && detailsStation.features.map((feature, i) => (
+                          <div key={i} className="flex items-center gap-2 text-xs font-medium text-white/80">
+                            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                            {feature}
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
