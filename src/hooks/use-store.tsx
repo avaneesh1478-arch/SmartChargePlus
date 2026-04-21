@@ -1,4 +1,3 @@
-
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -129,6 +128,42 @@ export function AppProvider({ children }: { children: ReactNode }) {
     
     setIsLoaded(true);
   }, []);
+
+  // Passive Watcher: Automated Booking Completion
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    const checkInterval = setInterval(() => {
+      const now = Date.now();
+      let hasChanges = false;
+      const updatedBookings = bookings.map(booking => {
+        if (booking.status === 'confirmed' && booking.endTime && booking.endTime < now) {
+          hasChanges = true;
+          return { ...booking, status: 'completed' as const };
+        }
+        return booking;
+      });
+
+      if (hasChanges) {
+        setBookings(updatedBookings);
+        
+        // Auto-release chargers
+        const completedBookings = updatedBookings.filter(b => b.status === 'completed' && !bookings.find(oldB => oldB.id === b.id && oldB.status === 'completed'));
+        
+        if (completedBookings.length > 0) {
+          setChargers(prev => prev.map(charger => {
+            const associatedCompletion = completedBookings.find(b => b.chargerId === charger.charger_id);
+            if (associatedCompletion) {
+              return { ...charger, status: 'available' as const, current_usage: 0 };
+            }
+            return charger;
+          }));
+        }
+      }
+    }, 15000); // Check every 15 seconds
+
+    return () => clearInterval(checkInterval);
+  }, [bookings, isLoaded]);
 
   // Synchronize local user with Firebase Auth session
   useEffect(() => {
@@ -333,14 +368,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
     ));
   };
 
-  /**
-   * Automated "Escrow" Logic (On Booking Creation)
-   * This logic handles funds deduction and escrowing when a user reserves a slot.
-   */
   const addBooking = (booking: Booking) => {
     const bookingAmount = booking.amount || 0;
     const currentUser = users.find(u => u.uid === booking.userId);
     
+    // Calculate Timestamps
+    const startTime = new Date(`${booking.bookingDate}T${booking.bookingTime}`).getTime();
+    const durationMs = (booking.duration || 1) * 60 * 60 * 1000;
+    const endTime = startTime + durationMs;
+
+    const enrichedBooking = {
+      ...booking,
+      startTime,
+      endTime,
+      status: 'pending' as const
+    };
+
     if (currentUser) {
       const currentBalance = currentUser.wallet_balance || 0;
       
@@ -349,30 +392,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const updatedUser = { ...currentUser, wallet_balance: currentBalance - bookingAmount };
         setUsers(prev => prev.map(u => u.uid === currentUser.uid ? updatedUser : u));
         
-        // Update local session if it's the current user
         if (user && user.uid === currentUser.uid) {
            setUser(updatedUser);
            localStorage.setItem('volta_user', JSON.stringify(updatedUser));
         }
 
-        setBookings(prev => [...prev, { ...booking, status: 'pending' }]);
+        setBookings(prev => [...prev, enrichedBooking]);
       } else {
         // Insufficient funds: Mark as failed
-        setBookings(prev => [...prev, { ...booking, status: 'failed_insufficient_funds' }]);
+        setBookings(prev => [...prev, { ...enrichedBooking, status: 'failed_insufficient_funds' as const }]);
       }
     }
   };
 
-  /**
-   * Automated "Refund" Logic (On Status Change)
-   * If a booking is rejected by an operator, the escrowed funds are returned to the user.
-   */
   const updateBookingStatus = (bookingId: string, status: Booking['status']) => {
     setBookings(prev => {
       const booking = prev.find(b => b.id === bookingId);
       
       if (booking && booking.status === 'pending' && status === 'rejected') {
-        // Refund detected: Increment user balance
         const targetUser = users.find(u => u.uid === booking.userId);
         if (targetUser) {
           const refundAmount = booking.amount || 0;
@@ -380,12 +417,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
           
           setUsers(allUsers => allUsers.map(u => u.uid === targetUser.uid ? updatedUser : u));
           
-          // Update local session if it's the current user
           if (user && user.uid === targetUser.uid) {
              setUser(updatedUser);
              localStorage.setItem('volta_user', JSON.stringify(updatedUser));
           }
         }
+      }
+
+      // If approved, update charger status
+      if (booking && status === 'confirmed' && booking.chargerId) {
+        setChargers(allChargers => allChargers.map(c => 
+          c.charger_id === booking.chargerId 
+            ? { ...c, status: 'occupied' as const, current_usage: (c.type === 'DCFC' ? 50 : 7) } 
+            : c
+        ));
       }
       
       return prev.map(b => b.id === bookingId ? { ...b, status } : b);

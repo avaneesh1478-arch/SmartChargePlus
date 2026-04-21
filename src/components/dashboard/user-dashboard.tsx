@@ -22,7 +22,9 @@ import {
   Wifi,
   Coffee,
   Check,
-  ChevronRight
+  ChevronRight,
+  FileText,
+  MessageSquare
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -120,10 +122,18 @@ export function UserDashboard() {
     );
   }, [bookings, selectedStation, selectedChargerId, dateStr, selectedTime]);
 
-  const myBookingsSorted = useMemo(() => {
+  // CATEGORIZED BOOKINGS
+  const activeBookings = useMemo(() => {
     if (!appUser) return [];
     return bookings
-      .filter(b => b.userId === appUser.uid)
+      .filter(b => b.userId === appUser.uid && ['pending', 'confirmed'].includes(b.status))
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  }, [bookings, appUser]);
+
+  const pastBookings = useMemo(() => {
+    if (!appUser) return [];
+    return bookings
+      .filter(b => b.userId === appUser.uid && ['completed', 'rejected', 'failed_insufficient_funds'].includes(b.status))
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [bookings, appUser]);
 
@@ -169,7 +179,6 @@ export function UserDashboard() {
   const handleConfirmBooking = () => {
     if (!appUser || !selectedStation || !selectedChargerId) return;
     
-    // Check local balance before attempting (Frontend check)
     if ((appUser.wallet_balance || 0) < estimatedCost) {
       toast({
         variant: "destructive",
@@ -194,7 +203,7 @@ export function UserDashboard() {
         bookingTime: selectedTime,
         duration: parseInt(duration),
         status: 'pending',
-        amount: estimatedCost, // Passing cost for escrow
+        amount: estimatedCost,
         createdAt: new Date().toISOString()
       };
 
@@ -308,7 +317,7 @@ export function UserDashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <StatCard title={t.dashboard.wallet} value={`₹${appUser?.wallet_balance?.toFixed(2) || '0.00'}`} icon={IndianRupee} />
-        <StatCard title="Confirmed Bookings" value={myBookingsSorted.filter(b => b.status === 'confirmed').length} icon={CheckCircle2} />
+        <StatCard title="Confirmed Bookings" value={activeBookings.filter(b => b.status === 'confirmed').length} icon={CheckCircle2} />
         <StatCard title="Nearby Stations" value={stations.length} icon={Navigation} />
       </div>
 
@@ -349,13 +358,14 @@ export function UserDashboard() {
           <Card className="border-none bg-[#1a1a1c] border-white/5 rounded-2xl overflow-hidden shadow-2xl">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex items-center gap-2 text-foreground">
-                <History className="h-5 w-5 text-primary" /> My Bookings
+                <Clock className="h-5 w-5 text-primary" /> Active Sessions
               </CardTitle>
+              <CardDescription>Track your upcoming and live charges.</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-white/5">
-                {myBookingsSorted.length > 0 ? (
-                  myBookingsSorted.map(bk => (
+                {activeBookings.length > 0 ? (
+                  activeBookings.map(bk => (
                     <div key={bk.id} className="p-5 flex gap-4 items-center hover:bg-white/5 transition-colors">
                       <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                         <Zap className="h-5 w-5 text-primary" />
@@ -368,16 +378,59 @@ export function UserDashboard() {
                       </div>
                       <div className="text-right">
                         <Badge 
-                          variant={bk.status === 'confirmed' ? 'default' : bk.status === 'pending' ? 'secondary' : 'destructive'} 
+                          variant={bk.status === 'confirmed' ? 'default' : 'secondary'} 
                           className="text-[10px] uppercase"
                         >
-                          {bk.status === 'failed_insufficient_funds' ? 'No Funds' : bk.status}
+                          {bk.status}
                         </Badge>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <div className="p-10 text-center text-xs text-muted-foreground">No bookings yet.</div>
+                  <div className="p-10 text-center text-xs text-muted-foreground">No active bookings.</div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-none bg-[#1a1a1c] border-white/5 rounded-2xl overflow-hidden shadow-2xl">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center gap-2 text-foreground">
+                <History className="h-5 w-5 text-primary" /> Past Sessions
+              </CardTitle>
+              <CardDescription>Review your charging history.</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="divide-y divide-white/5">
+                {pastBookings.length > 0 ? (
+                  pastBookings.map(bk => (
+                    <div key={bk.id} className="p-5 space-y-4 hover:bg-white/5 transition-colors">
+                      <div className="flex gap-4 items-center">
+                        <div className="h-10 w-10 rounded-full bg-secondary/40 flex items-center justify-center shrink-0">
+                          <CheckCircle2 className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold truncate text-foreground">{bk.stationName}</p>
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">
+                            {bk.bookingDate} • Status: <span className={cn(bk.status === 'completed' ? 'text-emerald-500' : 'text-rose-500')}>{bk.status}</span>
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {bk.status === 'completed' && (
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm" className="h-8 text-[10px] font-bold uppercase tracking-wider flex-1 bg-white/5 border-white/5">
+                            <FileText className="h-3 w-3 mr-1.5" /> Receipt
+                          </Button>
+                          <Button variant="outline" size="sm" className="h-8 text-[10px] font-bold uppercase tracking-wider flex-1 bg-white/5 border-white/5">
+                            <MessageSquare className="h-3 w-3 mr-1.5" /> Review
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-10 text-center text-xs text-muted-foreground">No past sessions recorded.</div>
                 )}
               </div>
             </CardContent>

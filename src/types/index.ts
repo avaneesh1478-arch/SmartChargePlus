@@ -1,4 +1,3 @@
-
 export type UserRole = 'ADMIN' | 'OPERATOR' | 'USER';
 
 export interface User {
@@ -57,9 +56,11 @@ export interface Booking {
   stationName: string;
   bookingDate: string; // ISO format YYYY-MM-DD
   bookingTime: string; // 24h format HH:mm
-  status: 'pending' | 'confirmed' | 'rejected' | 'failed_insufficient_funds';
+  status: 'pending' | 'confirmed' | 'rejected' | 'failed_insufficient_funds' | 'completed';
   createdAt: string;
   chargerId?: string;
   duration?: number; // in hours
   amount?: number; // The escrowed cost
+  startTime?: number; // Timestamp
+  endTime?: number;   // Timestamp
 }
