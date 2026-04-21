@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMemo } from 'react';
@@ -20,21 +21,49 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useRouter } from 'next/navigation';
 
 export function OperatorDashboard() {
-  const { user: appUser, bookings, updateBookingStatus } = useApp();
+  const { user: appUser, bookings, updateBookingStatus, stations, transactions } = useApp();
   const { toast } = useToast();
   const router = useRouter();
 
-  // Filter local bookings for the operator
+  // Identify stations managed by this operator
+  const myStations = useMemo(() => {
+    if (!appUser) return [];
+    return stations.filter(s => 
+      s.operator_id === appUser.uid || 
+      (appUser.associated_station_id && s.station_id === appUser.associated_station_id)
+    );
+  }, [stations, appUser]);
+
+  const myStationIds = useMemo(() => myStations.map(s => s.station_id), [myStations]);
+
+  // Calculate real revenue from transactions and bookings
+  const realRevenue = useMemo(() => {
+    if (!appUser) return 0;
+    
+    // Revenue from historical transactions
+    const transactionRevenue = transactions
+      .filter(t => myStationIds.includes(t.station_id))
+      .reduce((acc, t) => acc + t.cost, 0);
+    
+    // Revenue from active or completed bookings (escrowed funds)
+    const bookingRevenue = bookings
+      .filter(b => myStationIds.includes(b.stationId) && (b.status === 'confirmed' || b.status === 'completed'))
+      .reduce((acc, b) => acc + (b.amount || 0), 0);
+      
+    return transactionRevenue + bookingRevenue;
+  }, [transactions, bookings, myStationIds, appUser]);
+
+  // Filter local bookings for the operator's stations
   const myBookings = useMemo(() => {
     if (!appUser) return [];
     return bookings
-      .filter(b => b.operatorId === appUser.uid)
+      .filter(b => myStationIds.includes(b.stationId))
       .sort((a, b) => {
         const dateA = new Date(`${a.bookingDate}T${a.bookingTime}`);
         const dateB = new Date(`${b.bookingDate}T${b.bookingTime}`);
         return dateA.getTime() - dateB.getTime();
       });
-  }, [bookings, appUser]);
+  }, [bookings, myStationIds, appUser]);
 
   const handleUpdateStatus = (bookingId: string, newStatus: 'confirmed' | 'rejected') => {
     updateBookingStatus(bookingId, newStatus);
@@ -71,10 +100,10 @@ export function OperatorDashboard() {
       {/* Top Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard 
-          title="Revenue (Est)" 
-          value="₹19,880" 
+          title="Total Revenue" 
+          value={`₹${realRevenue.toLocaleString()}`} 
           icon={IndianRupee} 
-          trend={{ value: 12, isUp: true }} 
+          trend={{ value: 8, isUp: true }} 
           iconClassName="bg-emerald-500/10"
         />
         <StatCard 
