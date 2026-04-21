@@ -1,3 +1,4 @@
+
 "use client";
 
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
@@ -55,6 +56,8 @@ export default function AdminContentPage() {
 
   const renderForm = (lang: Language) => {
     const content = editingTranslations[lang];
+    if (!content) return null;
+
     return (
       <div className="space-y-6 pt-4">
         <div className="space-y-4">
@@ -68,7 +71,7 @@ export default function AdminContentPage() {
             <div className="grid gap-2">
               <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Background Image URL</Label>
               <Input 
-                value={content.hero.backgroundImage} 
+                value={content.hero?.backgroundImage || ''} 
                 onChange={(e) => updateField(lang, 'hero', 'backgroundImage', e.target.value)}
                 className="bg-secondary/30 border-none"
                 placeholder="https://images.unsplash.com/..."
@@ -78,7 +81,7 @@ export default function AdminContentPage() {
             <div className="grid gap-2">
               <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Title</Label>
               <Input 
-                value={content.hero.title} 
+                value={content.hero?.title || ''} 
                 onChange={(e) => updateField(lang, 'hero', 'title', e.target.value)}
                 className="bg-secondary/30 border-none"
               />
@@ -86,7 +89,7 @@ export default function AdminContentPage() {
             <div className="grid gap-2">
               <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Subtitle</Label>
               <Textarea 
-                value={content.hero.subtitle} 
+                value={content.hero?.subtitle || ''} 
                 onChange={(e) => updateField(lang, 'hero', 'subtitle', e.target.value)}
                 className="bg-secondary/30 border-none min-h-[80px]"
               />
@@ -95,7 +98,7 @@ export default function AdminContentPage() {
               <div className="grid gap-2">
                 <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Find Station Button</Label>
                 <Input 
-                  value={content.hero.findStation} 
+                  value={content.hero?.findStation || ''} 
                   onChange={(e) => updateField(lang, 'hero', 'findStation', e.target.value)}
                   className="bg-secondary/30 border-none"
                 />
@@ -103,7 +106,7 @@ export default function AdminContentPage() {
               <div className="grid gap-2">
                 <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Login Button</Label>
                 <Input 
-                  value={content.hero.goDashboard} 
+                  value={content.hero?.goDashboard || ''} 
                   onChange={(e) => updateField(lang, 'hero', 'goDashboard', e.target.value)}
                   className="bg-secondary/30 border-none"
                 />
@@ -118,7 +121,7 @@ export default function AdminContentPage() {
             <div className="grid gap-2">
               <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Main Title</Label>
               <Input 
-                value={content.howItWorks.title} 
+                value={content.howItWorks?.title || ''} 
                 onChange={(e) => updateField(lang, 'howItWorks', 'title', e.target.value)}
                 className="bg-secondary/30 border-none"
               />
@@ -126,7 +129,7 @@ export default function AdminContentPage() {
             <div className="grid gap-2">
               <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Main Subtitle</Label>
               <Input 
-                value={content.howItWorks.subtitle} 
+                value={content.howItWorks?.subtitle || ''} 
                 onChange={(e) => updateField(lang, 'howItWorks', 'subtitle', e.target.value)}
                 className="bg-secondary/30 border-none"
               />

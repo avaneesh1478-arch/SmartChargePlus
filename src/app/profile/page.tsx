@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useApp } from '@/hooks/use-store';
@@ -154,7 +155,7 @@ export default function ProfilePage() {
                           <Input
                             id="fullName"
                             className="bg-secondary/50 border-none h-10"
-                            value={formData.fullName}
+                            value={formData.fullName || ''}
                             onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                           />
                         </div>
@@ -164,7 +165,7 @@ export default function ProfilePage() {
                             id="email"
                             type="email"
                             className="bg-secondary/50 border-none h-10"
-                            value={formData.email}
+                            value={formData.email || ''}
                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                           />
                         </div>
@@ -174,7 +175,7 @@ export default function ProfilePage() {
                             id="contactNumber"
                             className="bg-secondary/50 border-none h-10"
                             placeholder="e.g. +91 98765 43210"
-                            value={formData.contactNumber}
+                            value={formData.contactNumber || ''}
                             onChange={(e) => setFormData({ ...formData, contactNumber: e.target.value })}
                           />
                         </div>
@@ -184,7 +185,7 @@ export default function ProfilePage() {
                             id="address"
                             className="bg-secondary/50 border-none h-10"
                             placeholder="e.g. 123 Tesla Way"
-                            value={formData.address}
+                            value={formData.address || ''}
                             onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                           />
                         </div>
@@ -195,7 +196,7 @@ export default function ProfilePage() {
                               id="profileImage"
                               className="bg-secondary/50 border-none h-10 flex-1"
                               placeholder="https://..."
-                              value={formData.profileImage}
+                              value={formData.profileImage || ''}
                               onChange={(e) => setFormData({ ...formData, profileImage: e.target.value })}
                             />
                             <input 

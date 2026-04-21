@@ -169,7 +169,7 @@ export function AdminDashboard() {
                       id="name"
                       placeholder="e.g. Central Plaza Hub"
                       className="flex h-10 w-full rounded-md border-none bg-secondary/50 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 disabled:cursor-not-allowed disabled:opacity-50"
-                      value={formData.name}
+                      value={formData.name || ''}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     />
                   </div>
@@ -180,7 +180,7 @@ export function AdminDashboard() {
                       type="email"
                       placeholder="e.g. operator@hub.com"
                       className="flex h-10 w-full rounded-md border-none bg-secondary/50 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 disabled:cursor-not-allowed disabled:opacity-50"
-                      value={formData.email}
+                      value={formData.email || ''}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     />
                   </div>
@@ -190,7 +190,7 @@ export function AdminDashboard() {
                       id="address"
                       placeholder="e.g. 123 Tesla Way, Tech City"
                       className="flex h-10 w-full rounded-md border-none bg-secondary/50 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 disabled:cursor-not-allowed disabled:opacity-50"
-                      value={formData.address}
+                      value={formData.address || ''}
                       onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                     />
                   </div>
@@ -204,7 +204,7 @@ export function AdminDashboard() {
                         step="0.000001"
                         placeholder="e.g. 12.9716"
                         className="flex h-10 w-full rounded-md border-none bg-secondary/50 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 disabled:cursor-not-allowed disabled:opacity-50"
-                        value={formData.latitude}
+                        value={formData.latitude || ''}
                         onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
                       />
                     </div>
@@ -216,7 +216,7 @@ export function AdminDashboard() {
                         step="0.000001"
                         placeholder="e.g. 77.5946"
                         className="flex h-10 w-full rounded-md border-none bg-secondary/50 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 disabled:cursor-not-allowed disabled:opacity-50"
-                        value={formData.longitude}
+                        value={formData.longitude || ''}
                         onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
                       />
                     </div>
@@ -230,7 +230,7 @@ export function AdminDashboard() {
                       step="0.01"
                       placeholder="e.g. 15.00"
                       className="flex h-10 w-full rounded-md border-none bg-secondary/50 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 disabled:cursor-not-allowed disabled:opacity-50"
-                      value={formData.chargingCost}
+                      value={formData.chargingCost || ''}
                       onChange={(e) => setFormData({ ...formData, chargingCost: e.target.value })}
                     />
                   </div>
