@@ -1,3 +1,4 @@
+
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -174,7 +175,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
-    localStorage.setItem('volta_lang', lang);
+    try {
+      localStorage.setItem('volta_lang', lang);
+    } catch (e) {
+      console.warn("Could not save language preference", e);
+    }
   };
 
   const updateTranslations = (lang: Language, newContent: any) => {
@@ -188,34 +193,58 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!isLoaded) return;
-    localStorage.setItem('volta_all_users', JSON.stringify(users));
+    try {
+      localStorage.setItem('volta_all_users', JSON.stringify(users));
+    } catch (e) {
+      console.warn("Storage quota exceeded for users", e);
+    }
   }, [users, isLoaded]);
 
   useEffect(() => {
     if (!isLoaded) return;
-    localStorage.setItem('volta_stations', JSON.stringify(stations));
+    try {
+      localStorage.setItem('volta_stations', JSON.stringify(stations));
+    } catch (e) {
+      console.warn("Storage quota exceeded for stations. Your changes will not persist after refresh. Try using smaller images.", e);
+    }
   }, [stations, isLoaded]);
 
   useEffect(() => {
     if (!isLoaded) return;
-    localStorage.setItem('volta_chargers', JSON.stringify(chargers));
+    try {
+      localStorage.setItem('volta_chargers', JSON.stringify(chargers));
+    } catch (e) {
+      console.warn("Storage quota exceeded for chargers", e);
+    }
   }, [chargers, isLoaded]);
 
   useEffect(() => {
     if (!isLoaded) return;
-    localStorage.setItem('volta_bookings', JSON.stringify(bookings));
+    try {
+      localStorage.setItem('volta_bookings', JSON.stringify(bookings));
+    } catch (e) {
+      console.warn("Storage quota exceeded for bookings", e);
+    }
   }, [bookings, isLoaded]);
 
   useEffect(() => {
     if (!isLoaded) return;
-    localStorage.setItem('volta_translations', JSON.stringify(allTranslations));
+    try {
+      localStorage.setItem('volta_translations', JSON.stringify(allTranslations));
+    } catch (e) {
+      console.warn("Storage quota exceeded for translations", e);
+    }
   }, [allTranslations, isLoaded]);
 
   const login = (email: string) => {
     const found = users.find(u => u.email.toLowerCase() === email.toLowerCase());
     if (found) {
       setUser(found);
-      localStorage.setItem('volta_user', JSON.stringify(found));
+      try {
+        localStorage.setItem('volta_user', JSON.stringify(found));
+      } catch (e) {
+        console.warn("Could not save user session", e);
+      }
     }
     return found;
   };
@@ -237,7 +266,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
     
     setUser(newUser);
-    localStorage.setItem('volta_user', JSON.stringify(newUser));
+    try {
+      localStorage.setItem('volta_user', JSON.stringify(newUser));
+    } catch (e) {
+      console.warn("Could not save user session", e);
+    }
   };
 
   const logout = () => {
@@ -251,7 +284,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const updatedUser = { ...user, ...data };
     setUser(updatedUser);
     setUsers(prev => prev.map(u => u.uid === user.uid ? updatedUser : u));
-    localStorage.setItem('volta_user', JSON.stringify(updatedUser));
+    try {
+      localStorage.setItem('volta_user', JSON.stringify(updatedUser));
+    } catch (e) {
+      console.warn("Could not update user session", e);
+    }
   };
 
   const toggleCharger = (chargerId: string) => {
@@ -394,7 +431,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         
         if (user && user.uid === currentUser.uid) {
            setUser(updatedUser);
-           localStorage.setItem('volta_user', JSON.stringify(updatedUser));
+           try {
+             localStorage.setItem('volta_user', JSON.stringify(updatedUser));
+           } catch (e) {
+             console.warn("Could not update user session", e);
+           }
         }
 
         setBookings(prev => [...prev, enrichedBooking]);
@@ -419,7 +460,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
           
           if (user && user.uid === targetUser.uid) {
              setUser(updatedUser);
-             localStorage.setItem('volta_user', JSON.stringify(updatedUser));
+             try {
+               localStorage.setItem('volta_user', JSON.stringify(updatedUser));
+             } catch (e) {
+               console.warn("Could not update user session", e);
+             }
           }
         }
       }
