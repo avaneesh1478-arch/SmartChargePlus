@@ -19,7 +19,7 @@ export default function Home() {
   const { user, language, setLanguage, theme, toggleTheme, t } = useApp();
   const router = useRouter();
 
-  const heroImage = PlaceHolderImages.find(img => img.id === 'hero-bg');
+  const fallbackHeroImage = PlaceHolderImages.find(img => img.id === 'hero-bg');
 
   const languages = [
     { id: 'en', name: 'English', label: 'English' },
@@ -93,7 +93,7 @@ export default function Home() {
         {/* Background Image with Dark Overlay */}
         <div className="absolute inset-0 z-0">
           <Image
-            src={heroImage?.imageUrl || 'https://picsum.photos/seed/ev-night/1920/1080'}
+            src={t.hero.backgroundImage || fallbackHeroImage?.imageUrl || 'https://picsum.photos/seed/ev-night/1920/1080'}
             alt="Hero Background"
             fill
             className="object-cover opacity-60"

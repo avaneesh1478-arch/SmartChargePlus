@@ -12,7 +12,8 @@ export const translations = {
       title: "Smart Charge+",
       subtitle: "Real-time station availability, advance booking, and intelligent management — all in one platform.",
       findStation: "Find a Station",
-      goDashboard: "Login"
+      goDashboard: "Login",
+      backgroundImage: "https://picsum.photos/seed/ev-night-charge/1920/1080"
     },
     howItWorks: {
       title: "How It Works",
@@ -54,7 +55,8 @@ export const translations = {
       title: "ಸ್ಮಾರ್ಟ್ ಚಾರ್ಜ್+",
       subtitle: "ನೈಜ-ಸಮಯದ ನಿಲ್ದಾಣದ ಲಭ್ಯತೆ, ಮುಂಗಡ ಬುಕಿಂಗ್ ಮತ್ತು ಬುದ್ಧಿವಂತ ನಿರ್ವಹಣೆ — ಎಲ್ಲವೂ ಒಂದೇ ವೇದಿಕೆಯಲ್ಲಿ.",
       findStation: "ನಿಲ್ದಾಣವನ್ನು ಹುಡುಕಿ",
-      goDashboard: "ಲಾಗಿನ್"
+      goDashboard: "ಲಾಗಿನ್",
+      backgroundImage: "https://picsum.photos/seed/ev-night-charge/1920/1080"
     },
     howItWorks: {
       title: "ಇದು ಹೇಗೆ ಕೆಲಸ ಮಾಡುತ್ತದೆ",
@@ -96,7 +98,8 @@ export const translations = {
       title: "स्मार्ट चार्ज+",
       subtitle: "वास्तविक समय में स्टेशन की उपलब्धता, अग्रिम बुकिंग और बुद्धिमान प्रबंधन — सब एक ही प्लेटफॉर्म पर।",
       findStation: "स्टेशन खोजें",
-      goDashboard: "लॉगिन"
+      goDashboard: "लॉगिन",
+      backgroundImage: "https://picsum.photos/seed/ev-night-charge/1920/1080"
     },
     howItWorks: {
       title: "यह कैसे काम करता है",

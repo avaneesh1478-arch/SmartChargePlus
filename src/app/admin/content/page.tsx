@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { FileText, Save, Languages } from 'lucide-react';
+import { FileText, Save, Languages, Image as ImageIcon } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Language } from '@/lib/translations';
@@ -58,8 +58,23 @@ export default function AdminContentPage() {
     return (
       <div className="space-y-6 pt-4">
         <div className="space-y-4">
-          <h3 className="text-lg font-bold border-b border-white/5 pb-2">Hero Section</h3>
+          <div className="flex items-center justify-between border-b border-white/5 pb-2">
+            <h3 className="text-lg font-bold">Hero Section</h3>
+            <div className="flex items-center gap-2 text-primary text-[10px] font-bold uppercase tracking-widest">
+              <ImageIcon className="h-3 w-3" /> Visual Assets
+            </div>
+          </div>
           <div className="grid gap-4">
+            <div className="grid gap-2">
+              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Background Image URL</Label>
+              <Input 
+                value={content.hero.backgroundImage} 
+                onChange={(e) => updateField(lang, 'hero', 'backgroundImage', e.target.value)}
+                className="bg-secondary/30 border-none"
+                placeholder="https://images.unsplash.com/..."
+              />
+              <p className="text-[10px] text-muted-foreground">Enter a direct URL for the opening page hero background.</p>
+            </div>
             <div className="grid gap-2">
               <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Title</Label>
               <Input 
@@ -137,7 +152,7 @@ export default function AdminContentPage() {
           </div>
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Home Page Content</h1>
-            <p className="text-muted-foreground text-sm">Customize the messaging and headlines for all users.</p>
+            <p className="text-muted-foreground text-sm">Customize the messaging, headlines, and visual assets for all users.</p>
           </div>
         </div>
 
@@ -146,7 +161,7 @@ export default function AdminContentPage() {
             <CardTitle className="text-lg flex items-center gap-2">
               <Languages className="h-5 w-5 text-primary" /> Translation Settings
             </CardTitle>
-            <CardDescription>Select a language tab to edit specific localized content.</CardDescription>
+            <CardDescription>Select a language tab to edit specific localized content and background assets.</CardDescription>
           </CardHeader>
           <CardContent className="p-6">
             <Tabs defaultValue="en" className="w-full">
