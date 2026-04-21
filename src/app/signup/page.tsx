@@ -7,6 +7,7 @@ import { Zap, Mail, Lock, User as UserIcon, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
 
 export default function SignupPage() {
@@ -15,6 +16,7 @@ export default function SignupPage() {
   const [password, setPassword] = useState('');
   const { signup, user } = useApp();
   const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (user) {
@@ -24,6 +26,18 @@ export default function SignupPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validation: Only alphabets and spaces allowed
+    const nameRegex = /^[A-Za-z\s]+$/;
+    if (!nameRegex.test(fullName)) {
+      toast({
+        variant: "destructive",
+        title: "Invalid Full Name",
+        description: "Full name can only contain alphabets and spaces. Numbers or special characters are not allowed.",
+      });
+      return;
+    }
+
     signup(email, fullName);
   };
 
