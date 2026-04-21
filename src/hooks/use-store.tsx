@@ -1,4 +1,3 @@
-
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -17,6 +16,8 @@ interface AppContextType {
   bookings: Booking[];
   language: Language;
   setLanguage: (lang: Language) => void;
+  theme: 'dark' | 'light';
+  toggleTheme: () => void;
   allTranslations: typeof translations;
   updateTranslations: (lang: Language, newContent: any) => void;
   t: any;
@@ -45,6 +46,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [users, setUsers] = useState<User[]>(MOCK_USERS);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [language, setLanguageState] = useState<Language>('en');
+  const [theme, setThemeState] = useState<'dark' | 'light'>('dark');
   const [allTranslations, setAllTranslations] = useState<typeof translations>(translations);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -61,10 +63,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const storedChargers = localStorage.getItem('volta_chargers');
     const storedBookings = localStorage.getItem('volta_bookings');
     const storedLang = localStorage.getItem('volta_lang') as Language;
+    const storedTheme = localStorage.getItem('volta_theme') as 'dark' | 'light';
     const storedTranslations = localStorage.getItem('volta_translations');
     
     if (storedLang && ['en', 'kn', 'hi'].includes(storedLang)) {
       setLanguageState(storedLang);
+    }
+
+    if (storedTheme && ['dark', 'light'].includes(storedTheme)) {
+      setThemeState(storedTheme);
     }
 
     if (storedTranslations) {
@@ -130,6 +137,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setIsLoaded(true);
   }, []);
 
+  // Theme Sync
+  useEffect(() => {
+    if (theme === 'light') {
+      document.documentElement.classList.add('light');
+    } else {
+      document.documentElement.classList.remove('light');
+    }
+    localStorage.setItem('volta_theme', theme);
+  }, [theme]);
+
   // Passive Watcher: Automated Booking Completion
   useEffect(() => {
     if (!isLoaded) return;
@@ -180,6 +197,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     } catch (e) {
       console.warn("Could not save language preference", e);
     }
+  };
+
+  const toggleTheme = () => {
+    setThemeState(prev => prev === 'dark' ? 'light' : 'dark');
   };
 
   const updateTranslations = (lang: Language, newContent: any) => {
@@ -492,6 +513,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       bookings,
       language,
       setLanguage,
+      theme,
+      toggleTheme,
       allTranslations,
       updateTranslations,
       t,

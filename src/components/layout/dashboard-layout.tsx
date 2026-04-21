@@ -3,7 +3,7 @@
 import { ReactNode } from 'react';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/app-sidebar';
-import { Bell, Search, Globe, Check } from 'lucide-react';
+import { Bell, Search, Globe, Check, Sun, Moon } from 'lucide-react';
 import { useApp } from '@/hooks/use-store';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -18,7 +18,7 @@ import {
 import Link from 'next/link';
 
 export function DashboardLayout({ children }: { children: ReactNode }) {
-  const { user, language, setLanguage } = useApp();
+  const { user, language, setLanguage, theme, toggleTheme } = useApp();
 
   const languages = [
     { id: 'en', name: 'English' },
@@ -35,7 +35,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
         <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 px-6 backdrop-blur-md">
           <SidebarTrigger />
           <div className="flex flex-1 items-center gap-4">
-            <div className="relative w-full max-w-sm hidden md:block">
+            <div className="relative w-full max-sm hidden md:block">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
@@ -44,14 +44,23 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
               />
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={toggleTheme}
+              className="text-muted-foreground hover:bg-accent"
+            >
+              {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </Button>
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-muted-foreground">
+                <Button variant="ghost" size="icon" className="text-muted-foreground hover:bg-accent">
                   <Globe className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-card border-white/10 min-w-[150px] rounded-xl shadow-2xl">
+              <DropdownMenuContent align="end" className="bg-card border-border min-w-[150px] rounded-xl shadow-2xl">
                 {languages.map((lang) => (
                   <DropdownMenuItem 
                     key={lang.id} 
@@ -65,7 +74,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Button variant="ghost" size="icon" className="relative text-muted-foreground">
+            <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:bg-accent">
               <Bell className="h-5 w-5" />
               <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-primary" />
             </Button>

@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/hooks/use-store';
 import { Button } from '@/components/ui/button';
-import { Zap, Globe, User, MapPin, Clock, Shield, ChevronRight, Check } from 'lucide-react';
+import { Zap, Globe, User, MapPin, Clock, Shield, ChevronRight, Check, Sun, Moon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export default function Home() {
-  const { user, language, setLanguage, t } = useApp();
+  const { user, language, setLanguage, theme, toggleTheme, t } = useApp();
   const router = useRouter();
 
   const heroImage = PlaceHolderImages.find(img => img.id === 'hero-bg');
@@ -40,7 +40,16 @@ export default function Home() {
             <span className="tracking-tight text-sm">Smart Charge+</span>
           </div>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={toggleTheme}
+            className="h-9 w-9 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full flex items-center justify-center p-0"
+          >
+            {theme === 'dark' ? <Sun className="h-4 w-4 text-white" /> : <Moon className="h-4 w-4 text-foreground" />}
+          </Button>
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="text-xs bg-white/5 backdrop-blur-sm border border-white/10 rounded-full flex items-center gap-1 px-4">
@@ -126,7 +135,7 @@ export default function Home() {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-24 px-8 md:px-20 bg-black">
+      <section className="py-24 px-8 md:px-20 bg-background">
         <div className="text-center space-y-4 mb-16">
           <h2 className="text-4xl font-bold tracking-tight">{t.howItWorks.title}</h2>
           <p className="text-muted-foreground">{t.howItWorks.subtitle}</p>
@@ -150,7 +159,7 @@ export default function Home() {
               desc: t.howItWorks.chargeDesc
             }
           ].map((step, i) => (
-            <div key={i} className="dark-glass p-8 rounded-2xl border-white/5 space-y-6 text-center group hover:bg-white/5 transition-all">
+            <div key={i} className="dark-glass p-8 rounded-2xl space-y-6 text-center group hover:bg-accent transition-all">
               <div className="mx-auto w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
                 <step.icon className="h-6 w-6 text-primary" />
               </div>
@@ -164,7 +173,7 @@ export default function Home() {
       </section>
 
       {/* Choose Your Portal Section */}
-      <section className="py-24 px-8 md:px-20 bg-black border-t border-white/5">
+      <section className="py-24 px-8 md:px-20 bg-background border-t border-border">
         <div className="text-center space-y-4 mb-16">
           <h2 className="text-4xl font-bold tracking-tight">{t.portals.title}</h2>
         </div>
@@ -187,7 +196,7 @@ export default function Home() {
               desc: t.portals.adminDesc
             }
           ].map((portal, i) => (
-            <Link href="/login" key={i} className="dark-glass p-8 rounded-2xl border-white/5 space-y-6 group hover:bg-white/5 transition-all cursor-pointer block">
+            <Link href="/login" key={i} className="dark-glass p-8 rounded-2xl space-y-6 group hover:bg-accent transition-all cursor-pointer block">
               <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
                 <portal.icon className="h-5 w-5 text-primary" />
               </div>
@@ -203,7 +212,7 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="py-8 px-8 md:px-20 border-t border-white/5 flex flex-col md:flex-row items-center justify-between text-[10px] text-muted-foreground/60 uppercase tracking-widest bg-black">
+      <footer className="py-8 px-8 md:px-20 border-t border-border flex flex-col md:flex-row items-center justify-between text-[10px] text-muted-foreground/60 uppercase tracking-widest bg-background">
         <div className="flex items-center gap-2">
           <Zap className="h-3 w-3 fill-primary/40 text-primary/40" />
           <span>Smart Charge+ © 2026</span>
