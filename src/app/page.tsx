@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useRouter } from 'next/navigation';
@@ -28,6 +29,9 @@ export default function Home() {
   ] as const;
 
   const profileImg = user?.profileImage || `https://picsum.photos/seed/${user?.uid}/40/40`;
+
+  // Determine hero background image source with robust fallbacks
+  const heroImageSrc = t.hero.backgroundImage || fallbackHeroImage?.imageUrl || 'https://picsum.photos/seed/ev-night/1920/1080';
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground selection:bg-primary/30">
@@ -93,11 +97,12 @@ export default function Home() {
         {/* Background Image with Dark Overlay */}
         <div className="absolute inset-0 z-0">
           <Image
-            src={t.hero.backgroundImage || fallbackHeroImage?.imageUrl || 'https://picsum.photos/seed/ev-night/1920/1080'}
+            src={heroImageSrc}
             alt="Hero Background"
             fill
             className="object-cover opacity-60"
             priority
+            unoptimized // Added unoptimized to support large base64 strings reliably
             data-ai-hint="ev charging night"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-black via-black/40 to-transparent" />
@@ -214,7 +219,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="py-8 px-8 md:px-20 border-t border-border flex flex-col md:flex-row items-center justify-between text-[10px] text-muted-foreground/60 uppercase tracking-widest bg-background">
         <div className="flex items-center gap-2">
-          <Zap className="h-3 w-3 fill-primary/40 text-primary/40" />
+          < Zap className="h-3 w-3 fill-primary/40 text-primary/40" />
           <span>Smart Charge+ © 2026</span>
         </div>
         <div className="mt-4 md:mt-0">

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -76,7 +77,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     if (storedTranslations) {
       try {
-        setAllTranslations(JSON.parse(storedTranslations));
+        const parsed = JSON.parse(storedTranslations);
+        // Robust Merge: Ensure new default keys (like backgroundImage) are preserved
+        const mergedTranslations = { ...translations };
+        Object.keys(parsed).forEach((lang) => {
+          const l = lang as Language;
+          if (mergedTranslations[l]) {
+            mergedTranslations[l] = {
+              ...mergedTranslations[l],
+              ...parsed[l],
+              // Ensure nested hero object is also merged
+              hero: {
+                ...mergedTranslations[l].hero,
+                ...parsed[l].hero
+              },
+              howItWorks: {
+                ...mergedTranslations[l].howItWorks,
+                ...parsed[l].howItWorks
+              }
+            };
+          }
+        });
+        setAllTranslations(mergedTranslations);
       } catch (e) {
         console.error("Failed to parse stored translations", e);
       }
@@ -226,7 +248,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       localStorage.setItem('volta_stations', JSON.stringify(stations));
     } catch (e) {
-      console.warn("Storage quota exceeded for stations. Your changes will not persist after refresh. Try using smaller images.", e);
+      console.warn("Storage quota exceeded for stations. Try using smaller images.", e);
     }
   }, [stations, isLoaded]);
 
