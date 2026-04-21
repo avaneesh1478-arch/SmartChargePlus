@@ -9,8 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { FileText, Save, Languages, Image as ImageIcon } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { FileText, Save, Languages, Image as ImageIcon, Upload } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Language } from '@/lib/translations';
 
@@ -18,6 +18,8 @@ export default function AdminContentPage() {
   const { user, allTranslations, updateTranslations } = useApp();
   const { toast } = useToast();
   const [editingTranslations, setEditingTranslations] = useState(allTranslations);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [activeLang, setActiveLang] = useState<Language>('en');
 
   useEffect(() => {
     setEditingTranslations(allTranslations);
@@ -54,6 +56,22 @@ export default function AdminContentPage() {
     }));
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, lang: Language) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        updateField(lang, 'hero', 'backgroundImage', base64String);
+        toast({
+          title: "Image Uploaded",
+          description: "New background image has been staged. Remember to save changes.",
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const renderForm = (lang: Language) => {
     const content = editingTranslations[lang];
     if (!content) return null;
@@ -69,14 +87,33 @@ export default function AdminContentPage() {
           </div>
           <div className="grid gap-4">
             <div className="grid gap-2">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Background Image URL</Label>
-              <Input 
-                value={content.hero?.backgroundImage || ''} 
-                onChange={(e) => updateField(lang, 'hero', 'backgroundImage', e.target.value)}
-                className="bg-secondary/30 border-none"
-                placeholder="https://images.unsplash.com/..."
-              />
-              <p className="text-[10px] text-muted-foreground">Enter a direct URL for the opening page hero background.</p>
+              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Hero Background Image</Label>
+              <div className="flex gap-2">
+                <Input 
+                  value={content.hero?.backgroundImage || ''} 
+                  onChange={(e) => updateField(lang, 'hero', 'backgroundImage', e.target.value)}
+                  className="bg-secondary/30 border-none flex-1"
+                  placeholder="Paste image URL here..."
+                />
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  className="hidden" 
+                  ref={fileInputRef} 
+                  onChange={(e) => handleFileChange(e, lang)}
+                />
+                <Button 
+                  variant="outline" 
+                  className="bg-secondary/30 border-none px-4 flex items-center gap-2 font-bold"
+                  onClick={() => {
+                    setActiveLang(lang);
+                    fileInputRef.current?.click();
+                  }}
+                >
+                  <Upload className="h-4 w-4" /> Upload
+                </Button>
+              </div>
+              <p className="text-[10px] text-muted-foreground">Enter a direct URL or upload a high-quality photo from your local gallery (1920x1080 recommended).</p>
             </div>
             <div className="grid gap-2">
               <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Title</Label>
