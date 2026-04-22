@@ -36,17 +36,25 @@ export default function AnalyticsPage() {
   const { user, stations, chargers, bookings, transactions } = useApp();
 
   const isAuthorized = user?.role === 'ADMIN' || user?.role === 'OPERATOR';
-
   const todayStr = format(new Date(), 'yyyy-MM-dd');
 
   const stats = useMemo(() => {
-    // 1. Daily Bookings
-    const todayBookings = bookings.filter(b => b.bookingDate === todayStr);
+    if (!user) return null;
+
+    // Filter stations based on role
+    const filteredStations = user.role === 'ADMIN' 
+      ? stations 
+      : stations.filter(s => s.operator_id === user.uid || s.station_id === user.associated_station_id);
+
+    const filteredStationIds = filteredStations.map(s => s.station_id);
+
+    // 1. Daily Bookings for managed stations
+    const todayBookings = bookings.filter(b => b.bookingDate === todayStr && filteredStationIds.includes(b.stationId));
     const pendingToday = todayBookings.filter(b => b.status === 'pending').length;
     const confirmedToday = todayBookings.filter(b => b.status === 'confirmed').length;
 
     // 2. Station-wise Data
-    const stationMetrics = stations.map(station => {
+    const stationMetrics = filteredStations.map(station => {
       const stationChargers = chargers.filter(c => c.station_id === station.station_id);
       
       // Real usage percentage: (Sum of current usage / total power) * 100
@@ -68,10 +76,18 @@ export default function AnalyticsPage() {
       };
     });
 
-    // 3. Overall Totals
-    const totalRevenue = transactions.reduce((acc, t) => acc + t.cost, 0);
-    const totalEnergy = transactions.reduce((acc, t) => acc + t.energy_delivered, 0);
-    const activeChargers = chargers.filter(c => c.status === 'occupied').length;
+    // 3. Overall Totals for managed scope
+    const totalRevenue = transactions
+      .filter(t => filteredStationIds.includes(t.station_id))
+      .reduce((acc, t) => acc + t.cost, 0);
+      
+    const totalEnergy = transactions
+      .filter(t => filteredStationIds.includes(t.station_id))
+      .reduce((acc, t) => acc + t.energy_delivered, 0);
+
+    const activeChargers = chargers
+      .filter(c => filteredStationIds.includes(c.station_id) && c.status === 'occupied')
+      .length;
 
     return {
       pendingToday,
@@ -80,13 +96,15 @@ export default function AnalyticsPage() {
       totalRevenue,
       totalEnergy,
       activeChargers,
-      todayTotal: todayBookings.length
+      todayTotal: todayBookings.length,
+      managedCount: filteredStations.length,
+      totalCapacity: filteredStations.reduce((acc, s) => acc + s.total_power, 0)
     };
-  }, [stations, chargers, bookings, transactions, todayStr]);
+  }, [user, stations, chargers, bookings, transactions, todayStr]);
 
   const COLORS = ['#14b8a6', '#0ea5e9', '#6366f1', '#a855f7', '#ec4899'];
 
-  if (!isAuthorized) {
+  if (!isAuthorized || !stats) {
     return (
       <DashboardLayout>
         <div className="flex flex-col items-center justify-center h-full space-y-4">
@@ -103,9 +121,13 @@ export default function AnalyticsPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
             <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
-              <TrendingUp className="h-7 w-7 text-primary" /> Network Intelligence
+              <TrendingUp className="h-7 w-7 text-primary" /> {user?.role === 'ADMIN' ? 'Network Intelligence' : 'Station Insights'}
             </h1>
-            <p className="text-muted-foreground text-sm">Real-time usage patterns and financial performance tracking.</p>
+            <p className="text-muted-foreground text-sm">
+              {user?.role === 'ADMIN' 
+                ? 'Real-time global usage patterns and financial performance.' 
+                : 'Performance tracking for your assigned charging hubs.'}
+            </p>
           </div>
           <div className="flex items-center gap-3">
             <Badge variant="outline" className="h-10 px-4 success-badge flex items-center gap-2">
@@ -124,7 +146,7 @@ export default function AnalyticsPage() {
           />
           <StatCard 
             title="Energy Delivered" 
-            value={`${stats.totalEnergy} kWh`} 
+            value={`${stats.totalEnergy.toLocaleString()} kWh`} 
             icon={Zap} 
             iconClassName="bg-primary/10"
           />
@@ -149,7 +171,7 @@ export default function AnalyticsPage() {
           <Card className="lg:col-span-2 border-none bg-[#1a1a1c] border-white/5">
             <CardHeader>
               <CardTitle className="text-lg font-bold flex items-center gap-2">
-                <Activity className="h-5 w-5 text-primary" /> Station Utilization
+                <Activity className="h-5 w-5 text-primary" /> Hub Utilization
               </CardTitle>
               <CardDescription>Real-time percentage of power capacity currently in use.</CardDescription>
             </CardHeader>
@@ -179,7 +201,7 @@ export default function AnalyticsPage() {
               <CardTitle className="text-lg font-bold flex items-center gap-2">
                 <Clock className="h-5 w-5 text-primary" /> Today's Activity
               </CardTitle>
-              <CardDescription>Booking request status for today.</CardDescription>
+              <CardDescription>Managed station status for today.</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col items-center justify-center space-y-8">
               <div className="h-[200px] w-full">
@@ -225,7 +247,7 @@ export default function AnalyticsPage() {
               <CardTitle className="text-lg font-bold flex items-center gap-2">
                 <IndianRupee className="h-5 w-5 text-primary" /> Revenue Generation
               </CardTitle>
-              <CardDescription>Financial contribution per station hub.</CardDescription>
+              <CardDescription>Financial contribution per hub.</CardDescription>
             </CardHeader>
             <Table>
               <TableHeader>
@@ -260,7 +282,7 @@ export default function AnalyticsPage() {
               <CardTitle className="text-lg font-bold flex items-center gap-2">
                 <CheckCircle2 className="h-5 w-5 text-primary" /> Performance Summary
               </CardTitle>
-              <CardDescription>Automated insights based on network activity.</CardDescription>
+              <CardDescription>Automated insights based on active scope.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="flex items-start gap-4 p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10">
@@ -268,8 +290,8 @@ export default function AnalyticsPage() {
                   <TrendingUp className="h-4 w-4 text-emerald-500" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-emerald-500">Positive Revenue Trend</h4>
-                  <p className="text-xs text-muted-foreground mt-1">Network-wide revenue has reached ₹{stats.totalRevenue.toLocaleString()}. Consider expanding high-load hubs like {stats.stationMetrics.reduce((prev, curr) => prev.usage > curr.usage ? prev : curr).name}.</p>
+                  <h4 className="text-sm font-bold text-emerald-500">Revenue Analysis</h4>
+                  <p className="text-xs text-muted-foreground mt-1">Total revenue generated in this sector is ₹{stats.totalRevenue.toLocaleString()}. {stats.stationMetrics.length > 0 && `Highest performer: ${stats.stationMetrics.reduce((prev, curr) => prev.revenue > curr.revenue ? prev : curr).name}.`}</p>
                 </div>
               </div>
 
@@ -278,8 +300,8 @@ export default function AnalyticsPage() {
                   <Activity className="h-4 w-4 text-blue-500" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-blue-500">Utilization Healthy</h4>
-                  <p className="text-xs text-muted-foreground mt-1">{stats.activeChargers} slots are currently delivering power. System-wide load average is {stats.stationMetrics.length > 0 ? (stats.stationMetrics.reduce((a, b) => a + b.usage, 0) / stats.stationMetrics.length).toFixed(1) : 0}%.</p>
+                  <h4 className="text-sm font-bold text-blue-500">Infrastructure Health</h4>
+                  <p className="text-xs text-muted-foreground mt-1">{stats.activeChargers} slots are currently active. System-wide load average for these hubs is {stats.stationMetrics.length > 0 ? (stats.stationMetrics.reduce((a, b) => a + b.usage, 0) / stats.stationMetrics.length).toFixed(1) : 0}%.</p>
                 </div>
               </div>
 
@@ -289,7 +311,7 @@ export default function AnalyticsPage() {
                 </div>
                 <div>
                   <h4 className="text-sm font-bold text-primary">Station Density</h4>
-                  <p className="text-xs text-muted-foreground mt-1">Operating {stations.length} hubs across the city with a total capacity of {stations.reduce((a, b) => a + b.total_power, 0)} kW.</p>
+                  <p className="text-xs text-muted-foreground mt-1">Monitoring {stats.managedCount} hubs with a total capacity of {stats.totalCapacity.toLocaleString()} kW.</p>
                 </div>
               </div>
             </CardContent>
