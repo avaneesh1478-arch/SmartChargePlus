@@ -5,7 +5,6 @@ import { User, Station, Charger, Transaction, Booking, Review } from '@/types';
 import { MOCK_USERS, MOCK_STATIONS, MOCK_CHARGERS, MOCK_TRANSACTIONS } from '@/lib/mock-data';
 import { translations, Language } from '@/lib/translations';
 import { useAuth, useUser } from '@/firebase';
-import { signInAnonymously } from 'firebase/auth';
 
 interface AppContextType {
   user: User | null;
@@ -53,9 +52,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [allTranslations, setAllTranslations] = useState<typeof translations>(translations);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Firebase Auth hooks
   const auth = useAuth();
-  const { user: firebaseUser } = useUser();
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -91,10 +88,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
               hero: {
                 ...mergedTranslations[l].hero,
                 ...parsed[l].hero,
-              },
-              howItWorks: {
-                ...mergedTranslations[l].howItWorks,
-                ...parsed[l].howItWorks
               }
             };
           }
@@ -177,27 +170,39 @@ export function AppProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('volta_theme', theme);
   }, [theme]);
 
+  /**
+   * Automatic Status Transition Logic
+   * A booking becomes 'completed' when:
+   * (Start Time + Selected Duration Hours) < Current System Time
+   */
   useEffect(() => {
     if (!isLoaded) return;
 
     const checkInterval = setInterval(() => {
       const now = Date.now();
       let hasChanges = false;
-      const updatedBookings = bookings.map(booking => {
-        if (booking.status === 'confirmed' && booking.endTime && booking.endTime < now) {
-          hasChanges = true;
-          return { ...booking, status: 'completed' as const };
+      
+      setBookings(prev => {
+        const updated = prev.map(booking => {
+          // Rule: Status transitions to completed if it was confirmed AND the end time has passed
+          if (booking.status === 'confirmed' && booking.endTime && booking.endTime < now) {
+            hasChanges = true;
+            return { ...booking, status: 'completed' as const };
+          }
+          return booking;
+        });
+        
+        if (hasChanges) {
+          // If a slot was occupied by this booking, free it up
+          // Note: In a production app, we'd find the specific charger
+          return updated;
         }
-        return booking;
+        return prev;
       });
-
-      if (hasChanges) {
-        setBookings(updatedBookings);
-      }
-    }, 15000);
+    }, 10000); // Check every 10 seconds for high fidelity transitions
 
     return () => clearInterval(checkInterval);
-  }, [bookings, isLoaded]);
+  }, [isLoaded]);
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
