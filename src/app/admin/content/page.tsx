@@ -56,17 +56,19 @@ export default function AdminContentPage() {
     }));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, lang: Language) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
         const base64String = reader.result as string;
-        updateField(lang, 'hero', 'backgroundImage', base64String);
+        updateField(activeLang, 'hero', 'backgroundImage', base64String);
         toast({
           title: "Image Uploaded",
-          description: "New background image has been staged. Remember to save changes.",
+          description: `New background image has been staged for ${activeLang.toUpperCase()}. Remember to save changes.`,
         });
+        // Clear input so same file can be selected again if needed
+        if (fileInputRef.current) fileInputRef.current.value = '';
       };
       reader.readAsDataURL(file);
     }
@@ -95,13 +97,6 @@ export default function AdminContentPage() {
                   className="bg-secondary/30 border-none flex-1"
                   placeholder="Paste image URL here..."
                 />
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  className="hidden" 
-                  ref={fileInputRef} 
-                  onChange={(e) => handleFileChange(e, lang)}
-                />
                 <Button 
                   variant="outline" 
                   className="bg-secondary/30 border-none px-4 flex items-center gap-2 font-bold"
@@ -113,7 +108,7 @@ export default function AdminContentPage() {
                   <Upload className="h-4 w-4" /> Upload
                 </Button>
               </div>
-              <p className="text-[10px] text-muted-foreground">Enter a direct URL or upload a high-quality photo from your local gallery (1920x1080 recommended).</p>
+              <p className="text-[10px] text-muted-foreground">Enter a direct URL or upload a high-quality photo from your local gallery.</p>
             </div>
             <div className="grid gap-2">
               <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Title</Label>
@@ -186,6 +181,15 @@ export default function AdminContentPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-5xl mx-auto">
+        {/* Hidden Global File Input */}
+        <input 
+          type="file" 
+          accept="image/*" 
+          className="hidden" 
+          ref={fileInputRef} 
+          onChange={handleFileChange}
+        />
+
         <div className="flex items-center gap-3">
           <div className="bg-primary/10 p-2 rounded-lg">
             <FileText className="h-6 w-6 text-primary" />
@@ -201,10 +205,10 @@ export default function AdminContentPage() {
             <CardTitle className="text-lg flex items-center gap-2">
               <Languages className="h-5 w-5 text-primary" /> Translation Settings
             </CardTitle>
-            <CardDescription>Select a language tab to edit specific localized content and background assets.</CardDescription>
+            <CardDescription>Select a language tab to edit localized content and visual assets.</CardDescription>
           </CardHeader>
           <CardContent className="p-6">
-            <Tabs defaultValue="en" className="w-full">
+            <Tabs defaultValue="en" onValueChange={(val) => setActiveLang(val as Language)} className="w-full">
               <TabsList className="bg-secondary/20 p-1 rounded-xl mb-6">
                 <TabsTrigger value="en" className="flex-1 rounded-lg">English</TabsTrigger>
                 <TabsTrigger value="kn" className="flex-1 rounded-lg">ಕನ್ನಡ (Kannada)</TabsTrigger>

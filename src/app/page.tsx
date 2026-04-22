@@ -1,6 +1,6 @@
+
 "use client";
 
-import { useRouter } from 'next/navigation';
 import { useApp } from '@/hooks/use-store';
 import { Button } from '@/components/ui/button';
 import { Zap, Globe, User, MapPin, Clock, Shield, ChevronRight, Check, Sun, Moon } from 'lucide-react';
@@ -39,7 +39,7 @@ export default function Home() {
         <div className="flex items-center gap-2">
           <Button 
             variant="ghost" 
-            size="sm" 
+            size="icon" 
             onClick={toggleTheme}
             className="h-9 w-9 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full flex items-center justify-center p-0"
           >
@@ -130,7 +130,7 @@ export default function Home() {
           </div>
         </div>
         
-        {/* Background Decoration (Always active for depth) */}
+        {/* Background Decoration */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[120px] pointer-events-none -z-10" />
       </section>
 
