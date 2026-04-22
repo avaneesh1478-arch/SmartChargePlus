@@ -5,6 +5,7 @@ import { useApp } from '@/hooks/use-store';
 import { Button } from '@/components/ui/button';
 import { Zap, Globe, User, MapPin, Clock, Shield, ChevronRight, Check, Sun, Moon } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -85,11 +86,26 @@ export default function Home() {
 
       {/* Hero Section */}
       <section className="relative h-screen flex flex-col justify-center px-8 md:px-20 overflow-hidden border-b border-white/5">
+        {/* Dynamic Background Image */}
+        {t.hero.backgroundImage && (
+          <div className="absolute inset-0 -z-10">
+            <Image 
+              src={t.hero.backgroundImage}
+              alt="Hero Background"
+              fill
+              className="object-cover opacity-30 saturate-[0.8]"
+              priority
+              unoptimized={t.hero.backgroundImage.startsWith('data:')}
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent" />
+          </div>
+        )}
+
         <div className="relative z-10 max-w-2xl space-y-6">
-          <h1 className="text-6xl font-black tracking-tighter text-foreground">
+          <h1 className="text-6xl font-black tracking-tighter text-foreground drop-shadow-sm">
             {t.hero.title}
           </h1>
-          <p className="text-muted-foreground text-lg max-w-md leading-relaxed">
+          <p className="text-muted-foreground text-lg max-w-md leading-relaxed drop-shadow-sm">
             {t.hero.subtitle}
           </p>
 
@@ -114,7 +130,7 @@ export default function Home() {
           </div>
         </div>
         
-        {/* Background Decoration */}
+        {/* Background Decoration (Always active for depth) */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[120px] pointer-events-none -z-10" />
       </section>
 
