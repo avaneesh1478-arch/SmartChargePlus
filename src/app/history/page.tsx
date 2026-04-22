@@ -13,23 +13,51 @@ import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 
 export default function HistoryPage() {
-  const { user, transactions } = useApp();
+  const { user, transactions, bookings } = useApp();
 
-  // Filter transactions for the logged-in user and sort by newest first
-  const myTransactions = useMemo(() => {
+  // Combine transactions and completed bookings into a unified history list
+  const historyItems = useMemo(() => {
     if (!user) return [];
-    return transactions
+
+    // 1. Map actual transactions
+    const txItems = transactions
       .filter(t => t.user_id === user.uid)
-      .sort((a, b) => b.timestamp - a.timestamp);
-  }, [transactions, user]);
+      .map(t => ({
+        id: t.transaction_id,
+        stationName: t.station_name,
+        stationId: t.station_id,
+        timestamp: t.timestamp,
+        duration: t.duration,
+        energy: t.energy_delivered,
+        cost: t.cost,
+        type: 'transaction' as const
+      }));
+
+    // 2. Map completed bookings
+    const completedBookings = bookings
+      .filter(b => b.userId === user.uid && b.status === 'completed')
+      .map(b => ({
+        id: b.id,
+        stationName: b.stationName,
+        stationId: b.stationId,
+        timestamp: new Date(b.createdAt).getTime(),
+        duration: b.duration ? b.duration * 60 : 0, // convert hours to minutes
+        energy: b.duration ? b.duration * (b.chargerId?.includes('dcfc') ? 50 : 7) : 0, // estimated
+        cost: b.amount || 0,
+        type: 'booking' as const
+      }));
+
+    // Combine and sort by newest first
+    return [...txItems, ...completedBookings].sort((a, b) => b.timestamp - a.timestamp);
+  }, [transactions, bookings, user]);
 
   // Aggregate stats for the user's history
   const stats = useMemo(() => {
-    const totalEnergy = myTransactions.reduce((acc, t) => acc + t.energy_delivered, 0);
-    const totalSpent = myTransactions.reduce((acc, t) => acc + t.cost, 0);
-    const totalSessions = myTransactions.length;
+    const totalEnergy = historyItems.reduce((acc, t) => acc + t.energy, 0);
+    const totalSpent = historyItems.reduce((acc, t) => acc + t.cost, 0);
+    const totalSessions = historyItems.length;
     return { totalEnergy, totalSpent, totalSessions };
-  }, [myTransactions]);
+  }, [historyItems]);
 
   // Redirect or show unauthorized if not a USER
   if (!user || user.role !== 'USER') {
@@ -93,35 +121,35 @@ export default function HistoryPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {myTransactions.length > 0 ? (
-                myTransactions.map((tx) => (
-                  <TableRow key={tx.transaction_id} className="border-white/5 hover:bg-white/5 transition-colors">
+              {historyItems.length > 0 ? (
+                historyItems.map((item) => (
+                  <TableRow key={item.id} className="border-white/5 hover:bg-white/5 transition-colors">
                     <TableCell className="py-4">
                       <div className="flex flex-col">
-                        <span className="text-sm font-bold text-foreground">{tx.station_name}</span>
+                        <span className="text-sm font-bold text-foreground">{item.stationName}</span>
                         <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium flex items-center gap-1 mt-0.5">
-                          <MapPin className="h-2 w-2 text-primary/40" /> {tx.station_id}
+                          <MapPin className="h-2 w-2 text-primary/40" /> {item.stationId}
                         </span>
                       </div>
                     </TableCell>
                     <TableCell className="py-4">
                       <div className="text-sm text-muted-foreground">
-                        {format(new Date(tx.timestamp), 'MMM d, yyyy • HH:mm')}
+                        {format(new Date(item.timestamp), 'MMM d, yyyy • HH:mm')}
                       </div>
                     </TableCell>
                     <TableCell className="py-4">
                       <div className="flex items-center gap-2 text-sm font-medium">
                         <Clock className="h-3.5 w-3.5 text-primary/60" />
-                        {tx.duration} mins
+                        {item.duration} mins
                       </div>
                     </TableCell>
                     <TableCell className="py-4 text-right">
                       <Badge variant="secondary" className="bg-primary/10 text-primary border-none font-bold text-[10px]">
-                        {tx.energy_delivered} kWh
+                        {item.energy.toFixed(1)} kWh
                       </Badge>
                     </TableCell>
                     <TableCell className="py-4 text-right">
-                      <span className="text-sm font-black text-emerald-500">₹{tx.cost.toFixed(2)}</span>
+                      <span className="text-sm font-black text-emerald-500">₹{item.cost.toFixed(2)}</span>
                     </TableCell>
                   </TableRow>
                 ))
