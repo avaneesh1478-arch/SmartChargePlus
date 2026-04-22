@@ -1,35 +1,10 @@
-
 {
   "placeholderImages": [
     {
       "id": "hero-bg",
-      "description": "Electric vehicle charging at night with futuristic lighting",
-      "imageUrl": "https://picsum.photos/seed/ev-night-charge/1920/1080",
-      "imageHint": "ev charging night"
-    },
-    {
-      "id": "station-hero",
-      "description": "Electric vehicle charging station modern",
-      "imageUrl": "https://picsum.photos/seed/ev-charge/1200/600",
-      "imageHint": "ev charging"
-    },
-    {
-      "id": "map-placeholder",
-      "description": "Dark themed map showing charging locations",
-      "imageUrl": "https://picsum.photos/seed/ev-map/800/600",
-      "imageHint": "night map"
-    },
-    {
-      "id": "wallet-card-bg",
-      "description": "Futuristic EV charging with windmill and green energy",
-      "imageUrl": "https://picsum.photos/seed/ev-green-energy/800/400",
-      "imageHint": "ev windmill"
-    },
-    {
-      "id": "wallet-footer-bg",
-      "description": "Electric car charging promo graphic",
-      "imageUrl": "https://picsum.photos/seed/ev-promo/800/200",
-      "imageHint": "ev promo"
+      "description": "Moody dark mountain landscape with mist",
+      "imageUrl": "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1920&q=80",
+      "imageHint": "moody mountain mist"
     }
   ]
 }
