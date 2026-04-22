@@ -23,6 +23,8 @@ import {
   Coffee,
   Check,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   FileText,
   MessageSquare
 } from 'lucide-react';
@@ -46,7 +48,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
-import { format, addDays } from "date-fns";
+import { format, addDays, subDays } from "date-fns";
 import { useToast } from '@/hooks/use-toast';
 import { Station, Booking } from '@/types';
 import { cn, calculateDistance } from '@/lib/utils';
@@ -108,6 +110,7 @@ export function UserDashboard() {
 
   const estimatedCost = useMemo(() => {
     if (!selectedCharger) return 0;
+    // Base cost calculation for the UI demo (Rate * Hours * multiplier)
     return selectedCharger.rate_per_kwh * parseInt(duration) * (selectedCharger.type === 'DCFC' ? 50 : 7);
   }, [selectedCharger, duration]);
 
@@ -122,7 +125,6 @@ export function UserDashboard() {
     );
   }, [bookings, selectedStation, selectedChargerId, dateStr, selectedTime]);
 
-  // CATEGORIZED BOOKINGS
   const activeBookings = useMemo(() => {
     if (!appUser) return [];
     return bookings
@@ -227,6 +229,17 @@ export function UserDashboard() {
       }))
       .sort((a, b) => (a.distance || 0) - (b.distance || 0));
   }, [stations, searchQuery, userLocation]);
+
+  const incrementDay = () => {
+    setSelectedDate(prev => addDays(prev, 1));
+  };
+
+  const decrementDay = () => {
+    const nextDate = subDays(selectedDate, 1);
+    if (nextDate >= new Date(new Date().setHours(0,0,0,0))) {
+      setSelectedDate(nextDate);
+    }
+  };
 
   const renderStationCard = (station: Station) => (
     <Card 
@@ -439,46 +452,46 @@ export function UserDashboard() {
       </div>
 
       <Dialog open={isBookingOpen} onOpenChange={setIsBookingOpen}>
-        <DialogContent className="sm:max-w-[500px] bg-[#111113] border-white/10 text-white p-0 rounded-3xl overflow-hidden shadow-2xl">
-          <div className="p-6 space-y-8">
+        <DialogContent className="sm:max-w-[500px] bg-[#111113] border-white/5 text-white p-0 rounded-3xl overflow-hidden shadow-2xl">
+          <div className="p-8 space-y-8">
             <DialogHeader className="flex flex-row justify-between items-start space-y-0 text-left">
               <div className="space-y-1">
-                <DialogTitle className="text-2xl font-bold tracking-tight">{selectedStation?.name}</DialogTitle>
-                <DialogDescription className="text-sm text-muted-foreground">{selectedStation?.location}</DialogDescription>
+                <DialogTitle className="text-2xl font-black tracking-tight">{selectedStation?.name}</DialogTitle>
+                <DialogDescription className="text-sm text-muted-foreground/60">{selectedStation?.location}</DialogDescription>
               </div>
               <DialogClose asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-white">
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground hover:text-white bg-white/5 border border-white/5">
                   <X className="h-4 w-4" />
                 </Button>
               </DialogClose>
             </DialogHeader>
 
             <div className="space-y-4">
-              <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Select a Charger</h3>
+              <h3 className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/60">Select a Charger</h3>
               <div className="grid grid-cols-2 gap-3">
                 {stationChargers.map((charger, i) => (
                   <button
                     key={charger.charger_id}
                     onClick={() => setSelectedChargerId(charger.charger_id)}
                     className={cn(
-                      "flex flex-col p-4 rounded-xl border transition-all text-left",
+                      "flex flex-col p-4 rounded-xl border transition-all text-left group",
                       selectedChargerId === charger.charger_id 
-                        ? "bg-primary/10 border-primary" 
+                        ? "bg-primary/10 border-primary ring-1 ring-primary/20" 
                         : "bg-[#1c1c1f] border-white/5 hover:border-white/10"
                     )}
                   >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-bold flex items-center gap-1.5">
-                        <Zap className={cn("h-3 w-3", selectedChargerId === charger.charger_id ? "text-primary" : "text-muted-foreground")} />
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-bold flex items-center gap-1.5">
+                        <Zap className={cn("h-3 w-3", selectedChargerId === charger.charger_id ? "text-primary fill-primary" : "text-muted-foreground")} />
                         Slot {i + 1}
                       </span>
                       {selectedChargerId === charger.charger_id && <Check className="h-3 w-3 text-primary" />}
                     </div>
-                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">
+                    <span className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-bold mb-1">
                       {charger.type} • {charger.type === 'DCFC' ? '150kW' : '22kW'}
                     </span>
                     <span className={cn(
-                      "text-[10px] font-bold",
+                      "text-[10px] font-black uppercase tracking-wider",
                       charger.status === 'available' ? "text-emerald-500" : "text-rose-500"
                     )}>
                       {charger.status === 'available' ? 'Available' : 'Occupied'}
@@ -490,31 +503,51 @@ export function UserDashboard() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/60 flex items-center gap-2">
                   <CalendarIcon className="h-3 w-3" /> Date
                 </label>
-                <Button 
-                  variant="outline" 
-                  className="w-full h-11 justify-between text-left font-normal bg-[#1c1c1f] border-none rounded-xl"
-                  onClick={() => {
-                    setTempDate(selectedDate);
-                    setIsDatePickerOpen(true);
-                  }}
-                >
-                  <span className="truncate">{format(selectedDate, "PPP")}</span>
-                  <ChevronRight className="h-4 w-4 rotate-90 text-muted-foreground" />
-                </Button>
+                <div className="flex items-center gap-1 bg-[#1c1c1f] rounded-xl overflow-hidden p-0.5">
+                  <Button 
+                    variant="ghost" 
+                    className="flex-1 h-10 justify-between text-left font-bold text-sm bg-transparent hover:bg-white/5 border-none px-4 rounded-lg"
+                    onClick={() => {
+                      setTempDate(selectedDate);
+                      setIsDatePickerOpen(true);
+                    }}
+                  >
+                    <span className="truncate">{format(selectedDate, "MMMM do, yyyy")}</span>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                  <div className="flex flex-col border-l border-white/5 pr-0.5">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-5 w-8 rounded-md hover:bg-white/10"
+                      onClick={incrementDay}
+                    >
+                      <ChevronUp className="h-3 w-3" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-5 w-8 rounded-md hover:bg-white/10"
+                      onClick={decrementDay}
+                    >
+                      <ChevronDown className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/60 flex items-center gap-2">
                   <Clock className="h-3 w-3" /> Start Time
                 </label>
                 <Select value={selectedTime} onValueChange={setSelectedTime}>
-                  <SelectTrigger className="h-11 bg-[#1c1c1f] border-none rounded-xl focus:ring-primary/20">
+                  <SelectTrigger className="h-11 bg-[#1c1c1f] border-none rounded-xl focus:ring-primary/20 font-bold text-sm">
                     <SelectValue placeholder="Select Time" />
                   </SelectTrigger>
-                  <SelectContent className="bg-card border-border max-h-[300px]">
+                  <SelectContent className="bg-[#111113] border-white/10 text-white max-h-[300px]">
                     {timeSlots.map(slot => (
                       <SelectItem key={slot} value={slot}>{slot}</SelectItem>
                     ))}
@@ -524,12 +557,12 @@ export function UserDashboard() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Duration</label>
+              <label className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/60">Duration</label>
               <Select value={duration} onValueChange={setDuration}>
-                <SelectTrigger className="h-11 bg-[#1c1c1f] border-none rounded-xl focus:ring-primary/20">
+                <SelectTrigger className="h-11 bg-[#1c1c1f] border-none rounded-xl focus:ring-primary/20 font-bold text-sm">
                   <SelectValue placeholder="Select Duration" />
                 </SelectTrigger>
-                <SelectContent className="bg-card border-border">
+                <SelectContent className="bg-[#111113] border-white/10 text-white">
                   <SelectItem value="1">1 hour</SelectItem>
                   <SelectItem value="2">2 hours</SelectItem>
                   <SelectItem value="3">3 hours</SelectItem>
@@ -538,12 +571,12 @@ export function UserDashboard() {
               </Select>
             </div>
 
-            <div className="bg-[#1c1c1f] rounded-2xl p-5 flex items-center justify-between">
+            <div className="bg-[#1c1c1f] rounded-2xl p-6 flex items-center justify-between border border-white/5">
               <div className="space-y-1">
-                <p className="text-xs text-muted-foreground font-medium">Estimated Cost</p>
-                <p className="text-[10px] text-muted-foreground/60">Based on avg {selectedCharger?.type === 'DCFC' ? '50kW' : '7kW'} consumption</p>
+                <p className="text-xs text-muted-foreground/80 font-bold">Estimated Cost</p>
+                <p className="text-[10px] text-muted-foreground/40 font-medium">Based on avg {selectedCharger?.type === 'DCFC' ? '50kW' : '7kW'} consumption</p>
               </div>
-              <div className="text-2xl font-black">
+              <div className="text-3xl font-black text-white">
                 ₹{estimatedCost.toFixed(2)}
               </div>
             </div>
@@ -551,14 +584,14 @@ export function UserDashboard() {
             {isUnavailable && !isBookingPending && (
               <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-4 flex items-center gap-3">
                 <AlertCircle className="h-5 w-5 text-rose-500 shrink-0" />
-                <p className="text-xs text-rose-500 font-bold">This slot is currently unavailable at this time.</p>
+                <p className="text-xs text-rose-500 font-bold">Slot unavailable at the selected time.</p>
               </div>
             )}
 
             <Button 
               onClick={handleConfirmBooking} 
               disabled={isBookingPending || isUnavailable || !selectedChargerId}
-              className="w-full teal-gradient-btn h-14 font-black text-base rounded-2xl shadow-xl shadow-primary/20 transition-all hover:scale-[1.02]"
+              className="w-full teal-gradient-btn h-14 font-black text-lg rounded-2xl shadow-xl shadow-primary/30 transition-all hover:scale-[1.01] active:scale-[0.98]"
             >
               {isBookingPending ? <Loader2 className="h-5 w-5 animate-spin" /> : "Confirm Booking"}
             </Button>
@@ -566,29 +599,28 @@ export function UserDashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* High Fidelity Date Picker Dialog */}
+      {/* Date Picker Dialog */}
       <Dialog open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-        <DialogContent className="sm:max-w-[360px] p-0 bg-[#1a1a1c] border-white/5 rounded-3xl overflow-hidden shadow-2xl">
-          <div className="bg-[#555555] p-6 space-y-1">
-            <DialogTitle className="text-xs font-bold text-white/70 tracking-widest uppercase">{format(tempDate, "yyyy")}</DialogTitle>
-            <DialogDescription className="text-3xl font-bold text-white">{format(tempDate, "EEE, d MMM")}</DialogDescription>
+        <DialogContent className="sm:max-w-[360px] p-0 bg-[#1a1a1c] border-white/10 rounded-3xl overflow-hidden shadow-2xl">
+          <div className="bg-[#222222] p-8 space-y-1">
+            <DialogTitle className="text-xs font-black text-white/50 tracking-[0.2em] uppercase">{format(tempDate, "yyyy")}</DialogTitle>
+            <DialogDescription className="text-3xl font-black text-white">{format(tempDate, "EEE, d MMM")}</DialogDescription>
           </div>
-          <div className="p-2">
+          <div className="p-4 bg-[#1a1a1c]">
              <Calendar
                 mode="single"
                 selected={tempDate}
                 onSelect={(date) => date && setTempDate(date)}
-                disabled={(date) => date < new Date() || date > addDays(new Date(), 30)}
+                disabled={(date) => date < new Date(new Date().setHours(0,0,0,0)) || date > addDays(new Date(), 30)}
                 initialFocus
                 className="rounded-xl w-full"
              />
           </div>
-          <div className="p-4 flex items-center justify-end gap-2 bg-[#1a1a1c]">
-            <Button variant="ghost" className="text-primary font-bold px-6" onClick={() => setIsDatePickerOpen(false)}>Clear</Button>
-            <Button variant="ghost" className="text-primary font-bold px-6" onClick={() => setIsDatePickerOpen(false)}>Cancel</Button>
+          <div className="p-6 flex items-center justify-end gap-3 bg-[#1a1a1c]">
+            <Button variant="ghost" className="text-primary font-black uppercase tracking-widest text-xs h-10 px-6" onClick={() => setIsDatePickerOpen(false)}>Cancel</Button>
             <Button 
               variant="ghost" 
-              className="text-primary font-bold px-6" 
+              className="text-primary font-black uppercase tracking-widest text-xs h-10 px-8 bg-primary/10 rounded-xl" 
               onClick={() => {
                 setSelectedDate(tempDate);
                 setIsDatePickerOpen(false);
