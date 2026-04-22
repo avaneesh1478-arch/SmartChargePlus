@@ -1,3 +1,4 @@
+
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -27,10 +28,11 @@ interface AppContextType {
   updateProfile: (data: Partial<User>) => void;
   toggleCharger: (chargerId: string) => void;
   updateChargerStatus: (chargerId: string, status: Charger['status']) => void;
+  updateChargerRate: (chargerId: string, rate: number) => void;
   addStation: (data: { name: string, email: string, address: string, chargingCost: number, lat: number, lng: number }) => void;
   removeStation: (stationId: string) => void;
   updateStation: (stationId: string, data: Partial<Station>) => void;
-  addSlot: (stationId: string, count?: number) => void;
+  addSlot: (stationId: string, count?: number, rate?: number) => void;
   removeSlot: (chargerId: string) => void;
   addBooking: (booking: Booking) => void;
   updateBookingStatus: (bookingId: string, status: Booking['status']) => void;
@@ -313,6 +315,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setChargers(prev => prev.map(c => c.charger_id === chargerId ? { ...c, status } : c));
   };
 
+  const updateChargerRate = (chargerId: string, rate: number) => {
+    setChargers(prev => prev.map(c => c.charger_id === chargerId ? { ...c, rate_per_kwh: rate } : c));
+  };
+
   const updateStation = (stationId: string, data: Partial<Station>) => {
     setStations(prev => prev.map(s => s.station_id === stationId ? { ...s, ...data } : s));
   };
@@ -373,7 +379,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setChargers(prev => prev.filter(c => c.station_id !== stationId));
   };
 
-  const addSlot = (stationId: string, count: number = 1) => {
+  const addSlot = (stationId: string, count: number = 1, rate: number = 0.35) => {
     const newChargers: Charger[] = [];
     const timestamp = Date.now();
     
@@ -385,7 +391,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         type: 'Level 2',
         current_usage: 0,
         status: 'available',
-        rate_per_kwh: 0.35,
+        rate_per_kwh: rate,
       });
     }
 
@@ -474,6 +480,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       updateProfile,
       toggleCharger, 
       updateChargerStatus,
+      updateChargerRate,
       updateStation,
       addStation,
       removeStation,

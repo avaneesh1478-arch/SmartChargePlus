@@ -9,14 +9,14 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Info, Plus, X, Save, Image as ImageIcon, CheckCircle2, Zap, Upload, Trash2 } from 'lucide-react';
+import { Info, Plus, X, Save, Image as ImageIcon, CheckCircle2, Zap, Upload, Trash2, IndianRupee } from 'lucide-react';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Station, Charger } from '@/types';
 import Image from 'next/image';
 
 export default function OperatorStationDetailsPage() {
-  const { user, stations, chargers, updateStation, addSlot, removeSlot } = useApp();
+  const { user, stations, chargers, updateStation, updateChargerRate, addSlot, removeSlot } = useApp();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -41,6 +41,7 @@ export default function OperatorStationDetailsPage() {
     features: [] as string[]
   });
 
+  const [newSlotRate, setNewSlotRate] = useState('0.45');
   const [newImage, setNewImage] = useState('');
   const [newService, setNewService] = useState('');
   const [newFeature, setNewFeature] = useState('');
@@ -117,10 +118,10 @@ export default function OperatorStationDetailsPage() {
   };
 
   const handleAddSlot = () => {
-    addSlot(myStation.station_id, 1);
+    addSlot(myStation.station_id, 1, parseFloat(newSlotRate));
     toast({
       title: "Slot Added",
-      description: "A new charging slot has been commissioned at your station.",
+      description: `A new slot with rate ₹${newSlotRate}/kWh has been commissioned.`,
     });
   };
 
@@ -130,6 +131,13 @@ export default function OperatorStationDetailsPage() {
       title: "Slot Removed",
       description: "The charging slot has been decommissioned.",
     });
+  };
+
+  const handleUpdateRate = (chargerId: string, val: string) => {
+    const rate = parseFloat(val);
+    if (!isNaN(rate)) {
+      updateChargerRate(chargerId, rate);
+    }
   };
 
   return (
@@ -178,36 +186,64 @@ export default function OperatorStationDetailsPage() {
             </Card>
 
             <Card className="border-none bg-[#1a1a1c] border-white/5">
-              <CardHeader className="flex flex-row items-center justify-between">
+              <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-1">
                   <CardTitle className="text-lg">Charging Slots</CardTitle>
                   <CardDescription>Manage your technical infrastructure and availability.</CardDescription>
                 </div>
-                <Button onClick={handleAddSlot} className="teal-gradient-btn h-9 px-4 text-xs font-bold gap-2">
-                  <Plus className="h-4 w-4" /> Add Slot
-                </Button>
+                <div className="flex items-center gap-3">
+                  <div className="relative w-24">
+                    <Input 
+                      type="number"
+                      step="0.01"
+                      value={newSlotRate}
+                      onChange={(e) => setNewSlotRate(e.target.value)}
+                      className="bg-secondary/30 border-none h-9 pl-6 text-xs font-bold"
+                    />
+                    <IndianRupee className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                  </div>
+                  <Button onClick={handleAddSlot} className="teal-gradient-btn h-9 px-4 text-xs font-bold gap-2">
+                    <Plus className="h-4 w-4" /> Add Slot
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {myChargers.length > 0 ? (
                     myChargers.map((charger, idx) => (
-                      <div key={charger.charger_id} className="flex items-center justify-between p-4 bg-secondary/20 rounded-2xl border border-white/5 group hover:border-primary/20 transition-all">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                            <Zap className="h-5 w-5 text-primary" />
+                      <div key={charger.charger_id} className="flex flex-col p-5 bg-secondary/20 rounded-2xl border border-white/5 group hover:border-primary/20 transition-all space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                              <Zap className="h-5 w-5 text-primary" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-bold">Slot {idx + 1}</p>
+                              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{charger.type}</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-sm font-bold">Slot {idx + 1}</p>
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{charger.type} • {charger.rate_per_kwh} ₹/kWh</p>
+                          <div className="flex items-center gap-3">
+                             <Badge variant={charger.status === 'available' ? 'default' : 'secondary'} className={charger.status === 'available' ? 'success-badge text-[10px] uppercase' : 'text-[10px] uppercase'}>
+                               {charger.status}
+                             </Badge>
+                             <Button variant="ghost" size="icon" onClick={() => handleRemoveSlot(charger.charger_id)} className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10">
+                               <Trash2 className="h-4 w-4" />
+                             </Button>
                           </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                           <Badge variant={charger.status === 'available' ? 'default' : 'secondary'} className={charger.status === 'available' ? 'success-badge text-[10px] uppercase' : 'text-[10px] uppercase'}>
-                             {charger.status}
-                           </Badge>
-                           <Button variant="ghost" size="icon" onClick={() => handleRemoveSlot(charger.charger_id)} className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10">
-                             <Trash2 className="h-4 w-4" />
-                           </Button>
+                        
+                        <div className="pt-2 border-t border-white/5">
+                          <Label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-2 block">Set Charging Rate (₹/kWh)</Label>
+                          <div className="relative">
+                            <Input 
+                              type="number"
+                              step="0.01"
+                              value={charger.rate_per_kwh}
+                              onChange={(e) => handleUpdateRate(charger.charger_id, e.target.value)}
+                              className="bg-black/20 border-white/5 h-9 pl-8 text-sm font-black text-primary"
+                            />
+                            <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-primary" />
+                          </div>
                         </div>
                       </div>
                     ))
