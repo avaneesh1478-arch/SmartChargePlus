@@ -676,9 +676,13 @@ export function UserDashboard() {
       {/* Date Picker Dialog */}
       <Dialog open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
         <DialogContent className="sm:max-w-[360px] p-0 bg-[#1a1a1c] border-white/10 rounded-3xl overflow-hidden shadow-2xl">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Select Date</DialogTitle>
+            <DialogDescription>Choose a specific date for your charging session.</DialogDescription>
+          </DialogHeader>
           <div className="bg-[#222222] p-8 space-y-1">
-            <DialogTitle className="text-xs font-black text-white/50 tracking-[0.2em] uppercase">{format(tempDate, "yyyy")}</DialogTitle>
-            <DialogDescription className="text-3xl font-black text-white">{format(tempDate, "EEE, d MMM")}</DialogDescription>
+            <p className="text-xs font-black text-white/50 tracking-[0.2em] uppercase">{format(tempDate, "yyyy")}</p>
+            <p className="text-3xl font-black text-white">{format(tempDate, "EEE, d MMM")}</p>
           </div>
           <div className="p-4 bg-[#1a1a1c]">
              <Calendar
@@ -878,6 +882,10 @@ export function UserDashboard() {
       {/* Digital Receipt Dialog */}
       <Dialog open={isReceiptOpen} onOpenChange={setIsReceiptOpen}>
         <DialogContent className="sm:max-w-[400px] bg-[#111113] border-white/5 text-white p-0 rounded-3xl overflow-hidden shadow-2xl">
+          <DialogHeader className="sr-only">
+             <DialogTitle>Session Receipt</DialogTitle>
+             <DialogDescription>Detailed breakdown of your charging transaction.</DialogDescription>
+          </DialogHeader>
           <div className="flex flex-col">
             {/* Receipt Header Visual */}
             <div className="bg-gradient-to-br from-primary/20 to-secondary/10 p-8 text-center border-b border-white/5 relative overflow-hidden">
