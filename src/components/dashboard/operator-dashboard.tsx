@@ -11,7 +11,8 @@ import {
   X,
   Clock,
   Calendar as CalendarIcon,
-  Settings
+  Settings,
+  User as UserIcon
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,7 +22,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useRouter } from 'next/navigation';
 
 export function OperatorDashboard() {
-  const { user: appUser, bookings, updateBookingStatus, stations, transactions } = useApp();
+  const { user: appUser, bookings, users, updateBookingStatus, stations, transactions } = useApp();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -53,15 +54,13 @@ export function OperatorDashboard() {
     return transactionRevenue + bookingRevenue;
   }, [transactions, bookings, myStationIds, appUser]);
 
-  // Filter local bookings for the operator's stations
+  // Filter local bookings for the operator's stations and sort by latest created first
   const myBookings = useMemo(() => {
     if (!appUser) return [];
     return bookings
       .filter(b => myStationIds.includes(b.stationId))
       .sort((a, b) => {
-        const dateA = new Date(`${a.bookingDate}T${a.bookingTime}`);
-        const dateB = new Date(`${b.bookingDate}T${b.bookingTime}`);
-        return dateA.getTime() - dateB.getTime();
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       });
   }, [bookings, myStationIds, appUser]);
 
@@ -142,7 +141,7 @@ export function OperatorDashboard() {
           <Table>
             <TableHeader>
               <TableRow className="border-white/5 bg-secondary/5">
-                <TableHead className="text-[10px] font-bold uppercase tracking-widest py-4">Station</TableHead>
+                <TableHead className="text-[10px] font-bold uppercase tracking-widest py-4">Driver Name</TableHead>
                 <TableHead className="text-[10px] font-bold uppercase tracking-widest py-4">Date</TableHead>
                 <TableHead className="text-[10px] font-bold uppercase tracking-widest py-4">Time</TableHead>
                 <TableHead className="text-[10px] font-bold uppercase tracking-widest py-4">Status</TableHead>
@@ -151,48 +150,58 @@ export function OperatorDashboard() {
             </TableHeader>
             <TableBody>
               {myBookings.length > 0 ? (
-                myBookings.map((booking) => (
-                  <TableRow key={booking.id} className="border-white/5 hover:bg-white/5 transition-colors">
-                    <TableCell className="text-sm font-medium py-4">{booking.stationName}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground py-4">
-                      <div className="flex items-center gap-2">
-                        <CalendarIcon className="h-3 w-3" /> {booking.bookingDate}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground py-4">
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-3 w-3" /> {booking.bookingTime}
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-4">
-                      <Badge variant={booking.status === 'confirmed' ? 'default' : booking.status === 'pending' ? 'secondary' : 'destructive'} className="text-[10px] uppercase">
-                        {booking.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right py-4">
-                      {booking.status === 'pending' && (
-                        <div className="flex items-center justify-end gap-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="bg-emerald-500/10 border-emerald-500/20 text-emerald-500 hover:bg-emerald-500 hover:text-white h-8 w-8 p-0"
-                            onClick={() => handleUpdateStatus(booking.id, 'confirmed')}
-                          >
-                            <Check className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="bg-rose-500/10 border-rose-500/20 text-rose-500 hover:bg-rose-500 hover:text-white h-8 w-8 p-0"
-                            onClick={() => handleUpdateStatus(booking.id, 'rejected')}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
+                myBookings.map((booking) => {
+                  const driver = users.find(u => u.uid === booking.userId);
+                  const driverName = driver?.fullName || driver?.email.split('@')[0] || 'Unknown Driver';
+
+                  return (
+                    <TableRow key={booking.id} className="border-white/5 hover:bg-white/5 transition-colors">
+                      <TableCell className="text-sm font-medium py-4">
+                        <div className="flex items-center gap-2">
+                          <UserIcon className="h-3.5 w-3.5 text-primary/60" />
+                          {driverName}
                         </div>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground py-4">
+                        <div className="flex items-center gap-2">
+                          <CalendarIcon className="h-3 w-3" /> {booking.bookingDate}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground py-4">
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-3 w-3" /> {booking.bookingTime}
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-4">
+                        <Badge variant={booking.status === 'confirmed' ? 'default' : booking.status === 'pending' ? 'secondary' : 'destructive'} className="text-[10px] uppercase">
+                          {booking.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right py-4">
+                        {booking.status === 'pending' && (
+                          <div className="flex items-center justify-end gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="bg-emerald-500/10 border-emerald-500/20 text-emerald-500 hover:bg-emerald-500 hover:text-white h-8 w-8 p-0"
+                              onClick={() => handleUpdateStatus(booking.id, 'confirmed')}
+                            >
+                              <Check className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="bg-rose-500/10 border-rose-500/20 text-rose-500 hover:bg-rose-500 hover:text-white h-8 w-8 p-0"
+                              onClick={() => handleUpdateStatus(booking.id, 'rejected')}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               ) : (
                 <TableRow>
                   <TableCell colSpan={5} className="py-10 text-center text-muted-foreground italic">
