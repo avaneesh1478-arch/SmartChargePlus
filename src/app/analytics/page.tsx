@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useApp } from '@/hooks/use-store';
@@ -63,23 +62,33 @@ export default function AnalyticsPage() {
         ? Math.min(100, (totalCurrentUsage / station.total_power) * 100) 
         : 0;
 
-      // Real Revenue: Sum of transactions for this station
-      const stationRevenue = transactions
+      // Real Revenue: Sum of transactions + Sum of confirmed/completed bookings for this station
+      const txRevenue = transactions
         .filter(t => t.station_id === station.station_id)
         .reduce((acc, t) => acc + t.cost, 0);
+
+      const bkRevenue = bookings
+        .filter(b => b.stationId === station.station_id && (b.status === 'confirmed' || b.status === 'completed'))
+        .reduce((acc, b) => acc + (b.amount || 0), 0);
 
       return {
         name: station.name,
         usage: Math.round(usagePercentage),
-        revenue: stationRevenue,
+        revenue: txRevenue + bkRevenue,
         id: station.station_id
       };
     });
 
     // 3. Overall Totals for managed scope
-    const totalRevenue = transactions
+    const totalTxRevenue = transactions
       .filter(t => filteredStationIds.includes(t.station_id))
       .reduce((acc, t) => acc + t.cost, 0);
+      
+    const totalBkRevenue = bookings
+      .filter(b => filteredStationIds.includes(b.stationId) && (b.status === 'confirmed' || b.status === 'completed'))
+      .reduce((acc, b) => acc + (b.amount || 0), 0);
+
+    const totalRevenue = totalTxRevenue + totalBkRevenue;
       
     const totalEnergy = transactions
       .filter(t => filteredStationIds.includes(t.station_id))
@@ -247,7 +256,7 @@ export default function AnalyticsPage() {
               <CardTitle className="text-lg font-bold flex items-center gap-2">
                 <IndianRupee className="h-5 w-5 text-primary" /> Revenue Generation
               </CardTitle>
-              <CardDescription>Financial contribution per hub.</CardDescription>
+              <CardDescription>Total earnings received per managed station.</CardDescription>
             </CardHeader>
             <Table>
               <TableHeader>
