@@ -13,7 +13,7 @@ export const translations = {
       subtitle: "Real-time station availability, advance booking, and intelligent management — all in one platform.",
       findStation: "Find a Station",
       goDashboard: "Login",
-      backgroundImage: ""
+      backgroundImage: "https://images.unsplash.com/photo-1593941707882-a5bba14938c7?auto=format&fit=crop&q=80&w=1920"
     },
     howItWorks: {
       title: "How It Works",
@@ -56,7 +56,7 @@ export const translations = {
       subtitle: "ನೈಜ-ಸಮಯದ ನಿಲ್ದಾಣದ ಲಭ್ಯತೆ, ಮುಂಗಡ ಬುಕಿಂಗ್ ಮತ್ತು ಬುದ್ಧಿವಂತ ನಿರ್ವಹಣೆ — ಎಲ್ಲವೂ ಒಂದೇ ವೇದಿಕೆಯಲ್ಲಿ.",
       findStation: "ನಿಲ್ದಾಣವನ್ನು ಹುಡುಕಿ",
       goDashboard: "ಲಾಗಿನ್",
-      backgroundImage: ""
+      backgroundImage: "https://images.unsplash.com/photo-1593941707882-a5bba14938c7?auto=format&fit=crop&q=80&w=1920"
     },
     howItWorks: {
       title: "ಇದು ಹೇಗೆ ಕೆಲಸ ಮಾಡುತ್ತದೆ",
@@ -99,7 +99,7 @@ export const translations = {
       subtitle: "वास्तविक समय में स्टेशन की उपलब्धता, अग्रिम बुकिंग और बुद्धिमान प्रबंधन — सब एक ही प्लेटफॉर्म पर।",
       findStation: "स्टेशन खोजें",
       goDashboard: "लॉगिन",
-      backgroundImage: ""
+      backgroundImage: "https://images.unsplash.com/photo-1593941707882-a5bba14938c7?auto=format&fit=crop&q=80&w=1920"
     },
     howItWorks: {
       title: "यह कैसे काम करता है",
