@@ -1,13 +1,10 @@
-
 "use client";
 
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/hooks/use-store';
 import { Button } from '@/components/ui/button';
 import { Zap, Globe, User, MapPin, Clock, Shield, ChevronRight, Check, Sun, Moon } from 'lucide-react';
-import Image from 'next/image';
 import Link from 'next/link';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -18,9 +15,6 @@ import {
 
 export default function Home() {
   const { user, language, setLanguage, theme, toggleTheme, t } = useApp();
-  const router = useRouter();
-
-  const fallbackHeroImage = PlaceHolderImages.find(img => img.id === 'hero-bg');
 
   const languages = [
     { id: 'en', name: 'English', label: 'English' },
@@ -30,13 +24,10 @@ export default function Home() {
 
   const profileImg = user?.profileImage || `https://picsum.photos/seed/${user?.uid}/40/40`;
 
-  // Determine hero background image source with robust fallbacks
-  const heroImageSrc = t.hero.backgroundImage || fallbackHeroImage?.imageUrl || 'https://picsum.photos/seed/ev-night/1920/1080';
-
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground selection:bg-primary/30">
       {/* Navigation Overlay */}
-      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4">
+      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 border-b border-white/5 bg-background/50 backdrop-blur-md">
         <div className="flex items-center gap-2">
           {/* Logo */}
           <div className="flex items-center gap-1 text-primary font-bold">
@@ -93,24 +84,9 @@ export default function Home() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative h-screen flex flex-col justify-center px-8 md:px-20 overflow-hidden">
-        {/* Background Image with Dark Overlay */}
-        <div className="absolute inset-0 z-0">
-          <Image
-            src={heroImageSrc}
-            alt="Hero Background"
-            fill
-            className="object-cover opacity-60"
-            priority
-            unoptimized // Added unoptimized to support large base64 strings reliably
-            data-ai-hint="ev charging night"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/40 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
-        </div>
-
+      <section className="relative h-screen flex flex-col justify-center px-8 md:px-20 overflow-hidden border-b border-white/5">
         <div className="relative z-10 max-w-2xl space-y-6">
-          <h1 className="text-6xl font-black tracking-tighter text-white">
+          <h1 className="text-6xl font-black tracking-tighter text-foreground">
             {t.hero.title}
           </h1>
           <p className="text-muted-foreground text-lg max-w-md leading-relaxed">
@@ -128,7 +104,7 @@ export default function Home() {
             <Button 
               variant="outline" 
               size="lg" 
-              className="bg-white/5 hover:bg-white/10 backdrop-blur-md border-white/10 text-white font-bold px-8 rounded-xl h-14 text-base"
+              className="bg-secondary/20 hover:bg-secondary/40 border-white/10 text-foreground font-bold px-8 rounded-xl h-14 text-base"
               asChild
             >
               <Link href={user ? "/dashboard" : "/login"}>
@@ -137,6 +113,9 @@ export default function Home() {
             </Button>
           </div>
         </div>
+        
+        {/* Background Decoration */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[120px] pointer-events-none -z-10" />
       </section>
 
       {/* How It Works Section */}
