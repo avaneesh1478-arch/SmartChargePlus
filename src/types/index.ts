@@ -23,6 +23,7 @@ export interface Station {
   operator_id: string;
   total_power: number;
   charger_count: number;
+  base_rate?: number; // Station-wide charging price
   images?: string[];
   services?: string[];
   features?: string[];

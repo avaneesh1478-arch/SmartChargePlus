@@ -5,7 +5,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { User, Station, Charger, Transaction, Booking, Review } from '@/types';
 import { MOCK_USERS, MOCK_STATIONS, MOCK_CHARGERS, MOCK_TRANSACTIONS } from '@/lib/mock-data';
 import { translations, Language } from '@/lib/translations';
-import { useAuth, useUser } from '@/firebase';
+import { useAuth } from '@/firebase';
 
 interface AppContextType {
   user: User | null;
@@ -28,11 +28,11 @@ interface AppContextType {
   updateProfile: (data: Partial<User>) => void;
   toggleCharger: (chargerId: string) => void;
   updateChargerStatus: (chargerId: string, status: Charger['status']) => void;
-  updateChargerRate: (chargerId: string, rate: number) => void;
+  updateStationRate: (stationId: string, rate: number) => void;
   addStation: (data: { name: string, email: string, address: string, chargingCost: number, lat: number, lng: number }) => void;
   removeStation: (stationId: string) => void;
   updateStation: (stationId: string, data: Partial<Station>) => void;
-  addSlot: (stationId: string, count?: number, rate?: number) => void;
+  addSlot: (stationId: string, count?: number) => void;
   removeSlot: (chargerId: string) => void;
   addBooking: (booking: Booking) => void;
   updateBookingStatus: (bookingId: string, status: Booking['status']) => void;
@@ -43,7 +43,10 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [stations, setStations] = useState<Station[]>(MOCK_STATIONS);
+  const [stations, setStations] = useState<Station[]>(() => {
+    // Add base_rate to mock stations if not present
+    return MOCK_STATIONS.map(s => ({ ...s, base_rate: s.base_rate || 0.45 }));
+  });
   const [chargers, setChargers] = useState<Charger[]>(MOCK_CHARGERS);
   const [transactions, setTransactions] = useState<Transaction[]>(MOCK_TRANSACTIONS);
   const [users, setUsers] = useState<User[]>(MOCK_USERS);
@@ -172,11 +175,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('volta_theme', theme);
   }, [theme]);
 
-  /**
-   * Automatic Status Transition Logic
-   * A booking becomes 'completed' when:
-   * (Start Time + Selected Duration Hours) < Current System Time
-   */
   useEffect(() => {
     if (!isLoaded) return;
 
@@ -186,7 +184,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       
       setBookings(prev => {
         const updated = prev.map(booking => {
-          // Rule: Status transitions to completed if it was confirmed AND the end time has passed
           if (booking.status === 'confirmed' && booking.endTime && booking.endTime < now) {
             hasChanges = true;
             return { ...booking, status: 'completed' as const };
@@ -194,14 +191,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
           return booking;
         });
         
-        if (hasChanges) {
-          // If a slot was occupied by this booking, free it up
-          // Note: In a production app, we'd find the specific charger
-          return updated;
-        }
-        return prev;
+        return hasChanges ? updated : prev;
       });
-    }, 10000); // Check every 10 seconds for high fidelity transitions
+    }, 10000);
 
     return () => clearInterval(checkInterval);
   }, [isLoaded]);
@@ -315,8 +307,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setChargers(prev => prev.map(c => c.charger_id === chargerId ? { ...c, status } : c));
   };
 
-  const updateChargerRate = (chargerId: string, rate: number) => {
-    setChargers(prev => prev.map(c => c.charger_id === chargerId ? { ...c, rate_per_kwh: rate } : c));
+  const updateStationRate = (stationId: string, rate: number) => {
+    setStations(prev => prev.map(s => s.station_id === stationId ? { ...s, base_rate: rate } : s));
+    setChargers(prev => prev.map(c => c.station_id === stationId ? { ...c, rate_per_kwh: rate } : c));
   };
 
   const updateStation = (stationId: string, data: Partial<Station>) => {
@@ -337,6 +330,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       operator_id: opUid,
       total_power: 150,
       charger_count: 2,
+      base_rate: data.chargingCost
     };
 
     const newOperator: User = {
@@ -362,7 +356,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         type: 'Level 2', 
         current_usage: 0, 
         status: 'available', 
-        rate_per_kwh: data.chargingCost * 0.6 
+        rate_per_kwh: data.chargingCost
       },
     ];
 
@@ -379,7 +373,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setChargers(prev => prev.filter(c => c.station_id !== stationId));
   };
 
-  const addSlot = (stationId: string, count: number = 1, rate: number = 0.35) => {
+  const addSlot = (stationId: string, count: number = 1) => {
+    const station = stations.find(s => s.station_id === stationId);
+    const rate = station?.base_rate || 0.45;
     const newChargers: Charger[] = [];
     const timestamp = Date.now();
     
@@ -480,7 +476,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       updateProfile,
       toggleCharger, 
       updateChargerStatus,
-      updateChargerRate,
+      updateStationRate,
       updateStation,
       addStation,
       removeStation,

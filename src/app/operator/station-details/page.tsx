@@ -16,7 +16,7 @@ import { Station, Charger } from '@/types';
 import Image from 'next/image';
 
 export default function OperatorStationDetailsPage() {
-  const { user, stations, chargers, updateStation, updateChargerRate, addSlot, removeSlot } = useApp();
+  const { user, stations, chargers, updateStation, updateStationRate, addSlot, removeSlot } = useApp();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -36,12 +36,12 @@ export default function OperatorStationDetailsPage() {
   const [formData, setFormData] = useState({
     name: '',
     location: '',
+    base_rate: 0.45,
     images: [] as string[],
     services: [] as string[],
     features: [] as string[]
   });
 
-  const [newSlotRate, setNewSlotRate] = useState('0.45');
   const [newImage, setNewImage] = useState('');
   const [newService, setNewService] = useState('');
   const [newFeature, setNewFeature] = useState('');
@@ -51,6 +51,7 @@ export default function OperatorStationDetailsPage() {
       setFormData({
         name: myStation.name,
         location: myStation.location,
+        base_rate: myStation.base_rate || 0.45,
         images: myStation.images || [],
         services: myStation.services || [],
         features: myStation.features || []
@@ -70,10 +71,18 @@ export default function OperatorStationDetailsPage() {
   }
 
   const handleSave = () => {
-    updateStation(myStation.station_id, formData);
+    updateStation(myStation.station_id, {
+        name: formData.name,
+        location: formData.location,
+        images: formData.images,
+        services: formData.services,
+        features: formData.features
+    });
+    updateStationRate(myStation.station_id, formData.base_rate);
+    
     toast({
       title: "Station Updated",
-      description: "Public details for your station have been successfully updated.",
+      description: "Public details and pricing for your station have been successfully updated.",
     });
   };
 
@@ -118,10 +127,10 @@ export default function OperatorStationDetailsPage() {
   };
 
   const handleAddSlot = () => {
-    addSlot(myStation.station_id, 1, parseFloat(newSlotRate));
+    addSlot(myStation.station_id, 1);
     toast({
       title: "Slot Added",
-      description: `A new slot with rate ₹${newSlotRate}/kWh has been commissioned.`,
+      description: `A new slot has been commissioned with the station-wide rate of ₹${formData.base_rate}/kWh.`,
     });
   };
 
@@ -131,13 +140,6 @@ export default function OperatorStationDetailsPage() {
       title: "Slot Removed",
       description: "The charging slot has been decommissioned.",
     });
-  };
-
-  const handleUpdateRate = (chargerId: string, val: string) => {
-    const rate = parseFloat(val);
-    if (!isNaN(rate)) {
-      updateChargerRate(chargerId, rate);
-    }
   };
 
   return (
@@ -163,9 +165,9 @@ export default function OperatorStationDetailsPage() {
             <Card className="border-none bg-[#1a1a1c] border-white/5">
               <CardHeader>
                 <CardTitle className="text-lg">Core Information</CardTitle>
-                <CardDescription>Primary identification details for the network.</CardDescription>
+                <CardDescription>Primary identification and station-wide settings.</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
                 <div className="grid gap-2">
                   <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Station Display Name</Label>
                   <Input 
@@ -182,6 +184,22 @@ export default function OperatorStationDetailsPage() {
                     className="bg-secondary/30 border-none min-h-[80px]"
                   />
                 </div>
+
+                {/* Single Charging Price Field */}
+                <div className="pt-4 border-t border-white/5">
+                  <Label className="text-[10px] font-black uppercase tracking-widest text-primary mb-2 block">Station Charging Rate (₹/kWh)</Label>
+                  <div className="relative max-w-[200px]">
+                    <Input 
+                      type="number"
+                      step="0.01"
+                      value={formData.base_rate}
+                      onChange={(e) => setFormData(prev => ({ ...prev, base_rate: parseFloat(e.target.value) || 0 }))}
+                      className="bg-black/20 border-white/5 h-12 pl-10 text-lg font-black text-primary"
+                    />
+                    <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-primary" />
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-2 uppercase tracking-tight">This amount applies to all charging slots in this station.</p>
+                </div>
               </CardContent>
             </Card>
 
@@ -189,23 +207,11 @@ export default function OperatorStationDetailsPage() {
               <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-1">
                   <CardTitle className="text-lg">Charging Slots</CardTitle>
-                  <CardDescription>Manage your technical infrastructure and availability.</CardDescription>
+                  <CardDescription>Manage your technical infrastructure slots.</CardDescription>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="relative w-24">
-                    <Input 
-                      type="number"
-                      step="0.01"
-                      value={newSlotRate}
-                      onChange={(e) => setNewSlotRate(e.target.value)}
-                      className="bg-secondary/30 border-none h-9 pl-6 text-xs font-bold"
-                    />
-                    <IndianRupee className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
-                  </div>
-                  <Button onClick={handleAddSlot} className="teal-gradient-btn h-9 px-4 text-xs font-bold gap-2">
+                <Button onClick={handleAddSlot} className="teal-gradient-btn h-10 px-6 text-sm font-bold gap-2">
                     <Plus className="h-4 w-4" /> Add Slot
-                  </Button>
-                </div>
+                </Button>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -232,18 +238,9 @@ export default function OperatorStationDetailsPage() {
                           </div>
                         </div>
                         
-                        <div className="pt-2 border-t border-white/5">
-                          <Label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-2 block">Set Charging Rate (₹/kWh)</Label>
-                          <div className="relative">
-                            <Input 
-                              type="number"
-                              step="0.01"
-                              value={charger.rate_per_kwh}
-                              onChange={(e) => handleUpdateRate(charger.charger_id, e.target.value)}
-                              className="bg-black/20 border-white/5 h-9 pl-8 text-sm font-black text-primary"
-                            />
-                            <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-primary" />
-                          </div>
+                        <div className="pt-2 border-t border-white/5 flex items-center justify-between">
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Current Rate</span>
+                          <span className="text-sm font-black text-primary">₹{charger.rate_per_kwh.toFixed(2)}/kWh</span>
                         </div>
                       </div>
                     ))
