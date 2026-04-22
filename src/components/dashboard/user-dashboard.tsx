@@ -52,7 +52,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
-import { format, addDays, subDays } from "date-fns";
+import { format, addDays, subDays, isSameDay } from "date-fns";
 import { useToast } from '@/hooks/use-toast';
 import { Station, Booking, Review } from '@/types';
 import { cn, calculateDistance } from '@/lib/utils';
@@ -153,14 +153,39 @@ export function UserDashboard() {
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [bookings, appUser]);
 
+  // Validates time slots based on selected date
   const timeSlots = useMemo(() => {
     const slots = [];
+    const now = new Date();
+    const isToday = isSameDay(selectedDate, now);
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+
     for (let h = 8; h <= 22; h++) {
       const hh = h.toString().padStart(2, '0');
-      slots.push(`${hh}:00`, `${hh}:30`);
+      
+      // Logic: If it's today, only allow slots that haven't started yet
+      // A slot like 14:00 is allowed if current time is < 14:00
+      
+      // Check :00 slot
+      if (!isToday || h > currentHour) {
+        slots.push(`${hh}:00`);
+      }
+
+      // Check :30 slot
+      if (!isToday || h > currentHour || (h === currentHour && currentMinute < 30)) {
+        slots.push(`${hh}:30`);
+      }
     }
     return slots;
-  }, []);
+  }, [selectedDate]);
+
+  // Ensure selectedTime is valid when date or available slots change
+  useEffect(() => {
+    if (timeSlots.length > 0 && !timeSlots.includes(selectedTime)) {
+      setSelectedTime(timeSlots[0]);
+    }
+  }, [timeSlots, selectedTime]);
 
   const handleGetLocation = () => {
     if (!("geolocation" in navigator)) {
@@ -622,9 +647,13 @@ export function UserDashboard() {
                     <SelectValue placeholder="Select Time" />
                   </SelectTrigger>
                   <SelectContent className="bg-[#111113] border-white/10 text-white max-h-[300px]">
-                    {timeSlots.map(slot => (
-                      <SelectItem key={slot} value={slot}>{slot}</SelectItem>
-                    ))}
+                    {timeSlots.length > 0 ? (
+                      timeSlots.map(slot => (
+                        <SelectItem key={slot} value={slot}>{slot}</SelectItem>
+                      ))
+                    ) : (
+                      <div className="p-4 text-center text-xs text-muted-foreground">No available slots today.</div>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -655,16 +684,18 @@ export function UserDashboard() {
               </div>
             </div>
 
-            {isUnavailable && !isBookingPending && (
+            {(isUnavailable || timeSlots.length === 0) && !isBookingPending && (
               <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-4 flex items-center gap-3">
                 <AlertCircle className="h-5 w-5 text-rose-500 shrink-0" />
-                <p className="text-xs text-rose-500 font-bold">Slot unavailable at the selected time.</p>
+                <p className="text-xs text-rose-500 font-bold">
+                  {timeSlots.length === 0 ? "No more sessions available for today." : "Slot unavailable at the selected time."}
+                </p>
               </div>
             )}
 
             <Button 
               onClick={handleConfirmBooking} 
-              disabled={isBookingPending || isUnavailable || !selectedChargerId}
+              disabled={isBookingPending || isUnavailable || !selectedChargerId || timeSlots.length === 0}
               className="w-full teal-gradient-btn h-14 font-black text-lg rounded-2xl shadow-xl shadow-primary/30 transition-all hover:scale-[1.01] active:scale-[0.98]"
             >
               {isBookingPending ? <Loader2 className="h-5 w-5 animate-spin" /> : "Confirm Booking"}
