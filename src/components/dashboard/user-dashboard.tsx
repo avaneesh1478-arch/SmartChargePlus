@@ -32,13 +32,15 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { 
   Dialog, 
   DialogContent, 
   DialogHeader, 
   DialogTitle,
   DialogDescription,
-  DialogClose
+  DialogClose,
+  DialogFooter
 } from '@/components/ui/dialog';
 import {
   Select,
@@ -50,13 +52,13 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { format, addDays, subDays } from "date-fns";
 import { useToast } from '@/hooks/use-toast';
-import { Station, Booking } from '@/types';
+import { Station, Booking, Review } from '@/types';
 import { cn, calculateDistance } from '@/lib/utils';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
 export function UserDashboard() {
-  const { stations, chargers, t, user: appUser, bookings, addBooking } = useApp();
+  const { stations, chargers, t, user: appUser, bookings, addBooking, addReview } = useApp();
   const { toast } = useToast();
   const router = useRouter();
   
@@ -76,6 +78,12 @@ export function UserDashboard() {
 
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [detailsStation, setDetailsStation] = useState<Station | null>(null);
+
+  // Review Dialog State
+  const [isReviewOpen, setIsReviewOpen] = useState(false);
+  const [reviewStation, setReviewStation] = useState<Station | null>(null);
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState('');
 
   // Monitor Rejections for Refunds
   const prevBookingsRef = useRef<Booking[]>([]);
@@ -110,7 +118,6 @@ export function UserDashboard() {
 
   const estimatedCost = useMemo(() => {
     if (!selectedCharger) return 0;
-    // Base cost calculation for the UI demo (Rate * Hours * multiplier)
     return selectedCharger.rate_per_kwh * parseInt(duration) * (selectedCharger.type === 'DCFC' ? 50 : 7);
   }, [selectedCharger, duration]);
 
@@ -178,6 +185,34 @@ export function UserDashboard() {
     setIsDetailsOpen(true);
   };
 
+  const handleOpenReview = (stationId: string) => {
+    const station = stations.find(s => s.station_id === stationId);
+    if (station) {
+      setReviewStation(station);
+      setRating(5);
+      setComment('');
+      setIsReviewOpen(true);
+    }
+  };
+
+  const handleSubmitReview = () => {
+    if (!appUser || !reviewStation) return;
+    
+    addReview({
+      stationId: reviewStation.station_id,
+      userId: appUser.uid,
+      userName: appUser.fullName || appUser.email.split('@')[0],
+      rating,
+      comment
+    });
+
+    toast({
+      title: "Review Submitted",
+      description: "Thank you for your feedback! It helps others in the community.",
+    });
+    setIsReviewOpen(false);
+  };
+
   const handleConfirmBooking = () => {
     if (!appUser || !selectedStation || !selectedChargerId) return;
     
@@ -194,6 +229,9 @@ export function UserDashboard() {
     
     setTimeout(() => {
       const bookingId = `bk-${Date.now()}`;
+      const startTime = new Date(`${dateStr}T${selectedTime}`).getTime();
+      const durationMs = parseInt(duration) * 60 * 60 * 1000;
+
       const newBooking: Booking = {
         id: bookingId,
         userId: appUser.uid,
@@ -206,7 +244,9 @@ export function UserDashboard() {
         duration: parseInt(duration),
         status: 'pending',
         amount: estimatedCost,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        startTime,
+        endTime: startTime + durationMs
       };
 
       addBooking(newBooking);
@@ -435,7 +475,12 @@ export function UserDashboard() {
                           <Button variant="outline" size="sm" className="h-8 text-[10px] font-bold uppercase tracking-wider flex-1 bg-white/5 border-white/5">
                             <FileText className="h-3 w-3 mr-1.5" /> Receipt
                           </Button>
-                          <Button variant="outline" size="sm" className="h-8 text-[10px] font-bold uppercase tracking-wider flex-1 bg-white/5 border-white/5">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => handleOpenReview(bk.stationId)}
+                            className="h-8 text-[10px] font-bold uppercase tracking-wider flex-1 bg-white/5 border-white/5 hover:text-primary transition-colors"
+                          >
                             <MessageSquare className="h-3 w-3 mr-1.5" /> Review
                           </Button>
                         </div>
@@ -632,6 +677,7 @@ export function UserDashboard() {
         </DialogContent>
       </Dialog>
 
+      {/* Station Details Dialog */}
       <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
         <DialogContent className="sm:max-w-[700px] bg-[#1a1a1c] border-white/5 text-white p-0 rounded-3xl overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto">
           {detailsStation && (
@@ -736,6 +782,67 @@ export function UserDashboard() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Review & Rating Dialog */}
+      <Dialog open={isReviewOpen} onOpenChange={setIsReviewOpen}>
+        <DialogContent className="sm:max-w-[450px] bg-[#1a1a1c] border-white/5 text-white p-0 rounded-3xl overflow-hidden shadow-2xl">
+          <div className="p-8 space-y-6">
+            <DialogHeader className="space-y-1">
+              <DialogTitle className="text-2xl font-black tracking-tight flex items-center gap-2">
+                <Star className="h-6 w-6 text-primary fill-primary" /> Station Feedback
+              </DialogTitle>
+              <DialogDescription className="text-muted-foreground">
+                How was your experience at <strong>{reviewStation?.name}</strong>?
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div className="flex flex-col items-center gap-3 py-4 bg-black/20 rounded-2xl border border-white/5">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Your Rating</p>
+                <div className="flex items-center gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      onClick={() => setRating(star)}
+                      className="transition-transform active:scale-90 hover:scale-110"
+                    >
+                      <Star 
+                        className={cn(
+                          "h-8 w-8 transition-colors",
+                          star <= rating ? "text-primary fill-primary" : "text-muted-foreground/20"
+                        )} 
+                      />
+                    </button>
+                  ))}
+                </div>
+                <span className="text-lg font-black text-primary">
+                  {rating === 5 ? 'Excellent' : rating === 4 ? 'Good' : rating === 3 ? 'Average' : rating === 2 ? 'Poor' : 'Awful'}
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/60">Your Comments</label>
+                <Textarea 
+                  placeholder="Tell us about the charger speed, station cleanliness, or any issues you encountered..."
+                  className="bg-[#1c1c1f] border-none rounded-xl min-h-[120px] focus-visible:ring-primary/20 text-sm placeholder:text-muted-foreground/40"
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="flex gap-3 sm:gap-0">
+               <Button variant="ghost" className="flex-1 font-bold rounded-xl" onClick={() => setIsReviewOpen(false)}>Cancel</Button>
+               <Button 
+                className="flex-1 teal-gradient-btn font-black rounded-xl h-12"
+                onClick={handleSubmitReview}
+              >
+                 Submit Review
+               </Button>
+            </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

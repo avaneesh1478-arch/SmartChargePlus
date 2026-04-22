@@ -64,3 +64,13 @@ export interface Booking {
   startTime?: number; // Timestamp
   endTime?: number;   // Timestamp
 }
+
+export interface Review {
+  id: string;
+  stationId: string;
+  userId: string;
+  userName: string;
+  rating: number;
+  comment: string;
+  createdAt: number;
+}

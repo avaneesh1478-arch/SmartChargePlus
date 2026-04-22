@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, Station, Charger, Transaction, Booking } from '@/types';
+import { User, Station, Charger, Transaction, Booking, Review } from '@/types';
 import { MOCK_USERS, MOCK_STATIONS, MOCK_CHARGERS, MOCK_TRANSACTIONS } from '@/lib/mock-data';
 import { translations, Language } from '@/lib/translations';
 import { useAuth, useUser } from '@/firebase';
@@ -14,6 +14,7 @@ interface AppContextType {
   transactions: Transaction[];
   users: User[];
   bookings: Booking[];
+  reviews: Review[];
   language: Language;
   setLanguage: (lang: Language) => void;
   theme: 'dark' | 'light';
@@ -34,6 +35,7 @@ interface AppContextType {
   removeSlot: (chargerId: string) => void;
   addBooking: (booking: Booking) => void;
   updateBookingStatus: (bookingId: string, status: Booking['status']) => void;
+  addReview: (review: Omit<Review, 'id' | 'createdAt'>) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -45,6 +47,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [transactions, setTransactions] = useState<Transaction[]>(MOCK_TRANSACTIONS);
   const [users, setUsers] = useState<User[]>(MOCK_USERS);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [language, setLanguageState] = useState<Language>('en');
   const [theme, setThemeState] = useState<'dark' | 'light'>('dark');
   const [allTranslations, setAllTranslations] = useState<typeof translations>(translations);
@@ -62,6 +65,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const storedStations = localStorage.getItem('volta_stations');
     const storedChargers = localStorage.getItem('volta_chargers');
     const storedBookings = localStorage.getItem('volta_bookings');
+    const storedReviews = localStorage.getItem('volta_reviews');
     const storedLang = localStorage.getItem('volta_lang') as Language;
     const storedTheme = localStorage.getItem('volta_theme') as 'dark' | 'light';
     const storedTranslations = localStorage.getItem('volta_translations');
@@ -87,8 +91,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
               hero: {
                 ...mergedTranslations[l].hero,
                 ...parsed[l].hero,
-                // Prioritize new hardcoded defaults if the stored version is empty
-                backgroundImage: parsed[l].hero?.backgroundImage || mergedTranslations[l].hero.backgroundImage
               },
               howItWorks: {
                 ...mergedTranslations[l].howItWorks,
@@ -108,6 +110,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setBookings(JSON.parse(storedBookings));
       } catch (e) {
         console.error("Failed to parse stored bookings", e);
+      }
+    }
+
+    if (storedReviews) {
+      try {
+        setReviews(JSON.parse(storedReviews));
+      } catch (e) {
+        console.error("Failed to parse stored reviews", e);
       }
     }
 
@@ -183,28 +193,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       if (hasChanges) {
         setBookings(updatedBookings);
-        const completedBookings = updatedBookings.filter(b => b.status === 'completed' && !bookings.find(oldB => oldB.id === b.id && oldB.status === 'completed'));
-        
-        if (completedBookings.length > 0) {
-          setChargers(prev => prev.map(charger => {
-            const associatedCompletion = completedBookings.find(b => b.chargerId === charger.charger_id);
-            if (associatedCompletion) {
-              return { ...charger, status: 'available' as const, current_usage: 0 };
-            }
-            return charger;
-          }));
-        }
       }
     }, 15000);
 
     return () => clearInterval(checkInterval);
   }, [bookings, isLoaded]);
-
-  useEffect(() => {
-    if (isLoaded && user && !firebaseUser && auth) {
-      signInAnonymously(auth).catch(err => console.error("Firebase Sync Error:", err));
-    }
-  }, [user, firebaseUser, auth, isLoaded]);
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
@@ -232,46 +225,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!isLoaded) return;
     try {
       localStorage.setItem('volta_all_users', JSON.stringify(users));
-    } catch (e) {
-      console.warn("Storage quota exceeded for users", e);
-    }
-  }, [users, isLoaded]);
-
-  useEffect(() => {
-    if (!isLoaded) return;
-    try {
       localStorage.setItem('volta_stations', JSON.stringify(stations));
-    } catch (e) {
-      console.warn("Storage quota exceeded for stations. Try using smaller images.", e);
-    }
-  }, [stations, isLoaded]);
-
-  useEffect(() => {
-    if (!isLoaded) return;
-    try {
       localStorage.setItem('volta_chargers', JSON.stringify(chargers));
-    } catch (e) {
-      console.warn("Storage quota exceeded for chargers", e);
-    }
-  }, [chargers, isLoaded]);
-
-  useEffect(() => {
-    if (!isLoaded) return;
-    try {
       localStorage.setItem('volta_bookings', JSON.stringify(bookings));
-    } catch (e) {
-      console.warn("Storage quota exceeded for bookings", e);
-    }
-  }, [bookings, isLoaded]);
-
-  useEffect(() => {
-    if (!isLoaded) return;
-    try {
+      localStorage.setItem('volta_reviews', JSON.stringify(reviews));
       localStorage.setItem('volta_translations', JSON.stringify(allTranslations));
     } catch (e) {
-      console.warn("Storage quota exceeded for translations", e);
+      console.warn("Storage quota exceeded", e);
     }
-  }, [allTranslations, isLoaded]);
+  }, [users, stations, chargers, bookings, reviews, allTranslations, isLoaded]);
 
   const login = (email: string) => {
     const found = users.find(u => u.email.toLowerCase() === email.toLowerCase());
@@ -423,59 +385,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
 
     setChargers(prev => [...prev, ...newChargers]);
-    setStations(prev => prev.map(s => 
-      s.station_id === stationId 
-        ? { ...s, charger_count: s.charger_count + count } 
-        : s
-    ));
   };
 
   const removeSlot = (chargerId: string) => {
-    const chargerToRemove = chargers.find(c => c.charger_id === chargerId);
-    if (!chargerToRemove) return;
-
     setChargers(prev => prev.filter(c => c.charger_id !== chargerId));
-    setStations(prev => prev.map(s => 
-      s.station_id === chargerToRemove.station_id 
-        ? { ...s, charger_count: Math.max(0, s.charger_count - 1) } 
-        : s
-    ));
   };
 
   const addBooking = (booking: Booking) => {
     const bookingAmount = booking.amount || 0;
     const currentUser = users.find(u => u.uid === booking.userId);
     
-    const startTime = new Date(`${booking.bookingDate}T${booking.bookingTime}`).getTime();
-    const durationMs = (booking.duration || 1) * 60 * 60 * 1000;
-    const endTime = startTime + durationMs;
-
-    const enrichedBooking = {
-      ...booking,
-      startTime,
-      endTime,
-      status: 'pending' as const
-    };
-
     if (currentUser) {
       const currentBalance = currentUser.wallet_balance || 0;
-      
       if (currentBalance >= bookingAmount) {
         const updatedUser = { ...currentUser, wallet_balance: currentBalance - bookingAmount };
         setUsers(prev => prev.map(u => u.uid === currentUser.uid ? updatedUser : u));
         
         if (user && user.uid === currentUser.uid) {
            setUser(updatedUser);
-           try {
-             localStorage.setItem('volta_user', JSON.stringify(updatedUser));
-           } catch (e) {
-             console.warn("Could not update user session", e);
-           }
         }
 
-        setBookings(prev => [...prev, enrichedBooking]);
-      } else {
-        setBookings(prev => [...prev, { ...enrichedBooking, status: 'failed_insufficient_funds' as const }]);
+        setBookings(prev => [...prev, { ...booking, status: 'pending' }]);
       }
     }
   };
@@ -489,16 +419,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (targetUser) {
           const refundAmount = booking.amount || 0;
           const updatedUser = { ...targetUser, wallet_balance: (targetUser.wallet_balance || 0) + refundAmount };
-          
           setUsers(allUsers => allUsers.map(u => u.uid === targetUser.uid ? updatedUser : u));
-          
           if (user && user.uid === targetUser.uid) {
              setUser(updatedUser);
-             try {
-               localStorage.setItem('volta_user', JSON.stringify(updatedUser));
-             } catch (e) {
-               console.warn("Could not update user session", e);
-             }
           }
         }
       }
@@ -515,6 +438,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
   };
 
+  const addReview = (review: Omit<Review, 'id' | 'createdAt'>) => {
+    const newReview: Review = {
+      ...review,
+      id: `rev-${Date.now()}`,
+      createdAt: Date.now()
+    };
+    setReviews(prev => [newReview, ...prev]);
+  };
+
   return (
     <AppContext.Provider value={{ 
       user, 
@@ -523,6 +455,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       transactions, 
       users,
       bookings,
+      reviews,
       language,
       setLanguage,
       theme,
@@ -542,7 +475,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       addSlot,
       removeSlot,
       addBooking,
-      updateBookingStatus
+      updateBookingStatus,
+      addReview
     }}>
       {children}
     </AppContext.Provider>
