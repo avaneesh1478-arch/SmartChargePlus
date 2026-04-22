@@ -1,10 +1,3 @@
 {
-  "placeholderImages": [
-    {
-      "id": "hero-bg",
-      "description": "Moody dark mountain landscape with mist",
-      "imageUrl": "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1920&q=80",
-      "imageHint": "moody mountain mist"
-    }
-  ]
+  "placeholderImages": []
 }
