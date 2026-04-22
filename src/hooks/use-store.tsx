@@ -1,4 +1,3 @@
-
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -78,7 +77,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (storedTranslations) {
       try {
         const parsed = JSON.parse(storedTranslations);
-        // Robust Merge: Ensure new default keys (like backgroundImage) are preserved
         const mergedTranslations = { ...translations };
         Object.keys(parsed).forEach((lang) => {
           const l = lang as Language;
@@ -86,10 +84,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
             mergedTranslations[l] = {
               ...mergedTranslations[l],
               ...parsed[l],
-              // Ensure nested hero object is also merged
               hero: {
                 ...mergedTranslations[l].hero,
-                ...parsed[l].hero
+                ...parsed[l].hero,
+                // Prioritize new hardcoded defaults if the stored version is empty
+                backgroundImage: parsed[l].hero?.backgroundImage || mergedTranslations[l].hero.backgroundImage
               },
               howItWorks: {
                 ...mergedTranslations[l].howItWorks,
@@ -159,7 +158,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setIsLoaded(true);
   }, []);
 
-  // Theme Sync
   useEffect(() => {
     if (theme === 'light') {
       document.documentElement.classList.add('light');
@@ -169,7 +167,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('volta_theme', theme);
   }, [theme]);
 
-  // Passive Watcher: Automated Booking Completion
   useEffect(() => {
     if (!isLoaded) return;
 
@@ -186,8 +183,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       if (hasChanges) {
         setBookings(updatedBookings);
-        
-        // Auto-release chargers
         const completedBookings = updatedBookings.filter(b => b.status === 'completed' && !bookings.find(oldB => oldB.id === b.id && oldB.status === 'completed'));
         
         if (completedBookings.length > 0) {
@@ -200,12 +195,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
           }));
         }
       }
-    }, 15000); // Check every 15 seconds
+    }, 15000);
 
     return () => clearInterval(checkInterval);
   }, [bookings, isLoaded]);
 
-  // Synchronize local user with Firebase Auth session
   useEffect(() => {
     if (isLoaded && user && !firebaseUser && auth) {
       signInAnonymously(auth).catch(err => console.error("Firebase Sync Error:", err));
@@ -452,7 +446,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const bookingAmount = booking.amount || 0;
     const currentUser = users.find(u => u.uid === booking.userId);
     
-    // Calculate Timestamps
     const startTime = new Date(`${booking.bookingDate}T${booking.bookingTime}`).getTime();
     const durationMs = (booking.duration || 1) * 60 * 60 * 1000;
     const endTime = startTime + durationMs;
@@ -468,7 +461,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const currentBalance = currentUser.wallet_balance || 0;
       
       if (currentBalance >= bookingAmount) {
-        // Sufficient funds: Deduct from wallet and mark as pending
         const updatedUser = { ...currentUser, wallet_balance: currentBalance - bookingAmount };
         setUsers(prev => prev.map(u => u.uid === currentUser.uid ? updatedUser : u));
         
@@ -483,7 +475,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
         setBookings(prev => [...prev, enrichedBooking]);
       } else {
-        // Insufficient funds: Mark as failed
         setBookings(prev => [...prev, { ...enrichedBooking, status: 'failed_insufficient_funds' as const }]);
       }
     }
@@ -512,7 +503,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      // If approved, update charger status
       if (booking && status === 'confirmed' && booking.chargerId) {
         setChargers(allChargers => allChargers.map(c => 
           c.charger_id === booking.chargerId 
