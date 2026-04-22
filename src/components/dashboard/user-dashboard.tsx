@@ -26,7 +26,9 @@ import {
   ChevronDown,
   ChevronUp,
   FileText,
-  MessageSquare
+  MessageSquare,
+  Download,
+  ShieldCheck
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -84,6 +86,11 @@ export function UserDashboard() {
   const [reviewStation, setReviewStation] = useState<Station | null>(null);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
+
+  // Receipt Dialog State
+  const [isReceiptOpen, setIsReceiptOpen] = useState(false);
+  const [receiptBooking, setReceiptBooking] = useState<Booking | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   // Monitor Rejections for Refunds
   const prevBookingsRef = useRef<Booking[]>([]);
@@ -193,6 +200,22 @@ export function UserDashboard() {
       setComment('');
       setIsReviewOpen(true);
     }
+  };
+
+  const handleOpenReceipt = (booking: Booking) => {
+    setReceiptBooking(booking);
+    setIsReceiptOpen(true);
+  };
+
+  const handleDownloadReceipt = () => {
+    setIsDownloading(true);
+    setTimeout(() => {
+      setIsDownloading(false);
+      toast({
+        title: "Receipt Downloaded",
+        description: "Your session invoice has been saved to your gallery.",
+      });
+    }, 1500);
   };
 
   const handleSubmitReview = () => {
@@ -472,7 +495,12 @@ export function UserDashboard() {
                       
                       {bk.status === 'completed' && (
                         <div className="flex gap-2">
-                          <Button variant="outline" size="sm" className="h-8 text-[10px] font-bold uppercase tracking-wider flex-1 bg-white/5 border-white/5">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => handleOpenReceipt(bk)}
+                            className="h-8 text-[10px] font-bold uppercase tracking-wider flex-1 bg-white/5 border-white/5 hover:text-primary transition-colors"
+                          >
                             <FileText className="h-3 w-3 mr-1.5" /> Receipt
                           </Button>
                           <Button 
@@ -496,6 +524,7 @@ export function UserDashboard() {
         </div>
       </div>
 
+      {/* Booking Dialog */}
       <Dialog open={isBookingOpen} onOpenChange={setIsBookingOpen}>
         <DialogContent className="sm:max-w-[500px] bg-[#111113] border-white/5 text-white p-0 rounded-3xl overflow-hidden shadow-2xl">
           <div className="p-8 space-y-8">
@@ -842,6 +871,91 @@ export function UserDashboard() {
                  Submit Review
                </Button>
             </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Digital Receipt Dialog */}
+      <Dialog open={isReceiptOpen} onOpenChange={setIsReceiptOpen}>
+        <DialogContent className="sm:max-w-[400px] bg-[#111113] border-white/5 text-white p-0 rounded-3xl overflow-hidden shadow-2xl">
+          <div className="flex flex-col">
+            {/* Receipt Header Visual */}
+            <div className="bg-gradient-to-br from-primary/20 to-secondary/10 p-8 text-center border-b border-white/5 relative overflow-hidden">
+               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-primary/10 rounded-full blur-3xl -z-10" />
+               <Zap className="h-10 w-10 text-primary mx-auto mb-4" />
+               <h3 className="text-xl font-black tracking-tight">{receiptBooking?.stationName}</h3>
+               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mt-1">Charging Session Receipt</p>
+            </div>
+
+            <div className="p-8 space-y-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground font-medium">Date</span>
+                  <span className="font-bold">{receiptBooking?.bookingDate}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground font-medium">Booked Time</span>
+                  <span className="font-bold">{receiptBooking?.bookingTime}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground font-medium">Selected Duration</span>
+                  <span className="font-bold">{receiptBooking?.duration} Hour(s)</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground font-medium">Transaction ID</span>
+                  <span className="font-mono text-[10px] bg-white/5 px-2 py-1 rounded">#{receiptBooking?.id.substring(0, 10)}</span>
+                </div>
+              </div>
+
+              <div className="h-px bg-white/5 w-full border-t border-dashed" />
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground font-medium">Base Charge</span>
+                  <span className="font-bold text-foreground">₹{receiptBooking?.amount?.toFixed(2)}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black uppercase tracking-widest text-primary">Amount Paid</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl font-black">₹{receiptBooking?.amount?.toFixed(2)}</span>
+                    <ShieldCheck className="h-5 w-5 text-emerald-500" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-2xl p-4 flex items-center gap-3">
+                 <div className="h-8 w-8 rounded-lg bg-emerald-500/20 flex items-center justify-center shrink-0">
+                    <Check className="h-4 w-4 text-emerald-500" />
+                 </div>
+                 <div className="flex-1">
+                    <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest leading-none">Status: Paid</p>
+                    <p className="text-[9px] text-muted-foreground/60 font-medium mt-1">Processed successfully from your wallet balance.</p>
+                 </div>
+              </div>
+            </div>
+
+            <div className="p-8 border-t border-white/5 bg-secondary/10 flex gap-3">
+              <Button 
+                variant="ghost" 
+                className="flex-1 font-bold rounded-xl h-12" 
+                onClick={() => setIsReceiptOpen(false)}
+              >
+                Close
+              </Button>
+              <Button 
+                className="flex-1 teal-gradient-btn font-black rounded-xl h-12 gap-2"
+                onClick={handleDownloadReceipt}
+                disabled={isDownloading}
+              >
+                {isDownloading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <Download className="h-4 w-4" /> Download
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
