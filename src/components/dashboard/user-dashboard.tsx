@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from 'react';
@@ -128,16 +129,31 @@ export function UserDashboard() {
     return selectedCharger.rate_per_kwh * parseInt(duration) * (selectedCharger.type === 'DCFC' ? 50 : 7);
   }, [selectedCharger, duration]);
 
+  // Robust overlap validation for particular slots
   const isUnavailable = useMemo(() => {
     if (!selectedStation || !selectedChargerId) return false;
-    return bookings.some(b => 
-      b.stationId === selectedStation.station_id && 
-      b.chargerId === selectedChargerId &&
-      b.bookingDate === dateStr && 
-      b.bookingTime === selectedTime && 
-      ['pending', 'confirmed'].includes(b.status)
-    );
-  }, [bookings, selectedStation, selectedChargerId, dateStr, selectedTime]);
+    
+    // Convert current selection to timestamps for comparison
+    const newStartStr = `${dateStr}T${selectedTime}`;
+    const newStartTime = new Date(newStartStr).getTime();
+    const newEndTime = newStartTime + (parseInt(duration) * 60 * 60 * 1000);
+
+    return bookings.some(b => {
+      // Must be the same slot at the same station
+      if (b.stationId !== selectedStation.station_id || b.chargerId !== selectedChargerId) return false;
+      
+      // Only worry about active/confirmed bookings
+      if (!['pending', 'confirmed'].includes(b.status)) return false;
+
+      // Use pre-calculated timestamps if available
+      if (b.startTime && b.endTime) {
+        return (newStartTime < b.endTime) && (b.startTime < newEndTime);
+      }
+      
+      // Fallback for simple date checks if timestamps missing
+      return b.bookingDate === dateStr && b.bookingTime === selectedTime;
+    });
+  }, [bookings, selectedStation, selectedChargerId, dateStr, selectedTime, duration]);
 
   const activeBookings = useMemo(() => {
     if (!appUser) return [];
@@ -153,7 +169,6 @@ export function UserDashboard() {
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [bookings, appUser]);
 
-  // Validates time slots based on selected date
   const timeSlots = useMemo(() => {
     const slots = [];
     const now = new Date();
@@ -164,15 +179,11 @@ export function UserDashboard() {
     for (let h = 8; h <= 22; h++) {
       const hh = h.toString().padStart(2, '0');
       
-      // Logic: If it's today, only allow slots that haven't started yet
-      // A slot like 14:00 is allowed if current time is < 14:00
-      
-      // Check :00 slot
+      // Only allow slots that are in the future relative to system time
       if (!isToday || h > currentHour) {
         slots.push(`${hh}:00`);
       }
 
-      // Check :30 slot
       if (!isToday || h > currentHour || (h === currentHour && currentMinute < 30)) {
         slots.push(`${hh}:30`);
       }
@@ -180,7 +191,6 @@ export function UserDashboard() {
     return slots;
   }, [selectedDate]);
 
-  // Ensure selectedTime is valid when date or available slots change
   useEffect(() => {
     if (timeSlots.length > 0 && !timeSlots.includes(selectedTime)) {
       setSelectedTime(timeSlots[0]);
@@ -688,7 +698,9 @@ export function UserDashboard() {
               <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-4 flex items-center gap-3">
                 <AlertCircle className="h-5 w-5 text-rose-500 shrink-0" />
                 <p className="text-xs text-rose-500 font-bold">
-                  {timeSlots.length === 0 ? "No more sessions available for today." : "Slot unavailable at the selected time."}
+                  {timeSlots.length === 0 
+                    ? "No more sessions available for today." 
+                    : "This slot is already reserved for the selected time period."}
                 </p>
               </div>
             )}
@@ -918,7 +930,6 @@ export function UserDashboard() {
              <DialogDescription>Detailed breakdown of your charging transaction.</DialogDescription>
           </DialogHeader>
           <div className="flex flex-col">
-            {/* Receipt Header Visual */}
             <div className="bg-gradient-to-br from-primary/20 to-secondary/10 p-8 text-center border-b border-white/5 relative overflow-hidden">
                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-primary/10 rounded-full blur-3xl -z-10" />
                <Zap className="h-10 w-10 text-primary mx-auto mb-4" />
