@@ -254,7 +254,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       fullName: fullName,
       role: 'USER',
       created_at: Date.now(),
-      wallet_balance: 100.00,
+      wallet_balance: 0.00, // Wallet balance is now initialized to zero
     };
     
     setUsers(prev => {
