@@ -36,7 +36,7 @@ import { useToast } from '@/hooks/use-toast';
 import { format, subMonths, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 
 export function AdminDashboard() {
-  const { stations, chargers, users, transactions, addStation, removeStation } = useApp();
+  const { stations, chargers, users, transactions, bookings, addStation, removeStation } = useApp();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -49,8 +49,13 @@ export function AdminDashboard() {
   });
 
   const stats = useMemo(() => {
-    // 1. Total Revenue from all transactions
-    const totalRevenue = transactions.reduce((acc, t) => acc + t.cost, 0);
+    // 1. Total Revenue from all transactions and confirmed/completed bookings
+    const txRevenue = transactions.reduce((acc, t) => acc + t.cost, 0);
+    const bkRevenue = bookings
+      .filter(b => b.status === 'confirmed' || b.status === 'completed')
+      .reduce((acc, b) => acc + (b.amount || 0), 0);
+    
+    const totalRevenue = txRevenue + bkRevenue;
     
     // 2. Total Energy from all transactions
     const totalEnergy = transactions.reduce((acc, t) => acc + t.energy_delivered, 0);
@@ -68,16 +73,25 @@ export function AdminDashboard() {
     const chartRevenueData = months.map(month => {
       const monthStart = startOfMonth(month);
       const monthEnd = endOfMonth(month);
-      const monthRevenue = transactions
+      
+      const monthTxRevenue = transactions
         .filter(t => {
           const tDate = new Date(t.timestamp);
           return isWithinInterval(tDate, { start: monthStart, end: monthEnd });
         })
         .reduce((acc, t) => acc + t.cost, 0);
 
+      const monthBkRevenue = bookings
+        .filter(b => {
+          if (!['confirmed', 'completed'].includes(b.status)) return false;
+          const bDate = new Date(b.createdAt);
+          return isWithinInterval(bDate, { start: monthStart, end: monthEnd });
+        })
+        .reduce((acc, b) => acc + (b.amount || 0), 0);
+
       return {
         name: format(month, 'MMM'),
-        value: monthRevenue
+        value: monthTxRevenue + monthBkRevenue
       };
     });
 
@@ -99,7 +113,7 @@ export function AdminDashboard() {
       chartRevenueData,
       chartUsageData
     };
-  }, [transactions, chargers, users, stations]);
+  }, [transactions, bookings, chargers, users, stations]);
 
   const handleAddStation = (e: React.FormEvent) => {
     e.preventDefault();
@@ -355,9 +369,15 @@ export function AdminDashboard() {
             </TableHeader>
             <TableBody>
               {stations.map((station) => {
-                const lifetimeRev = transactions
+                const stationTxRev = transactions
                   .filter(t => t.station_id === station.station_id)
                   .reduce((acc, t) => acc + t.cost, 0);
+
+                const stationBkRev = bookings
+                  .filter(b => b.stationId === station.station_id && (b.status === 'confirmed' || b.status === 'completed'))
+                  .reduce((acc, b) => acc + (b.amount || 0), 0);
+
+                const lifetimeRev = stationTxRev + stationBkRev;
 
                 return (
                   <TableRow key={station.station_id} className="border-white/5 hover:bg-white/5 transition-colors">
