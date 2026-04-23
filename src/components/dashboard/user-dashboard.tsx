@@ -285,6 +285,7 @@ export function UserDashboard() {
 
     setIsBookingPending(true);
     
+    // Simulate API delay
     setTimeout(() => {
       const bookingId = `bk-${Date.now()}`;
       const startTime = new Date(`${dateStr}T${selectedTime}`).getTime();

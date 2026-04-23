@@ -254,7 +254,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       fullName: fullName,
       role: 'USER',
       created_at: Date.now(),
-      wallet_balance: 0.00, // Wallet balance is now initialized to zero
+      wallet_balance: 0.00,
     };
     
     setUsers(prev => {
@@ -408,6 +408,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const updatedUser = { ...currentUser, wallet_balance: currentBalance - bookingAmount };
         setUsers(prev => prev.map(u => u.uid === currentUser.uid ? updatedUser : u));
         
+        // Update local session user if needed
         if (user && user.uid === currentUser.uid) {
            setUser(updatedUser);
         }
@@ -421,18 +422,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setBookings(prev => {
       const booking = prev.find(b => b.id === bookingId);
       
+      // Handle refund on rejection
       if (booking && booking.status === 'pending' && status === 'rejected') {
         const targetUser = users.find(u => u.uid === booking.userId);
         if (targetUser) {
           const refundAmount = booking.amount || 0;
           const updatedUser = { ...targetUser, wallet_balance: (targetUser.wallet_balance || 0) + refundAmount };
           setUsers(allUsers => allUsers.map(u => u.uid === targetUser.uid ? updatedUser : u));
+          // If the target user is the currently logged in user, update the user state too
           if (user && user.uid === targetUser.uid) {
              setUser(updatedUser);
           }
         }
       }
 
+      // If confirmed, make the slot occupied
       if (booking && status === 'confirmed' && booking.chargerId) {
         setChargers(allChargers => allChargers.map(c => 
           c.charger_id === booking.chargerId 
