@@ -1,3 +1,4 @@
+
 export type Language = 'en' | 'kn' | 'hi';
 
 export const translations = {
@@ -9,11 +10,11 @@ export const translations = {
       language: "English"
     },
     hero: {
-      title: "Smart Charge+",
-      subtitle: "Real-time station availability, advance booking, and intelligent management — all in one platform.",
+      title: "The Future of Charging",
+      subtitle: "Experience seamless EV energy management with real-time availability, smart reservations, and ultra-fast network insights.",
       findStation: "Find a Station",
       goDashboard: "Go to Dashboard",
-      backgroundImage: "https://images.unsplash.com/photo-1593941707882-a5bba14938c7?q=80&w=2048&auto=format&fit=crop"
+      backgroundImage: "https://images.unsplash.com/photo-1647166545674-ce28ce93bdca?q=80&w=2070&auto=format&fit=crop"
     },
     howItWorks: {
       title: "How It Works",
@@ -52,11 +53,11 @@ export const translations = {
       language: "ಕನ್ನಡ"
     },
     hero: {
-      title: "ಸ್ಮಾರ್ಟ್ ಚಾರ್ಜ್+",
-      subtitle: "ನೈಜ-ಸಮಯದ ನಿಲ್ದಾಣದ ಲಭ್ಯತೆ, ಮುಂಗಡ ಬುಕಿಂಗ್ ಮತ್ತು ಬುದ್ಧಿವಂತ ನಿರ್ವಹಣೆ — ಎಲ್ಲವೂ ಒಂದೇ ವೇದಿಕೆಯಲ್ಲಿ.",
+      title: "ಚಾರ್ಜಿಂಗ್‌ನ ಭವಿಷ್ಯ",
+      subtitle: "ನೈಜ-ಸಮಯದ ಲಭ್ಯತೆ, ಸ್ಮಾರ್ಟ್ ಕಾಯ್ದಿರಿಸುವಿಕೆಗಳು ಮತ್ತು ಅಲ್ಟ್ರಾ-ಫಾಸ್ಟ್ ನೆಟ್‌ವರ್ಕ್ ಒಳನೋಟಗಳೊಂದಿಗೆ ತಡೆರಹಿತ EV ಶಕ್ತಿ ನಿರ್ವಹಣೆಯನ್ನು ಅನುಭವಿಸಿ.",
       findStation: "ನಿಲ್ದಾಣವನ್ನು ಹುಡುಕಿ",
       goDashboard: "ಡ್ಯಾಶ್‌ಬೋರ್ಡ್‌ಗೆ ಹೋಗಿ",
-      backgroundImage: "https://images.unsplash.com/photo-1593941707882-a5bba14938c7?q=80&w=2048&auto=format&fit=crop"
+      backgroundImage: "https://images.unsplash.com/photo-1647166545674-ce28ce93bdca?q=80&w=2070&auto=format&fit=crop"
     },
     howItWorks: {
       title: "ಇದು ಹೇಗೆ ಕೆಲಸ ಮಾಡುತ್ತದೆ",
@@ -95,11 +96,11 @@ export const translations = {
       language: "हिन्दी"
     },
     hero: {
-      title: "स्मार्ट चार्ज+",
-      subtitle: "वास्तविक समय में स्टेशन की उपलब्धता, अग्रिम बुकिंग और प्रबंधन — सब एक ही प्लेटफॉर्म पर।",
+      title: "चार्जिंग का भविष्य",
+      subtitle: "वास्तविक समय की उपलब्धता, स्मार्ट बुकिंग और अल्ट्रा-फास्ट नेटवर्क अंतर्दृष्टि के साथ निर्बाध ईवी ऊर्जा प्रबंधन का अनुभव करें।",
       findStation: "स्टेशन खोजें",
       goDashboard: "डैशबोर्ड पर जाएं",
-      backgroundImage: "https://images.unsplash.com/photo-1593941707882-a5bba14938c7?q=80&w=2048&auto=format&fit=crop"
+      backgroundImage: "https://images.unsplash.com/photo-1647166545674-ce28ce93bdca?q=80&w=2070&auto=format&fit=crop"
     },
     howItWorks: {
       title: "यह कैसे काम करता है",

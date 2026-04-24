@@ -1,9 +1,10 @@
+
 {
   "placeholderImages": [
     {
       "id": "hero-bg",
-      "description": "High quality cinematic EV charging station background at sunset",
-      "imageUrl": "https://images.unsplash.com/photo-1593941707882-a5bba14938c7?q=80&w=2048&auto=format&fit=crop",
+      "description": "High-end EV charging station at dusk with neon green lighting",
+      "imageUrl": "https://images.unsplash.com/photo-1647166545674-ce28ce93bdca?q=80&w=2070&auto=format&fit=crop",
       "imageHint": "ev station"
     },
     {
