@@ -38,7 +38,7 @@ export default function Home() {
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1 text-primary font-bold">
             <Zap className="h-5 w-5 fill-primary" />
-            <span className="tracking-tight text-sm">Smart Charge+</span>
+            <span className="tracking-tight text-sm uppercase">Smart Charge+</span>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -98,30 +98,30 @@ export default function Home() {
               src={t.hero.backgroundImage}
               alt="Hero Background"
               fill
-              className="object-cover opacity-50 saturate-[1.2]"
+              className="object-cover opacity-70 saturate-[1.1]"
               priority
               unoptimized={true}
               data-ai-hint="ev station"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-background via-background/40 to-transparent" />
-            <div className="absolute inset-0 bg-background/20" />
+            <div className="absolute inset-0 bg-gradient-to-r from-background via-background/60 to-transparent" />
+            <div className="absolute inset-0 bg-background/10" />
           </div>
         ) : (
           <div className="absolute inset-0 -z-10 bg-background" />
         )}
 
         <div className="relative z-10 max-w-2xl space-y-6">
-          <h1 className="text-6xl font-black tracking-tighter text-foreground drop-shadow-md">
+          <h1 className="text-7xl font-black tracking-tighter text-white drop-shadow-2xl">
             {t?.hero?.title}
           </h1>
-          <p className="text-muted-foreground text-lg max-w-md leading-relaxed drop-shadow-sm font-medium">
+          <p className="text-white/80 text-xl max-w-lg leading-relaxed drop-shadow-lg font-medium">
             {t?.hero?.subtitle}
           </p>
 
           <div className="flex flex-wrap gap-4 pt-4">
             <Button 
               size="lg" 
-              className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-8 rounded-xl h-14 text-base shadow-xl shadow-primary/20"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-black px-8 rounded-xl h-14 text-base shadow-2xl shadow-primary/30"
               asChild
             >
               <Link href="/stations">{t?.hero?.findStation}</Link>
@@ -129,18 +129,18 @@ export default function Home() {
             <Button 
               variant="outline" 
               size="lg" 
-              className="bg-secondary/20 hover:bg-secondary/40 border-white/10 text-foreground font-bold px-8 rounded-xl h-14 text-base backdrop-blur-sm"
+              className="bg-black/20 hover:bg-black/40 border-white/20 text-white font-black px-8 rounded-xl h-14 text-base backdrop-blur-md transition-all"
               asChild
             >
               <Link href={user ? "/dashboard" : "/login"}>
-                {user ? t?.nav?.dashboard : t?.hero?.goDashboard}
+                {user ? "Dashboard" : t?.hero?.goDashboard}
               </Link>
             </Button>
           </div>
         </div>
         
         {/* Background Decoration */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[120px] pointer-events-none -z-10" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/10 rounded-full blur-[120px] pointer-events-none -z-10" />
       </section>
 
       {/* How It Works Section */}

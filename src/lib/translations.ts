@@ -13,7 +13,7 @@ export const translations = {
       title: "Smart Charge+",
       subtitle: "Real-time station availability, advance booking, and intelligent management — all in one platform.",
       findStation: "Find a Station",
-      goDashboard: "Login",
+      goDashboard: "Go to Dashboard",
       backgroundImage: "https://images.unsplash.com/photo-1593941707882-a5bba14938c7?q=80&w=2048&auto=format&fit=crop"
     },
     howItWorks: {
@@ -56,7 +56,7 @@ export const translations = {
       title: "ಸ್ಮಾರ್ಟ್ ಚಾರ್ಜ್+",
       subtitle: "ನೈಜ-ಸಮಯದ ನಿಲ್ದಾಣದ ಲಭ್ಯತೆ, ಮುಂಗಡ ಬುಕಿಂಗ್ ಮತ್ತು ಬುದ್ಧಿವಂತ ನಿರ್ವಹಣೆ — ಎಲ್ಲವೂ ಒಂದೇ ವೇದಿಕೆಯಲ್ಲಿ.",
       findStation: "ನಿಲ್ದಾಣವನ್ನು ಹುಡುಕಿ",
-      goDashboard: "ಲಾಗಿನ್",
+      goDashboard: "ಡ್ಯಾಶ್‌ಬೋರ್ಡ್‌ಗೆ ಹೋಗಿ",
       backgroundImage: "https://images.unsplash.com/photo-1593941707882-a5bba14938c7?q=80&w=2048&auto=format&fit=crop"
     },
     howItWorks: {
@@ -99,7 +99,7 @@ export const translations = {
       title: "स्मार्ट चार्ज+",
       subtitle: "वास्तविक समय में स्टेशन की उपलब्धता, अग्रिम बुकिंग और प्रबंधन — सब एक ही प्लेटफॉर्म पर।",
       findStation: "स्टेशन खोजें",
-      goDashboard: "लॉगिन",
+      goDashboard: "डैशबोर्ड पर जाएं",
       backgroundImage: "https://images.unsplash.com/photo-1593941707882-a5bba14938c7?q=80&w=2048&auto=format&fit=crop"
     },
     howItWorks: {
