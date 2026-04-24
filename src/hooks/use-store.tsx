@@ -1,3 +1,4 @@
+
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -90,11 +91,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
               ...parsed[l],
               hero: {
                 ...mergedTranslations[l].hero,
-                ...(parsed[l].hero || {}),
+                // Fallback to default background if stored one is missing or stale
+                backgroundImage: parsed[l]?.hero?.backgroundImage || translations[l].hero.backgroundImage,
+                ...(parsed[l]?.hero || {}),
               },
               howItWorks: {
                 ...mergedTranslations[l].howItWorks,
-                ...(parsed[l].howItWorks || {}),
+                ...(parsed[l]?.howItWorks || {}),
               }
             };
           }

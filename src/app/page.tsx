@@ -13,9 +13,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useState, useEffect } from 'react';
 
 export default function Home() {
   const { user, language, setLanguage, theme, toggleTheme, t } = useApp();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const languages = [
     { id: 'en', name: 'English', label: 'English' },
@@ -30,7 +36,6 @@ export default function Home() {
       {/* Navigation Overlay */}
       <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 border-b border-white/5 bg-background/50 backdrop-blur-md">
         <div className="flex items-center gap-2">
-          {/* Logo */}
           <div className="flex items-center gap-1 text-primary font-bold">
             <Zap className="h-5 w-5 fill-primary" />
             <span className="tracking-tight text-sm">Smart Charge+</span>
@@ -87,28 +92,29 @@ export default function Home() {
       {/* Hero Section */}
       <section className="relative h-screen flex flex-col justify-center px-8 md:px-20 overflow-hidden border-b border-white/5">
         {/* Dynamic Background Image */}
-        {t?.hero?.backgroundImage ? (
-          <div className="absolute inset-0 -z-10">
+        {mounted && t?.hero?.backgroundImage ? (
+          <div className="absolute inset-0 -z-10 bg-background">
             <Image 
               src={t.hero.backgroundImage}
               alt="Hero Background"
               fill
-              className="object-cover opacity-40 saturate-[1.2]"
+              className="object-cover opacity-50 saturate-[1.2]"
               priority
               unoptimized={true}
               data-ai-hint="ev station"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-background via-background/60 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-background via-background/40 to-transparent" />
+            <div className="absolute inset-0 bg-background/20" />
           </div>
         ) : (
           <div className="absolute inset-0 -z-10 bg-background" />
         )}
 
         <div className="relative z-10 max-w-2xl space-y-6">
-          <h1 className="text-6xl font-black tracking-tighter text-foreground drop-shadow-sm">
+          <h1 className="text-6xl font-black tracking-tighter text-foreground drop-shadow-md">
             {t?.hero?.title}
           </h1>
-          <p className="text-muted-foreground text-lg max-w-md leading-relaxed drop-shadow-sm">
+          <p className="text-muted-foreground text-lg max-w-md leading-relaxed drop-shadow-sm font-medium">
             {t?.hero?.subtitle}
           </p>
 
@@ -123,7 +129,7 @@ export default function Home() {
             <Button 
               variant="outline" 
               size="lg" 
-              className="bg-secondary/20 hover:bg-secondary/40 border-white/10 text-foreground font-bold px-8 rounded-xl h-14 text-base"
+              className="bg-secondary/20 hover:bg-secondary/40 border-white/10 text-foreground font-bold px-8 rounded-xl h-14 text-base backdrop-blur-sm"
               asChild
             >
               <Link href={user ? "/dashboard" : "/login"}>
