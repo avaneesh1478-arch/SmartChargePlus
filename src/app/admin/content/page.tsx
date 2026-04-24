@@ -1,4 +1,3 @@
-
 "use client";
 
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
@@ -9,8 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { FileText, Save, Languages, Image as ImageIcon, Upload } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
+import { FileText, Save, Languages, Type } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Language } from '@/lib/translations';
 
@@ -18,7 +17,6 @@ export default function AdminContentPage() {
   const { user, allTranslations, updateTranslations } = useApp();
   const { toast } = useToast();
   const [editingTranslations, setEditingTranslations] = useState(allTranslations);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeLang, setActiveLang] = useState<Language>('en');
 
   useEffect(() => {
@@ -56,24 +54,6 @@ export default function AdminContentPage() {
     }));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        updateField(activeLang, 'hero', 'backgroundImage', base64String);
-        toast({
-          title: "Image Uploaded",
-          description: `New background image has been staged for ${activeLang.toUpperCase()}. Remember to save changes.`,
-        });
-        // Clear input so same file can be selected again if needed
-        if (fileInputRef.current) fileInputRef.current.value = '';
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
   const renderForm = (lang: Language) => {
     const content = editingTranslations[lang];
     if (!content) return null;
@@ -84,32 +64,10 @@ export default function AdminContentPage() {
           <div className="flex items-center justify-between border-b border-white/5 pb-2">
             <h3 className="text-lg font-bold">Hero Section</h3>
             <div className="flex items-center gap-2 text-primary text-[10px] font-bold uppercase tracking-widest">
-              <ImageIcon className="h-3 w-3" /> Visual Assets
+              <Type className="h-3 w-3" /> Text Content
             </div>
           </div>
           <div className="grid gap-4">
-            <div className="grid gap-2">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Hero Background Image</Label>
-              <div className="flex gap-2">
-                <Input 
-                  value={content.hero?.backgroundImage || ''} 
-                  onChange={(e) => updateField(lang, 'hero', 'backgroundImage', e.target.value)}
-                  className="bg-secondary/30 border-none flex-1"
-                  placeholder="Paste image URL here..."
-                />
-                <Button 
-                  variant="outline" 
-                  className="bg-secondary/30 border-none px-4 flex items-center gap-2 font-bold"
-                  onClick={() => {
-                    setActiveLang(lang);
-                    fileInputRef.current?.click();
-                  }}
-                >
-                  <Upload className="h-4 w-4" /> Upload
-                </Button>
-              </div>
-              <p className="text-[10px] text-muted-foreground">Enter a direct URL or upload a high-quality photo from your local gallery.</p>
-            </div>
             <div className="grid gap-2">
               <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Title</Label>
               <Input 
@@ -181,22 +139,13 @@ export default function AdminContentPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-5xl mx-auto">
-        {/* Hidden Global File Input */}
-        <input 
-          type="file" 
-          accept="image/*" 
-          className="hidden" 
-          ref={fileInputRef} 
-          onChange={handleFileChange}
-        />
-
         <div className="flex items-center gap-3">
           <div className="bg-primary/10 p-2 rounded-lg">
             <FileText className="h-6 w-6 text-primary" />
           </div>
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Home Page Content</h1>
-            <p className="text-muted-foreground text-sm">Customize the messaging, headlines, and visual assets for all users.</p>
+            <p className="text-muted-foreground text-sm">Customize the messaging and headlines for all users across the network.</p>
           </div>
         </div>
 
@@ -205,7 +154,7 @@ export default function AdminContentPage() {
             <CardTitle className="text-lg flex items-center gap-2">
               <Languages className="h-5 w-5 text-primary" /> Translation Settings
             </CardTitle>
-            <CardDescription>Select a language tab to edit localized content and visual assets.</CardDescription>
+            <CardDescription>Select a language tab to edit localized headlines and button text.</CardDescription>
           </CardHeader>
           <CardContent className="p-6">
             <Tabs defaultValue="en" onValueChange={(val) => setActiveLang(val as Language)} className="w-full">
