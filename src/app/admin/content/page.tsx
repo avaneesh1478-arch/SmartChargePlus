@@ -8,8 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { FileText, Save, Languages, Type, Image as ImageIcon, Upload, X } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
+import { FileText, Save, Languages, Type } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Language } from '@/lib/translations';
 
@@ -18,7 +18,6 @@ export default function AdminContentPage() {
   const { toast } = useToast();
   const [editingTranslations, setEditingTranslations] = useState(allTranslations);
   const [activeLang, setActiveLang] = useState<Language>('en');
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setEditingTranslations(allTranslations);
@@ -53,21 +52,6 @@ export default function AdminContentPage() {
         }
       }
     }));
-  };
-
-  const handleImageUpload = (lang: Language, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        updateField(lang, 'hero', 'backgroundImage', reader.result as string);
-        toast({
-          title: "Image Processed",
-          description: "Click save to apply the new background image.",
-        });
-      };
-      reader.readAsDataURL(file);
-    }
   };
 
   const renderForm = (lang: Language) => {
@@ -116,59 +100,6 @@ export default function AdminContentPage() {
                   onChange={(e) => updateField(lang, 'hero', 'goDashboard', e.target.value)}
                   className="bg-secondary/30 border-none"
                 />
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-4 pt-4 border-t border-white/5">
-            <div className="flex items-center gap-2 text-primary text-[10px] font-bold uppercase tracking-widest">
-              <ImageIcon className="h-3 w-3" /> Visual Assets
-            </div>
-            <div className="grid gap-4">
-              <div className="grid gap-2">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Home Page Background Image</Label>
-                <div className="flex gap-2">
-                  <Input 
-                    placeholder="Enter image URL..." 
-                    value={content.hero?.backgroundImage || ''} 
-                    onChange={(e) => updateField(lang, 'hero', 'backgroundImage', e.target.value)}
-                    className="bg-secondary/30 border-none flex-1"
-                  />
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    className="hidden" 
-                    ref={fileInputRef} 
-                    onChange={(e) => handleImageUpload(lang, e)}
-                  />
-                  <Button 
-                    variant="outline" 
-                    className="bg-secondary/20 border-white/5 h-10 gap-2 font-bold px-4"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <Upload className="h-4 w-4" />
-                    <span>Upload</span>
-                  </Button>
-                </div>
-                {content.hero?.backgroundImage && (
-                  <div className="relative mt-2 rounded-xl overflow-hidden aspect-video border border-white/5 max-w-sm group">
-                    <img 
-                      src={content.hero.backgroundImage} 
-                      alt="Background Preview" 
-                      className="w-full h-full object-cover opacity-80"
-                    />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <Button 
-                        variant="destructive" 
-                        size="sm" 
-                        onClick={() => updateField(lang, 'hero', 'backgroundImage', '')}
-                        className="h-8 font-bold gap-2"
-                      >
-                        <X className="h-4 w-4" /> Remove Image
-                      </Button>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </div>
