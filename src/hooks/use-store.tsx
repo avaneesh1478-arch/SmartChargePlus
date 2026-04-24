@@ -1,4 +1,3 @@
-
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -44,7 +43,6 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [stations, setStations] = useState<Station[]>(() => {
-    // Add base_rate to mock stations if not present
     return MOCK_STATIONS.map(s => ({ ...s, base_rate: s.base_rate || 0.45 }));
   });
   const [chargers, setChargers] = useState<Charger[]>(MOCK_CHARGERS);
@@ -92,7 +90,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
               ...parsed[l],
               hero: {
                 ...mergedTranslations[l].hero,
-                ...parsed[l].hero,
+                ...(parsed[l].hero || {}),
+              },
+              howItWorks: {
+                ...mergedTranslations[l].howItWorks,
+                ...(parsed[l].howItWorks || {}),
               }
             };
           }
@@ -174,29 +176,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
     localStorage.setItem('volta_theme', theme);
   }, [theme]);
-
-  useEffect(() => {
-    if (!isLoaded) return;
-
-    const checkInterval = setInterval(() => {
-      const now = Date.now();
-      let hasChanges = false;
-      
-      setBookings(prev => {
-        const updated = prev.map(booking => {
-          if (booking.status === 'confirmed' && booking.endTime && booking.endTime < now) {
-            hasChanges = true;
-            return { ...booking, status: 'completed' as const };
-          }
-          return booking;
-        });
-        
-        return hasChanges ? updated : prev;
-      });
-    }, 10000);
-
-    return () => clearInterval(checkInterval);
-  }, [isLoaded]);
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
@@ -408,7 +387,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const updatedUser = { ...currentUser, wallet_balance: currentBalance - bookingAmount };
         setUsers(prev => prev.map(u => u.uid === currentUser.uid ? updatedUser : u));
         
-        // Update local session user if needed
         if (user && user.uid === currentUser.uid) {
            setUser(updatedUser);
         }
@@ -422,21 +400,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setBookings(prev => {
       const booking = prev.find(b => b.id === bookingId);
       
-      // Handle refund on rejection
       if (booking && booking.status === 'pending' && status === 'rejected') {
         const targetUser = users.find(u => u.uid === booking.userId);
         if (targetUser) {
           const refundAmount = booking.amount || 0;
           const updatedUser = { ...targetUser, wallet_balance: (targetUser.wallet_balance || 0) + refundAmount };
           setUsers(allUsers => allUsers.map(u => u.uid === targetUser.uid ? updatedUser : u));
-          // If the target user is the currently logged in user, update the user state too
           if (user && user.uid === targetUser.uid) {
              setUser(updatedUser);
           }
         }
       }
 
-      // If confirmed, make the slot occupied
       if (booking && status === 'confirmed' && booking.chargerId) {
         setChargers(allChargers => allChargers.map(c => 
           c.charger_id === booking.chargerId 

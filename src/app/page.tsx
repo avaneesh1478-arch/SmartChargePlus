@@ -86,7 +86,7 @@ export default function Home() {
       {/* Hero Section */}
       <section className="relative h-screen flex flex-col justify-center px-8 md:px-20 overflow-hidden border-b border-white/5">
         {/* Dynamic Background Image */}
-        {t?.hero?.backgroundImage && (
+        {t?.hero?.backgroundImage ? (
           <div className="absolute inset-0 -z-10">
             <Image 
               src={t.hero.backgroundImage}
@@ -98,6 +98,8 @@ export default function Home() {
             />
             <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent" />
           </div>
+        ) : (
+          <div className="absolute inset-0 -z-10 bg-background" />
         )}
 
         <div className="relative z-10 max-w-2xl space-y-6">
