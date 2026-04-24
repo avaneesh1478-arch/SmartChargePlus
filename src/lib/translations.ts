@@ -1,3 +1,4 @@
+
 export type Language = 'en' | 'kn' | 'hi';
 
 export const translations = {
@@ -96,7 +97,7 @@ export const translations = {
     },
     hero: {
       title: "स्मार्ट चार्ज+",
-      subtitle: "वास्तविक समय में स्टेशन की उपलब्धता, अग्रिम बुकिंग और बुद्धिमान प्रबंधन — सब एक ही प्लेटफॉर्म पर।",
+      subtitle: "वास्तविक समय में स्टेशन की उपलब्धता, अग्रिम बुकिंग और प्रबंधन — सब एक ही प्लेटफॉर्म पर।",
       findStation: "स्टेशन खोजें",
       goDashboard: "लॉगिन",
       backgroundImage: "https://images.unsplash.com/photo-1593941707882-a5bba14938c7?q=80&w=2048&auto=format&fit=crop"

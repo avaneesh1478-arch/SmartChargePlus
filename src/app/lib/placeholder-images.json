@@ -1,3 +1,23 @@
+
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero-bg",
+      "description": "High quality EV charging station background",
+      "imageUrl": "https://images.unsplash.com/photo-1593941707882-a5bba14938c7?q=80&w=2048&auto=format&fit=crop",
+      "imageHint": "ev station"
+    },
+    {
+      "id": "wallet-card-bg",
+      "description": "Eco friendly windmill background for wallet",
+      "imageUrl": "https://images.unsplash.com/photo-1466611653911-95081537e5b7?q=80&w=1200&auto=format&fit=crop",
+      "imageHint": "windmill eco"
+    },
+    {
+      "id": "wallet-footer-bg",
+      "description": "Green promo background",
+      "imageUrl": "https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?q=80&w=800&auto=format&fit=crop",
+      "imageHint": "nature green"
+    }
+  ]
 }
