@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useApp } from '@/hooks/use-store';
@@ -98,13 +97,13 @@ export default function Home() {
               src={t.hero.backgroundImage}
               alt="Hero Background"
               fill
-              className="object-cover opacity-100 saturate-[1.1] brightness-[0.7]"
+              className="object-cover opacity-100 saturate-[1.2] brightness-[0.65]"
               priority
               unoptimized={true}
               data-ai-hint="ev station"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-background via-background/60 to-transparent" />
-            <div className="absolute inset-0 bg-background/20" />
+            <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/40 to-transparent" />
+            <div className="absolute inset-0 bg-background/10" />
           </div>
         ) : (
           <div className="absolute inset-0 -z-10 bg-background" />
