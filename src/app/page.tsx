@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useApp } from '@/hooks/use-store';
@@ -87,7 +86,7 @@ export default function Home() {
       {/* Hero Section */}
       <section className="relative h-screen flex flex-col justify-center px-8 md:px-20 overflow-hidden border-b border-white/5">
         {/* Dynamic Background Image */}
-        {t.hero.backgroundImage && (
+        {t?.hero?.backgroundImage && (
           <div className="absolute inset-0 -z-10">
             <Image 
               src={t.hero.backgroundImage}
@@ -95,7 +94,7 @@ export default function Home() {
               fill
               className="object-cover opacity-30 saturate-[0.8]"
               priority
-              unoptimized={t.hero.backgroundImage.startsWith('data:')}
+              unoptimized={true}
             />
             <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent" />
           </div>
@@ -103,10 +102,10 @@ export default function Home() {
 
         <div className="relative z-10 max-w-2xl space-y-6">
           <h1 className="text-6xl font-black tracking-tighter text-foreground drop-shadow-sm">
-            {t.hero.title}
+            {t?.hero?.title}
           </h1>
           <p className="text-muted-foreground text-lg max-w-md leading-relaxed drop-shadow-sm">
-            {t.hero.subtitle}
+            {t?.hero?.subtitle}
           </p>
 
           <div className="flex flex-wrap gap-4 pt-4">
@@ -115,7 +114,7 @@ export default function Home() {
               className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-8 rounded-xl h-14 text-base shadow-xl shadow-primary/20"
               asChild
             >
-              <Link href="/stations">{t.hero.findStation}</Link>
+              <Link href="/stations">{t?.hero?.findStation}</Link>
             </Button>
             <Button 
               variant="outline" 
@@ -124,7 +123,7 @@ export default function Home() {
               asChild
             >
               <Link href={user ? "/dashboard" : "/login"}>
-                {user ? t.nav.dashboard : t.hero.goDashboard}
+                {user ? t?.nav?.dashboard : t?.hero?.goDashboard}
               </Link>
             </Button>
           </div>
@@ -137,26 +136,26 @@ export default function Home() {
       {/* How It Works Section */}
       <section className="py-24 px-8 md:px-20 bg-background">
         <div className="text-center space-y-4 mb-16">
-          <h2 className="text-4xl font-bold tracking-tight">{t.howItWorks.title}</h2>
-          <p className="text-muted-foreground">{t.howItWorks.subtitle}</p>
+          <h2 className="text-4xl font-bold tracking-tight">{t?.howItWorks?.title}</h2>
+          <p className="text-muted-foreground">{t?.howItWorks?.subtitle}</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {[
             {
               icon: MapPin,
-              title: t.howItWorks.find,
-              desc: t.howItWorks.findDesc
+              title: t?.howItWorks?.find,
+              desc: t?.howItWorks?.findDesc
             },
             {
               icon: Clock,
-              title: t.howItWorks.book,
-              desc: t.howItWorks.bookDesc
+              title: t?.howItWorks?.book,
+              desc: t?.howItWorks?.bookDesc
             },
             {
               icon: Zap,
-              title: t.howItWorks.charge,
-              desc: t.howItWorks.chargeDesc
+              title: t?.howItWorks?.charge,
+              desc: t?.howItWorks?.chargeDesc
             }
           ].map((step, i) => (
             <div key={i} className="dark-glass p-8 rounded-2xl space-y-6 text-center group hover:bg-accent transition-all">
@@ -175,25 +174,25 @@ export default function Home() {
       {/* Choose Your Portal Section */}
       <section className="py-24 px-8 md:px-20 bg-background border-t border-border">
         <div className="text-center space-y-4 mb-16">
-          <h2 className="text-4xl font-bold tracking-tight">{t.portals.title}</h2>
+          <h2 className="text-4xl font-bold tracking-tight">{t?.portals?.title}</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {[
             {
               icon: MapPin,
-              title: t.portals.driver,
-              desc: t.portals.driverDesc
+              title: t?.portals?.driver,
+              desc: t?.portals?.driverDesc
             },
             {
               icon: Zap,
-              title: t.portals.operator,
-              desc: t.portals.operatorDesc
+              title: t?.portals?.operator,
+              desc: t?.portals?.operatorDesc
             },
             {
               icon: Shield,
-              title: t.portals.admin,
-              desc: t.portals.adminDesc
+              title: t?.portals?.admin,
+              desc: t?.portals?.adminDesc
             }
           ].map((portal, i) => (
             <Link href="/login" key={i} className="dark-glass p-8 rounded-2xl space-y-6 group hover:bg-accent transition-all cursor-pointer block">
