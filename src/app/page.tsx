@@ -98,13 +98,13 @@ export default function Home() {
               src={t.hero.backgroundImage}
               alt="Hero Background"
               fill
-              className="object-cover opacity-70 saturate-[1.1]"
+              className="object-cover opacity-100 saturate-[1.1] brightness-[0.7]"
               priority
               unoptimized={true}
               data-ai-hint="ev station"
             />
             <div className="absolute inset-0 bg-gradient-to-r from-background via-background/60 to-transparent" />
-            <div className="absolute inset-0 bg-background/10" />
+            <div className="absolute inset-0 bg-background/20" />
           </div>
         ) : (
           <div className="absolute inset-0 -z-10 bg-background" />
@@ -114,7 +114,7 @@ export default function Home() {
           <h1 className="text-7xl font-black tracking-tighter text-white drop-shadow-2xl">
             {t?.hero?.title}
           </h1>
-          <p className="text-white/80 text-xl max-w-lg leading-relaxed drop-shadow-lg font-medium">
+          <p className="text-white text-xl max-w-lg leading-relaxed drop-shadow-lg font-bold">
             {t?.hero?.subtitle}
           </p>
 
@@ -129,7 +129,7 @@ export default function Home() {
             <Button 
               variant="outline" 
               size="lg" 
-              className="bg-black/20 hover:bg-black/40 border-white/20 text-white font-black px-8 rounded-xl h-14 text-base backdrop-blur-md transition-all"
+              className="bg-black/40 hover:bg-black/60 border-white/20 text-white font-black px-8 rounded-xl h-14 text-base backdrop-blur-md transition-all shadow-xl"
               asChild
             >
               <Link href={user ? "/dashboard" : "/login"}>
