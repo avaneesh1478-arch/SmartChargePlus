@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useApp } from '@/hooks/use-store';
@@ -35,7 +34,7 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground selection:bg-primary/30">
       {/* Navigation Overlay */}
-      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 border-b border-white/5 bg-background/40 backdrop-blur-lg">
+      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 border-b border-white/5 bg-background/60 backdrop-blur-md">
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1 text-primary font-bold">
             <Zap className="h-5 w-5 fill-primary" />
@@ -93,22 +92,22 @@ export default function Home() {
       {/* Hero Section */}
       <section className="relative h-screen flex flex-col justify-center px-8 md:px-20 overflow-hidden">
         {/* Dynamic Background Image */}
-        {mounted && t?.hero?.backgroundImage && (
-          <div className="absolute inset-0 -z-10 bg-background">
+        <div className="absolute inset-0 -z-10 bg-black">
+          {t?.hero?.backgroundImage && (
             <Image 
               src={t.hero.backgroundImage}
               alt="Hero Background"
               fill
-              className="object-cover opacity-100 saturate-[1.1] brightness-[0.7]"
+              className={`object-cover opacity-100 saturate-[1.1] brightness-[0.8] transition-opacity duration-1000 ${mounted ? 'opacity-100' : 'opacity-0'}`}
               priority
               unoptimized={true}
               data-ai-hint="ev station"
             />
-            {/* Multi-layered gradient for text readability */}
-            <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/60 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/20" />
-          </div>
-        )}
+          )}
+          {/* Multi-layered gradient for text readability - optimized for visibility */}
+          <div className="absolute inset-0 bg-gradient-to-r from-background/80 via-background/40 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/10" />
+        </div>
 
         <div className="relative z-10 max-w-3xl space-y-8">
           <div className="space-y-4">
@@ -255,7 +254,7 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="py-12 px-8 md:px-20 border-t border-white/5 flex flex-col md:flex-row items-center justify-between text-[10px] text-muted-foreground/60 uppercase tracking-[0.3em] bg-background">
+      <footer className="py-12 px-8 md:px-20 border-t border-white/5 flex flex-col md:row items-center justify-between text-[10px] text-muted-foreground/60 uppercase tracking-[0.3em] bg-background">
         <div className="flex items-center gap-2">
           <Zap className="h-4 w-4 fill-primary/40 text-primary/40" />
           <span className="font-black text-white/40">Smart Charge+ © 2026</span>
